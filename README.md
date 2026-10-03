@@ -12,3 +12,8 @@ Die Seite liest alle 60 Sekunden `status.json`. Zum Melden die Datei auf GitHub 
 - `message`: Text für die Leuchtanzeige, `messageAt`: Uhrzeit dazu
 - `gpsLink`: Link zum Live-Standort (muss mit https:// beginnen)
 - `variant`: Weg ab Parma, `cisa` (La Spezia) oder `bologna`
+## Live-GPS
+
+`sender.html` auf dem Handy einer Lehrkraft öffnen, einmalig einen GitHub-Token eintragen (Fine-grained, nur Repository `toskana-2026`, Berechtigung „Contents: Read and write“) und „Tracking starten“ tippen. Das Handy schreibt etwa jede Minute seine Position in `pos.json` im Branch `live`. Die Schülerseite liest sie von dort.
+
+Nach der Fahrt: Branch `live` löschen, damit der Streckenverlauf nicht öffentlich bleibt, und den Token auf GitHub widerrufen.

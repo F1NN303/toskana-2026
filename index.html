@@ -86,6 +86,11 @@ p{margin:0}
 .strip-lbl .endname{position:absolute;right:0;top:4px;font-weight:800}
 .plate{display:inline-flex;align-self:flex-start;background:#fff;color:#111;border:2px solid #111;border-radius:4px;padding:4px 10px;font-weight:700;font-size:.92rem}
 .plate.late{background:var(--yellow)}
+.plates{display:flex;flex-wrap:wrap;gap:8px}
+.plate.live{background:var(--it);color:#fff;border-color:#fff;align-items:center}
+.plate.live i{display:inline-block;width:9px;height:9px;border-radius:50%;background:#fff;margin-right:8px;animation:blink 1.4s steps(2,start) infinite}
+@keyframes blink{to{visibility:hidden}}
+@media (prefers-reduced-motion:reduce){.plate.live i{animation:none}}
 .gps{align-self:flex-start;display:inline-flex;gap:10px;align-items:center;background:var(--yellow);color:#111;font-weight:900;text-decoration:none;padding:11px 16px;border-radius:6px;border:3px solid #111;box-shadow:0 3px 0 rgba(0,0,0,.45)}
 a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline-offset:3px}
 .stack{display:flex;flex-direction:column;gap:14px}
@@ -245,8 +250,8 @@ var CISA=[['sp',840,1135,'it:A15'],['vi',880,1185,'it:A12'],['lc',900,1210,'it:A
 var BOLO=[['bo',830,1120,'it:A1'],['fi',890,1225,'it:A1'],['mt',930,1275,'it:A11']];
 var MAJOR={ko:1,ka:1,ba:1,lu:1,go:1,lg:1,mi:1,pr:1,sp:1,bo:1,fi:1,fr:1,mt:1,mg:1};
 
-function route(phase){
-  var v=state.variant[phase]==='bologna'?BOLO:CISA;
+function route(phase,variant){
+  var v=(variant||state.variant[phase])==='bologna'?BOLO:CISA;
   var hin=COMMON.concat(v).map(function(r){var p=P[r[0]];return {id:r[0],n:p.n,sub:p.sub,lat:p.lat,lon:p.lon,c:p.c,off:r[1],km:r[2],road:r[3]}});
   if(phase==='hin')return hin;
   var tot=hin[hin.length-1].off, kt=hin[hin.length-1].km, out=[];
@@ -265,9 +270,38 @@ function estimate(phase,now){
   var i=0; while(i<r.length-2&&r[i+1].off<=eff)i++;
   var a=r[i], b=r[i+1], f=Math.max(0,Math.min(1,(eff-a.off)/(b.off-a.off)));
   var done=(ck&&ck.wp===r[r.length-1].id)||eff>=total;
-  return {phase:phase,r:r,start:start,total:total,ck:ck,cks:cks,delay:delay,eff:eff,i:i,a:a,b:b,f:f,done:done,
+  var res={phase:phase,r:r,start:start,total:total,ck:ck,cks:cks,delay:delay,eff:eff,i:i,a:a,b:b,f:f,done:done,live:false,
     lat:a.lat+(b.lat-a.lat)*f,lon:a.lon+(b.lon-a.lon)*f,km:a.km+(b.km-a.km)*f,kmTotal:r[r.length-1].km,
     remain:total-eff,eta:now+(total-eff)*60000};
+  // Echtes GPS hat Vorrang, solange es frisch ist und zur Fahrt passt
+  if(gpsFresh(now)&&now>=start-90*60000&&now<=start+(total+720)*60000){
+    var best=null;
+    ['cisa','bologna'].forEach(function(v){var rr=route(phase,v),pj=project(rr,gps.lat,gps.lon);if(!best||pj.dist<best.pj.dist)best={r:rr,pj:pj}});
+    if(best.pj.dist<40){
+      var R=best.r, A=R[best.pj.i], B=R[best.pj.i+1], F=best.pj.f, T2=R[R.length-1].off, E=A.off+(B.off-A.off)*F;
+      var fin=R[R.length-1], dFin=kmDist(gps.lat,gps.lon,fin.lat,fin.lon);
+      res.r=R;res.total=T2;res.i=best.pj.i;res.a=A;res.b=B;res.f=F;res.eff=E;res.live=true;res.off=best.pj.dist;
+      res.lat=gps.lat;res.lon=gps.lon;res.km=A.km+(B.km-A.km)*F;res.kmTotal=fin.km;
+      res.delay=(now-start)/60000-E;res.remain=Math.max(0,T2-E);res.eta=now+res.remain*60000;
+      res.done=dFin<5||E>=T2-10;
+    }
+  }
+  return res;
+}
+
+/* Live-GPS */
+var gps=null;
+function gpsFresh(now){return !!gps&&now-gps.t<15*60000&&gps.t<=now+5*60000}
+function kmDist(la1,lo1,la2,lo2){var k=Math.cos((la1+la2)/2*Math.PI/180);var dx=(lo2-lo1)*111.32*k,dy=(la2-la1)*110.57;return Math.sqrt(dx*dx+dy*dy)}
+function project(r,lat,lon){
+  var k=Math.cos(lat*Math.PI/180),best={i:0,f:0,dist:1e9};
+  for(var j=0;j<r.length-1;j++){
+    var ax=(r[j].lon-lon)*111.32*k, ay=(r[j].lat-lat)*110.57, bx=(r[j+1].lon-lon)*111.32*k, by=(r[j+1].lat-lat)*110.57;
+    var vx=bx-ax, vy=by-ay, L=vx*vx+vy*vy, t=L?Math.max(0,Math.min(1,-(ax*vx+ay*vy)/L)):0;
+    var px=ax+vx*t, py=ay+vy*t, d=Math.sqrt(px*px+py*py);
+    if(d<best.dist)best={i:j,f:t,dist:d};
+  }
+  return best;
 }
 function phaseNow(now){
   if(now<HIN_START)return 'vorher';
@@ -376,7 +410,8 @@ function tuscanyMap(todayPlace,e){
   s+=label('mt',T,'t','Hotel Montecatini');
   s+=label('si',T,'r');s+=label('fi',T,'r','Firenze');s+=label('pt',T,'r');s+=label('pi',T,'r');s+=label('vi',T,'r');s+=label('lc',T,'r','Lucca','lbl minor');
   [['DI',P.si,8,-10,'si'],['MI',P.fi,8,20,'fi'],['DO',P.pi,-24,20,'pi'],['MO',P.mt,-10,24,'mt']].forEach(function(d){var q=xy(d[1].lat,d[1].lon,T);s+='<text class="day'+(todayPlace===d[4]?' today':'')+'" x="'+(q[0]+d[2]).toFixed(1)+'" y="'+(q[1]+d[3]).toFixed(1)+'">'+d[0]+'</text>'});
-  if(e&&!e.done&&e.lat<T.lat1&&e.lat>T.lat0&&e.lon>T.lon0&&e.lon<T.lon1)s+=busMark(e.lat,e.lon,T);
+  var g=(e&&!e.done)?e:(gpsFresh(Date.now())?gps:null);
+  if(g&&g.lat<T.lat1&&g.lat>T.lat0&&g.lon>T.lon0&&g.lon<T.lon1)s+=busMark(g.lat,g.lon,T);
   return s+'</svg>';
 }
 
@@ -394,7 +429,9 @@ function roadStrip(ee,pct){
 }
 function hero(ph,now,e){
   var h='';
-  if(state.message)h+='<div class="vms" role="status"><div class="l1">Nachricht der Lehrkräfte'+(state.messageAt?' · '+tm(state.messageAt):'')+'</div><div class="l3">'+esc(state.message)+'</div></div>';
+  var msg=state.message, msgAt=state.messageAt;
+  if(gps&&gps.msgAt&&(!msgAt||gps.msgAt>msgAt)){msg=gps.msg||'';msgAt=gps.msgAt}
+  if(msg)h+='<div class="vms" role="status"><div class="l1">Nachricht der Lehrkräfte'+(msgAt?' · '+tm(msgAt):'')+'</div><div class="l3">'+esc(msg)+'</div></div>';
   if(ph==='vorher'){
     var ee=estimate('hin',now);
     h+='<div class="vms"><div class="l1">Abfahrt in</div><div class="l2">'+dur((HIN_START-now)/60000)+'</div><div class="l3">So 04.10. · Treffen 22:15 · Abfahrt 22:30 · Nespelerstraße 75</div></div>';
@@ -406,8 +443,9 @@ function hero(ph,now,e){
     h+='<div class="gantry"><div class="sign '+cc+'"><div class="in hero-in"><div class="where"><span class="small">'+(ph==='hin'?'Hinfahrt – wir sind gerade':'Heimfahrt – wir sind gerade')+'</span><strong>'+esc(whereText(e))+'</strong></div>'+
        '<div class="dest">'+ARROW+'<span class="to">'+esc(last.n)+'</span><span class="km">'+n1(e.kmTotal-e.km)+' km</span><span class="eta">Ankunft ca. '+tm(e.eta)+', noch '+dur(e.remain)+'</span></div></div></div></div>';
     h+=roadStrip(e,e.km/e.kmTotal*100);
-    if(e.ck){var d=Math.round(e.delay);h+='<span class="plate'+(d>=10?' late':'')+'">Gemeldet: '+esc(P[e.ck.wp].n)+' um '+tm(e.ck.t)+(Math.abs(d)>=10?', '+(d>0?'+':'−')+Math.abs(d)+' Min zum Plan':'')+'</span>'}
-    else h+='<span class="plate">Geschätzt nach Fahrplan</span>';
+    if(e.live){var dl=Math.round(e.delay);h+='<div class="plates"><span class="plate live"><i></i>GPS live, Stand '+tm(gps.t)+' Uhr</span>'+(gps.stopped?'<span class="plate late">Bus steht gerade, vermutlich Pause</span>':'')+(Math.abs(dl)>=15?'<span class="plate">'+(dl>0?dl+' Min hinter':(-dl)+' Min vor')+' dem Plan</span>':'')+'</div>'}
+    else if(e.ck){var d=Math.round(e.delay);h+='<span class="plate'+(d>=10?' late':'')+'">Gemeldet: '+esc(P[e.ck.wp].n)+' um '+tm(e.ck.t)+(Math.abs(d)>=10?', '+(d>0?'+':'−')+Math.abs(d)+' Min zum Plan':'')+'</span>'}
+    else h+='<span class="plate">'+(gps&&gps.t>e.start-90*60000?'Kein GPS-Signal seit '+tm(gps.t)+' Uhr, Position geschätzt':'Geschätzt nach Fahrplan')+'</span>';
   } else if(ph==='vorort'){
     var today=berlinDate(now), D=DAYS.filter(function(d){return d.date===today})[0];
     h+='<div class="gantry"><div class="sign brown"><div class="in hero-in"><div class="where"><span class="small">'+(D?D.wd+' '+D.dm+' · heute':'In der Toskana')+'</span><strong>'+esc(D?D.title:'Montecatini Terme')+'</strong></div>'+
@@ -499,7 +537,7 @@ document.getElementById('app').innerHTML=
  '</div></section>'+
  '<div id="teacher"></div>'+
  '<div class="edge"></div>'+
- '<footer>Die Position des Busses ist aus dem Fahrplan geschätzt. Wenn eine Lehrkraft unterwegs meldet, wo wir sind, rechnet die Seite ab dieser Zeit weiter. Die genaue Route bestimmt der Busfahrer. Echtes GPS gibt es nur, wenn die Lehrkräfte oben einen Live-Standort teilen.</footer>'+
+ '<footer>Die Position kommt live vom GPS eines Lehrkraft-Handys im Bus und wird etwa jede Minute aktualisiert. Fällt das Signal länger als 15 Minuten aus (Funkloch, Tunnel, Akku), schätzt die Seite die Position nach dem Fahrplan, bis wieder ein Signal kommt.</footer>'+
 '</div>';
 
 render();
@@ -519,7 +557,23 @@ function pullStatus(){
     render();
   }).catch(function(){});
 }
-if(!(window.claude&&typeof window.claude.use==='function')){pullStatus();setInterval(pullStatus,60000)}
+var GPS_API='https://api.github.com/repos/F1NN303/toskana-2026/contents/pos.json?ref=live';
+var GPS_RAW='https://raw.githubusercontent.com/F1NN303/toskana-2026/live/pos.json';
+function useGps(p){
+  if(!p||typeof p!=='object')return;
+  var lat=+p.lat,lon=+p.lon,t=toMs(p.t);
+  if(!isFinite(lat)||!isFinite(lon)||!isFinite(t)||Math.abs(lat)>90||Math.abs(lon)>180||(lat===0&&lon===0)){lat=0;lon=0;t=0}
+  gps={lat:lat,lon:lon,t:t,acc:+p.acc||null,stopped:!!p.stopped,msg:typeof p.msg==='string'?p.msg.slice(0,200):'',msgAt:p.msgAt?toMs(p.msgAt):null};
+  render();
+}
+function pullGps(){
+  if(!window.fetch||location.protocol==='file:')return;
+  fetch(GPS_API,{cache:'no-store',headers:{'Accept':'application/vnd.github.raw+json'}}).then(function(r){
+    if(r.ok)return r.json();
+    return fetch(GPS_RAW+'?t='+Date.now(),{cache:'no-store'}).then(function(r2){return r2.ok?r2.json():null});
+  }).then(useGps).catch(function(){});
+}
+if(!(window.claude&&typeof window.claude.use==='function')){pullStatus();setInterval(pullStatus,60000);pullGps();setInterval(pullGps,75000)}
 
 /* Lehrkraft-Bereich: nur für Personen mit Bearbeitungsrecht */
 var art=null;
