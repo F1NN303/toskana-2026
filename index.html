@@ -191,6 +191,39 @@ svg .day.today{fill:var(--yellow)}
 .warn p{color:var(--paint-dim);font-size:.97rem}
 footer{font-size:.85rem;color:var(--muted);max-width:72ch}
 
+
+/* Handy: kompakter, damit Position und Status ohne Scrollen sichtbar sind */
+@media (max-width:600px){
+  body{font-size:16px}
+  .wrap{padding-block:14px 40px;gap:20px}
+  .top{gap:6px}
+  .top p{font-size:.82rem}
+  .top h1{font-size:2.1rem}
+  .ovals{display:none}
+  .sign>.in{padding:12px 14px}
+  .gantry{padding-top:16px}
+  .gantry::before{height:9px}
+  .gantry::after{top:9px;height:7px}
+  .where strong{font-size:1.65rem}
+  .hero-in{gap:12px}
+  .dest{gap:2px 10px;padding-top:10px}
+  .dest svg{width:24px;height:32px}
+  .dest .to{font-size:1.1rem}
+  .dest .km{font-size:1.45rem}
+  .dest .eta{font-size:.9rem}
+  .vms{padding:10px 12px;border-width:5px}
+  .vms .l2{font-size:1.9rem}
+  .strip{height:44px}
+  .strip .bus{width:50px;height:24px}
+  .plate{font-size:.85rem}
+  .sec-title h2{font-size:1.25rem}
+  .drow{font-size:1.15rem}
+  .drow.final{font-size:1.25rem}
+  .fp li{grid-template-columns:3.6rem 16px minmax(0,1fr) auto;gap:8px}
+  .tsign h3{font-size:1.3rem}
+  .nav-head{font-size:.66rem;letter-spacing:.04em}
+  .nav-head span{white-space:nowrap}
+}
 </style>
 <script type="application/json" id="state">{"checkins":[],"message":"","messageAt":null,"gpsLink":"","variant":{"hin":"cisa","rueck":"cisa"}}</script>
 <div id="app"></div>
@@ -245,30 +278,43 @@ function route(phase,variant){
 }
 function startOf(phase){return phase==='hin'?HIN_START:RUECK_START}
 
+function bestRoute(phase,lat,lon){var best=null;['cisa','bologna'].forEach(function(v){var rr=route(phase,v),pj=project(rr,lat,lon);if(!best||pj.dist<best.pj.dist)best={r:rr,pj:pj}});return best}
+function offOf(R,pj){var A=R[pj.i],B=R[pj.i+1];return A.off+(B.off-A.off)*pj.f}
 function estimate(phase,now){
-  var r=route(phase), start=startOf(phase), total=r[r.length-1].off;
+  var r=route(phase), start=startOf(phase);
+  var inWin=function(t){return t>=start-90*60000&&t<=start+(r[r.length-1].off+720)*60000};
+  var fresh=gpsFresh(now)&&inWin(now), bg=null;
+  // Welche Route passt zum letzten GPS-Punkt (La Spezia oder Bologna)?
+  if(gps&&gps.t&&inWin(gps.t)){bg=bestRoute(phase,gps.lat,gps.lon);if(bg.pj.dist<40)r=bg.r;else bg.far=true}
+  var total=r[r.length-1].off;
   var cks=state.checkins.filter(function(c){return c.phase===phase&&r.some(function(w){return w.id===c.wp})}).sort(function(a,b){return a.t-b.t});
-  var ck=cks.length?cks[cks.length-1]:null, delay=0, minOff=0;
+  var ck=cks.length?cks[cks.length-1]:null, delay=0, minOff=0, anchored=false;
   if(ck){var w=r.filter(function(x){return x.id===ck.wp})[0];delay=(ck.t-start)/60000-w.off;minOff=w.off}
+  // GPS gerade weg: ab dem letzten echten Punkt mit dessen Verspätung weiterschätzen
+  if(bg&&!bg.far&&!fresh&&(!ck||gps.t>ck.t)){var E0=offOf(r,bg.pj);delay=(gps.t-start)/60000-E0;minOff=E0;anchored=true}
   var eff=(now-start)/60000-delay;
   eff=Math.max(minOff,Math.min(total,eff)); if(eff<0)eff=0;
   var i=0; while(i<r.length-2&&r[i+1].off<=eff)i++;
   var a=r[i], b=r[i+1], f=Math.max(0,Math.min(1,(eff-a.off)/(b.off-a.off)));
   var done=(ck&&ck.wp===r[r.length-1].id)||eff>=total;
-  var res={phase:phase,r:r,start:start,total:total,ck:ck,cks:cks,delay:delay,eff:eff,i:i,a:a,b:b,f:f,done:done,live:false,
+  var res={phase:phase,r:r,start:start,total:total,ck:ck,cks:cks,delay:delay,eff:eff,i:i,a:a,b:b,f:f,done:done,live:false,anchored:anchored,offRoute:false,
     lat:a.lat+(b.lat-a.lat)*f,lon:a.lon+(b.lon-a.lon)*f,km:a.km+(b.km-a.km)*f,kmTotal:r[r.length-1].km,
     remain:total-eff,eta:now+(total-eff)*60000};
-  // Echtes GPS hat Vorrang, solange es frisch ist und zur Fahrt passt
-  if(gpsFresh(now)&&now>=start-90*60000&&now<=start+(total+720)*60000){
-    var best=null;
-    ['cisa','bologna'].forEach(function(v){var rr=route(phase,v),pj=project(rr,gps.lat,gps.lon);if(!best||pj.dist<best.pj.dist)best={r:rr,pj:pj}});
-    if(best.pj.dist<40){
-      var R=best.r, A=R[best.pj.i], B=R[best.pj.i+1], F=best.pj.f, T2=R[R.length-1].off, E=A.off+(B.off-A.off)*F;
-      var fin=R[R.length-1], dFin=kmDist(gps.lat,gps.lon,fin.lat,fin.lon);
-      res.r=R;res.total=T2;res.i=best.pj.i;res.a=A;res.b=B;res.f=F;res.eff=E;res.live=true;res.off=best.pj.dist;
-      res.lat=gps.lat;res.lon=gps.lon;res.km=A.km+(B.km-A.km)*F;res.kmTotal=fin.km;
-      res.delay=(now-start)/60000-E;res.remain=Math.max(0,T2-E);res.eta=now+res.remain*60000;
-      res.done=dFin<5||E>=T2-10;
+  if(fresh&&bg){
+    var fin=r[r.length-1];
+    if(!bg.far){
+      // Echtes GPS auf der Strecke: Position und Ankunft ab hier
+      var A=r[bg.pj.i], B=r[bg.pj.i+1], F=bg.pj.f, E=offOf(r,bg.pj);
+      res.i=bg.pj.i;res.a=A;res.b=B;res.f=F;res.eff=E;res.live=true;res.off=bg.pj.dist;
+      res.lat=gps.lat;res.lon=gps.lon;res.km=A.km+(B.km-A.km)*F;
+      res.delay=(now-start)/60000-E;res.remain=Math.max(0,total-E);res.eta=now+res.remain*60000;
+      res.done=kmDist(gps.lat,gps.lon,fin.lat,fin.lon)<5||E>=total-10;
+    } else {
+      // Umleitung: echte Position zeigen, Rest grob über die Luftlinie
+      var rest=kmDist(gps.lat,gps.lon,fin.lat,fin.lon)*1.3;
+      res.live=true;res.offRoute=true;res.lat=gps.lat;res.lon=gps.lon;
+      res.km=Math.max(0,res.kmTotal-rest);res.remain=Math.max(0,rest/70*60);res.eta=now+res.remain*60000;
+      res.done=rest<6;
     }
   }
   return res;
@@ -427,10 +473,10 @@ function hero(ph,now,e){
     var cc=CC[e.f<.5?e.a.c:e.b.c], last=e.r[e.r.length-1];
     h+='<div class="gantry"><div class="sign '+cc+'"><div class="in hero-in"><div class="where"><span class="small">'+(ph==='hin'?'Hinfahrt – wir sind gerade':'Heimfahrt – wir sind gerade')+'</span><strong>'+esc(whereText(e))+'</strong></div>'+
        '<div class="dest">'+ARROW+'<span class="to">'+esc(last.n)+'</span><span class="km">'+n1(e.kmTotal-e.km)+' km</span><span class="eta">Ankunft ca. '+tm(e.eta)+', noch '+dur(e.remain)+'</span></div></div></div></div>';
-    h+=roadStrip(e,e.km/e.kmTotal*100);
-    if(e.live){var dl=Math.round(e.delay);h+='<div class="plates"><span class="plate live"><i></i>GPS live, Stand '+tm(gps.t)+' Uhr</span>'+(gps.stopped?'<span class="plate late">Bus steht gerade, vermutlich Pause</span>':'')+(Math.abs(dl)>=15?'<span class="plate">'+(dl>0?dl+' Min hinter':(-dl)+' Min vor')+' dem Plan</span>':'')+'</div>'}
+    if(e.live){var dl=Math.round(e.delay);h+='<div class="plates"><span class="plate live"><i></i>GPS live, Stand '+tm(gps.t)+' Uhr</span>'+(gps.stopped?'<span class="plate late">'+esc(stopText(now))+'</span>':'')+(e.offRoute?'<span class="plate late">Umleitung: abseits der geplanten Strecke</span>':(Math.abs(dl)>=15?'<span class="plate">'+(dl>0?dl+' Min hinter':(-dl)+' Min vor')+' dem Plan</span>':''))+'</div>'}
     else if(e.ck){var d=Math.round(e.delay);h+='<span class="plate'+(d>=10?' late':'')+'">Gemeldet: '+esc(P[e.ck.wp].n)+' um '+tm(e.ck.t)+(Math.abs(d)>=10?', '+(d>0?'+':'−')+Math.abs(d)+' Min zum Plan':'')+'</span>'}
     else h+='<span class="plate">'+(gps&&gps.t>e.start-90*60000?'Kein GPS-Signal seit '+tm(gps.t)+' Uhr, Position geschätzt':'Geschätzt nach Fahrplan')+'</span>';
+    h+=roadStrip(e,e.km/e.kmTotal*100);
   } else if(ph==='vorort'){
     var today=berlinDate(now), D=DAYS.filter(function(d){return d.date===today})[0];
     h+='<div class="gantry"><div class="sign brown"><div class="in hero-in"><div class="where"><span class="small">'+(D?D.wd+' '+D.dm+' · heute':'In der Toskana')+'</span><strong>'+esc(D?D.title:'Montecatini Terme')+'</strong></div>'+
@@ -444,6 +490,7 @@ function hero(ph,now,e){
 function whereText(e){
   var a=e.a,b=e.b;
   if(e.done)return 'Angekommen in '+e.r[e.r.length-1].n;
+  if(e.offRoute)return 'Abseits der geplanten Route';
   if(e.eff<=0)return 'Abfahrt in '+a.n;
   if((a.id==='go'&&b.id==='ai')||(a.id==='ai'&&b.id==='go'))return 'Im Gotthard-Tunnel';
   if(e.f<.15)return 'Kurz hinter '+a.n;
@@ -455,7 +502,7 @@ function distSign(ph,now,e){
   var cur=(ph==='vorher'||ph==='vorort')?0:ee.km;
   if(ph==='zuhause')return '';
   var up=r.filter(function(w){return w.km>cur+1&&MAJOR[w.id]}), last=r[r.length-1];
-  var rows=up.filter(function(w){return w.id!==last.id}).slice(0,3);
+  var rows=(e&&e.offRoute)?[]:up.filter(function(w){return w.id!==last.id}).slice(0,3);
   var cc=ph==='vorort'?'it':(ph==='vorher'?'de':CC[ee.f<.5?ee.a.c:ee.b.c]);
   var h='<div class="sign dist '+cc+'"><div class="in"><div class="head">'+ARROW+'<span>'+(rp==='hin'?'Hinfahrt':'Rückfahrt')+' – nächste Orte</span></div>';
   rows.forEach(function(w){h+='<div class="drow"><span>'+esc(w.n)+'</span><b>'+n1(w.km-cur)+' km</b></div>'});
@@ -503,7 +550,7 @@ function render(){
 /* Grundgerüst */
 document.getElementById('app').innerHTML=
 '<div class="wrap">'+
- '<header class="top"><div class="stack" style="gap:8px"><p>Stufenfahrt der Hans-Jonas-Gesamtschule, 04.–09.10.2026</p><h1>Wo ist <span>unser Bus?</span></h1></div>'+
+ '<header class="top"><div class="stack" style="gap:8px"><p>Stufenfahrt der Hans-Jonas-Gesamtschule, <span style="white-space:nowrap">04.–09.10.2026</span></p><h1>Wo ist <span>unser Bus?</span></h1></div>'+
  '<div class="ovals" aria-label="Länder: Deutschland, Schweiz, Italien"><span class="oval">D</span><span class="oval">CH</span><span class="oval">I</span></div></header>'+
  '<section class="stack" id="s-hero" aria-live="polite"></section>'+
  '<div class="lane"></div>'+
@@ -542,11 +589,46 @@ function pullStatus(){
 }
 var GPS_API='https://api.github.com/repos/F1NN303/toskana-2026/contents/pos.json?ref=live';
 var GPS_RAW='https://raw.githubusercontent.com/F1NN303/toskana-2026/live/pos.json';
+/* Halt erkennen: steht der Bus, schaut OpenStreetMap nach einer Raststätte in der Nähe */
+var stopCache={}, stopPending={};
+function stopKey(){return gps.lat.toFixed(3)+','+gps.lon.toFixed(3)}
+function lookupStop(){
+  if(!gps||!gps.stopped||!gpsFresh(Date.now())||!window.fetch)return;
+  var k=stopKey(), la=gps.lat, lo=gps.lon;
+  if(k in stopCache||stopPending[k])return;
+  stopPending[k]=1;
+  var q='[out:json][timeout:15];(nwr(around:700,'+la+','+lo+')["highway"~"^(services|rest_area)$"];nwr(around:300,'+la+','+lo+')["amenity"="fuel"];);out center tags;';
+  fetch('https://overpass-api.de/api/interpreter?data='+encodeURIComponent(q)).then(function(r){return r.ok?r.json():null}).then(function(j){
+    if(!j){delete stopPending[k];return}
+    var best=null, fuelName='';
+    (j.elements||[]).forEach(function(el){
+      var y=el.lat!=null?el.lat:(el.center&&el.center.lat), x=el.lon!=null?el.lon:(el.center&&el.center.lon);
+      if(y==null)return;
+      var t=el.tags||{}, kind=t.highway==='services'?'Raststätte':(t.highway==='rest_area'?'Rastplatz':'Tankstelle');
+      var name=t.name||t.brand||t.operator||'', rank=kind==='Raststätte'?0:(kind==='Tankstelle'?1:2), d=kmDist(la,lo,y,x);
+      if(kind==='Tankstelle'&&name&&!fuelName)fuelName=name;
+      var c={kind:kind,name:name,d:d,rank:rank};
+      if(!best||c.rank<best.rank||(c.rank===best.rank&&c.d<best.d))best=c;
+    });
+    if(best&&!best.name&&fuelName)best.name=fuelName;
+    stopCache[k]=best; delete stopPending[k]; render();
+  }).catch(function(){delete stopPending[k]});
+}
+function stopText(now){
+  var mins=gps.stoppedSince?Math.max(1,Math.round((now-gps.stoppedSince)/60000)):null;
+  var since=mins?' seit '+mins+' Min':'';
+  var k=stopKey(), place=stopCache[k];
+  if(place===undefined)return 'Bus steht'+since;
+  if(place===null)return 'Bus steht'+since+', keine Raststätte in der Nähe (vermutlich Stau)';
+  var label=/rast|area|autogrill|services|aire|tankstelle|stazione/i.test(place.name)?place.name:(place.kind+(place.name?' '+place.name:''));
+  return (mins!==null&&mins<15?'Kurzer Halt':'Pause')+': '+label+since;
+}
 function useGps(p){
   if(!p||typeof p!=='object')return;
   var lat=+p.lat,lon=+p.lon,t=toMs(p.t);
   if(!isFinite(lat)||!isFinite(lon)||!isFinite(t)||Math.abs(lat)>90||Math.abs(lon)>180||(lat===0&&lon===0)){lat=0;lon=0;t=0}
-  gps={lat:lat,lon:lon,t:t,acc:+p.acc||null,stopped:!!p.stopped,msg:typeof p.msg==='string'?p.msg.slice(0,200):'',msgAt:p.msgAt?toMs(p.msgAt):null};
+  gps={lat:lat,lon:lon,t:t,acc:+p.acc||null,stopped:!!p.stopped,stoppedSince:p.stoppedSince?toMs(p.stoppedSince):null,msg:typeof p.msg==='string'?p.msg.slice(0,200):'',msgAt:p.msgAt?toMs(p.msgAt):null};
+  lookupStop();
   render();
 }
 function pullGps(){

@@ -150,15 +150,33 @@ final class Tracker: NSObject, ObservableObject, CLLocationManagerDelegate {
         return l.distance(from: old) < 300
     }
 
+    /// Seit wann steht der Bus? Bleibt gesetzt, bis er wieder fährt.
+    private var stopSince: Date?
+
+    private func updateStop() {
+        guard let l = last, isStopped() else {
+            stopSince = nil
+            return
+        }
+        if stopSince != nil { return }
+        var since = l.timestamp
+        for h in history.reversed() {
+            if l.distance(from: h) < 300 { since = h.timestamp } else { break }
+        }
+        stopSince = since
+    }
+
     private func payload() -> [String: Any] {
         var p: [String: Any] = ["msg": sentMessage, "t": 0]
         p["msgAt"] = msgAt.map { Int($0.timeIntervalSince1970 * 1000) } ?? NSNull()
         if let l = last {
+            updateStop()
             p["lat"] = (l.coordinate.latitude * 100_000).rounded() / 100_000
             p["lon"] = (l.coordinate.longitude * 100_000).rounded() / 100_000
             p["t"] = Int(l.timestamp.timeIntervalSince1970 * 1000)
             p["acc"] = Int(l.horizontalAccuracy)
-            p["stopped"] = isStopped()
+            p["stopped"] = stopSince != nil
+            p["stoppedSince"] = stopSince.map { Int($0.timeIntervalSince1970 * 1000) } ?? NSNull()
         }
         return p
     }
