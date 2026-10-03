@@ -4,7 +4,7 @@
 <style id="css">
 /* Layout: die Seite ist die Autobahn. Asphalt als Grund, Inhalte als echte Verkehrsschilder:
    Schilderbrücke oben, Wechselverkehrszeichen für Countdown und Nachrichten, Entfernungstafel,
-   braune Touristikschilder für die Ausflüge, gelbe Baustellentafel für die Lehrkräfte. */
+   braune Touristikschilder für die Ausflüge */
 :root{
   color-scheme:dark;
   --asphalt:#232527; --asphalt-hi:#2d3033; --asphalt-lo:#1a1b1d;
@@ -183,29 +183,14 @@ svg .day.today{fill:var(--yellow)}
 .todayplate{background:var(--yellow);color:#111;border-radius:3px;padding:0 7px;font-weight:900;letter-spacing:.04em}
 
 /* Gut zu wissen */
-.warns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px 28px}
-@media (max-width:700px){.warns{grid-template-columns:minmax(0,1fr)}}
+.warns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px 28px}
+@media (max-width:860px){.warns{grid-template-columns:minmax(0,1fr)}}
 .warn{display:grid;grid-template-columns:52px minmax(0,1fr);gap:14px;align-items:start}
 .warn svg{width:52px;height:46px}
 .warn h3{font-size:1.1rem;margin-bottom:3px}
 .warn p{color:var(--paint-dim);font-size:.97rem}
 footer{font-size:.85rem;color:var(--muted);max-width:72ch}
 
-/* Lehrkräfte: Baustellentafel */
-.panel .in{display:flex;flex-direction:column;gap:14px}
-.panel h2{font-size:1.4rem;text-transform:uppercase}
-.panel .row{display:flex;flex-wrap:wrap;gap:12px}
-.panel label{display:flex;flex-direction:column;gap:4px;font-size:.88rem;font-weight:800;flex:1 1 200px;min-width:0}
-.panel input,.panel select{font:inherit;font-weight:600;padding:8px 10px;border-radius:4px;border:2px solid #111;background:#fff;color:#111;width:100%;min-width:0;color-scheme:light}
-.wpgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
-.panel button{font:inherit;font-weight:800;padding:8px 11px;border-radius:4px;border:2px solid #111;background:#fff;color:#111;cursor:pointer;text-align:left}
-.panel button.dark{background:#111;color:var(--yellow)}
-.panel button.reported{background:#111;color:#fff}
-.panel button:disabled{opacity:.45;cursor:default}
-.panel button small{display:block;font-weight:500;font-size:.75rem;opacity:.8}
-.panel .actions{display:flex;flex-wrap:wrap;gap:8px}
-.panel .lead{font-weight:600}
-#t-status{font-weight:900;min-height:1.4em}
 </style>
 <script type="application/json" id="state">{"checkins":[],"message":"","messageAt":null,"gpsLink":"","variant":{"hin":"cisa","rueck":"cisa"}}</script>
 <div id="app"></div>
@@ -431,7 +416,7 @@ function hero(ph,now,e){
   var h='';
   var msg=state.message, msgAt=state.messageAt;
   if(gps&&gps.msgAt&&(!msgAt||gps.msgAt>msgAt)){msg=gps.msg||'';msgAt=gps.msgAt}
-  if(msg)h+='<div class="vms" role="status"><div class="l1">Nachricht der Lehrkräfte'+(msgAt?' · '+tm(msgAt):'')+'</div><div class="l3">'+esc(msg)+'</div></div>';
+  if(msg)h+='<div class="vms" role="status"><div class="l1">Nachricht aus dem Bus'+(msgAt?' · '+tm(msgAt):'')+'</div><div class="l3">'+esc(msg)+'</div></div>';
   if(ph==='vorher'){
     var ee=estimate('hin',now);
     h+='<div class="vms"><div class="l1">Abfahrt in</div><div class="l2">'+dur((HIN_START-now)/60000)+'</div><div class="l3">So 04.10. · Treffen 22:15 · Abfahrt 22:30 · Nespelerstraße 75</div></div>';
@@ -530,14 +515,12 @@ document.getElementById('app').innerHTML=
  '<div class="week"><div class="nav"><div class="nav-head"><span>Ausflüge ab dem Hotel</span><span>gestrichelt = Zug</span></div><div id="s-tus"></div></div><div id="s-week" style="display:contents"></div></div></section>'+
  '<div class="lane"></div>'+
  '<section class="stack"><div class="sec-title"><h2>Gut zu wissen</h2></div><div class="warns">'+
-  '<div class="warn">'+tri('!')+'<div><h3>Anschnallen, auch im Schlaf</h3><p>Im Reisebus gilt Anschnallpflicht. Der Notbremsassistent bremst im Ernstfall sehr hart, egal wie vorsichtig der Fahrer fährt.</p></div></div>'+
   '<div class="warn">'+tri('€')+'<div><h3>Handy in der Schweiz</h3><p>Die Schweiz ist nicht in der EU, Roaming kann dort teuer werden. Zwischen Basel und Chiasso mobile Daten aus, wenn dein Tarif die Schweiz nicht enthält. In Italien gilt EU-Roaming wie zu Hause.</p></div></div>'+
   '<div class="warn">'+tri('!')+'<div><h3>Fliegende Händler</h3><p>In Pisa und am Strand nichts von Straßenhändlern kaufen. Für gefälschte Ware gibt es in Italien hohe Strafen, bis ca. 5.000 €.</p></div></div>'+
   '<div class="warn">'+infoSq('i')+'<div><h3>Gepäck und Geld</h3><p>Sporttasche statt Hartschalenkoffer, höchstens 20 kg. Für die Nacht: Kissen, Wasser, Snacks, Powerbank. Standseilbahn 7,50 €, Mittagessen auf den Ausflügen zahlt ihr selbst.</p></div></div>'+
  '</div></section>'+
- '<div id="teacher"></div>'+
  '<div class="edge"></div>'+
- '<footer>Die Position kommt live vom GPS eines Lehrkraft-Handys im Bus und wird etwa jede Minute aktualisiert. Fällt das Signal länger als 15 Minuten aus (Funkloch, Tunnel, Akku), schätzt die Seite die Position nach dem Fahrplan, bis wieder ein Signal kommt.</footer>'+
+ '<footer>Die Position kommt live vom GPS eines Handys im Bus und wird etwa jede Minute aktualisiert. Fällt das Signal länger als 15 Minuten aus (Funkloch, Tunnel, Akku), schätzt die Seite die Position nach dem Fahrplan, bis wieder ein Signal kommt.</footer>'+
 '</div>';
 
 render();
@@ -573,92 +556,8 @@ function pullGps(){
     return fetch(GPS_RAW+'?t='+Date.now(),{cache:'no-store'}).then(function(r2){return r2.ok?r2.json():null});
   }).then(useGps).catch(function(){});
 }
-if(!(window.claude&&typeof window.claude.use==='function')){pullStatus();setInterval(pullStatus,60000);pullGps();setInterval(pullGps,75000)}
+pullStatus();setInterval(pullStatus,60000);pullGps();setInterval(pullGps,75000);
 
-/* Lehrkraft-Bereich: nur für Personen mit Bearbeitungsrecht */
-var art=null;
-function buildHtml(next){
-  var reset=':root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px/1.4 system-ui,-apple-system,sans-serif;background:#fafaf9}img{max-width:100%}[hidden]{display:none!important}';
-  var json=JSON.stringify(next).replace(/</g,'\\u003c');
-  return '<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>'+reset+'</style></head><body>'+
-    '\n'+document.getElementById('fonts').outerHTML+'\n'+
-    '<style id="css">'+document.getElementById('css').textContent+'</style>\n'+
-    '<script type="application/json" id="state">'+json+'<\/script>\n<div id="app"></div>\n'+
-    '<script id="app-js">'+document.getElementById('app-js').textContent+'<\/script></body></html>';
-}
-function clone(){return JSON.parse(JSON.stringify(state))}
-function setStatus(t){var el=document.getElementById('t-status');if(el)el.textContent=t}
-function lock(b){document.querySelectorAll('#teacher button,#teacher select,#teacher input').forEach(function(x){x.disabled=b})}
-function save(mut){
-  var next=clone();mut(next);
-  try{sessionStorage.setItem('tl-draft',JSON.stringify({msg:document.getElementById('t-msg').value,gps:document.getElementById('t-gps').value}))}catch(e){}
-  lock(true);setStatus('Wird gespeichert …');
-  art.publish(buildHtml(next)).then(function(){setStatus('Gespeichert. Die Seite lädt für alle neu.')},function(err){
-    var c=err&&err.code;
-    if(c==='conflict'){setStatus('Gerade hat jemand anderes gespeichert. Die Seite lädt neu, bitte danach nochmal melden.');return}
-    if(['not_writer','not_granted','not_declared','consent_required','capability_disabled','capability_removed'].indexOf(c)>=0){setStatus('Du kannst die Seite nur ansehen. Melden geht nur mit Bearbeitungsrecht.');return}
-    if(c==='rate_limited'){setStatus('Zu viele Meldungen hintereinander. Bitte in einer Minute nochmal tippen.');lock(false);return}
-    setStatus('Speichern hat nicht geklappt'+(c?' ('+c+')':'')+'. Bitte nochmal tippen.');lock(false);
-  });
-}
-function pickTime(){
-  var v=document.getElementById('t-time').value, now=Date.now();
-  if(!v)return now;
-  var t=Date.parse(berlinDate(now)+'T'+v+':00+02:00');
-  if(t>now+5*60000)t-=86400000;
-  return t;
-}
-function panelPhase(){var ph=phaseNow(Date.now());return ph==='rueck'||ph==='vorort'||ph==='zuhause'?'rueck':'hin'}
-function renderWps(){
-  var phase=document.getElementById('t-phase').value, r=route(phase);
-  var done={};state.checkins.forEach(function(c){if(c.phase===phase)done[c.wp]=c});
-  document.getElementById('t-wps').innerHTML=r.map(function(w){var c=done[w.id];return '<button type="button" data-wp="'+w.id+'" class="'+(c?'reported':'')+'">'+esc(w.n)+'<small>'+(c?'gemeldet '+tm(c.t):'Plan ca. '+tm(startOf(phase)+w.off*60000))+'</small></button>'}).join('');
-}
-function showPanel(){
-  var ph=panelPhase();
-  var el=document.getElementById('teacher');
-  el.innerHTML='<section class="sign yellow panel" aria-label="Lehrkraft-Bereich"><div class="in"><div class="stack" style="gap:4px"><h2>Nur für Lehrkräfte</h2><p class="lead">Diese Tafel sehen nur Personen, die die Seite bearbeiten dürfen. Jede Meldung aktualisiert die Seite sofort für alle.</p></div>'+
-  '<div class="row"><label for="t-phase">Fahrt<select id="t-phase"><option value="hin">Hinfahrt</option><option value="rueck">Rückfahrt</option></select></label>'+
-  '<label for="t-var">Weg ab Parma<select id="t-var"><option value="cisa">über La Spezia (A15)</option><option value="bologna">über Bologna und Florenz (A1)</option></select></label>'+
-  '<label for="t-time">Uhrzeit der Meldung (leer = jetzt)<input type="time" id="t-time"></label></div>'+
-  '<div class="stack" style="gap:6px"><p class="lead">Hier sind wir gerade:</p><div class="wpgrid" id="t-wps"></div></div>'+
-  '<div class="actions"><button type="button" id="t-undo">Letzte Meldung löschen</button></div>'+
-  '<div class="row"><label for="t-msg">Nachricht an alle, erscheint als Leuchtanzeige (z. B. „Pause bis 03:30 an der Raststätte“)<input id="t-msg" maxlength="160"></label></div>'+
-  '<div class="actions"><button type="button" class="dark" id="t-msg-save">Nachricht anzeigen</button><button type="button" id="t-msg-clear">Nachricht entfernen</button></div>'+
-  '<div class="row"><label for="t-gps">Link zum Live-Standort (z. B. Google Maps „Standort teilen“)<input id="t-gps" type="url" placeholder="https://maps.app.goo.gl/…"></label></div>'+
-  '<div class="actions"><button type="button" class="dark" id="t-gps-save">Link speichern</button><button type="button" id="t-gps-clear">Link entfernen</button></div>'+
-  '<p id="t-status" role="status"></p></div></section>';
-  var sel=document.getElementById('t-phase');sel.value=ph;
-  var vs=document.getElementById('t-var');vs.value=state.variant[ph];
-  document.getElementById('t-msg').value=state.message;
-  document.getElementById('t-gps').value=state.gpsLink;
-  try{var d=JSON.parse(sessionStorage.getItem('tl-draft')||'null');sessionStorage.removeItem('tl-draft');if(d){if(d.msg&&d.msg!==state.message)document.getElementById('t-msg').value=d.msg;if(d.gps&&d.gps!==state.gpsLink)document.getElementById('t-gps').value=d.gps}}catch(e){}
-  renderWps();
-  sel.addEventListener('change',function(){vs.value=state.variant[sel.value];renderWps()});
-  vs.addEventListener('change',function(){var p=sel.value,v=vs.value;save(function(n){n.variant[p]=v})});
-  document.getElementById('t-wps').addEventListener('click',function(ev){
-    var b=ev.target.closest('button[data-wp]');if(!b)return;
-    var p=sel.value,wp=b.getAttribute('data-wp'),t=pickTime();
-    save(function(n){n.checkins=n.checkins.filter(function(c){return !(c.phase===p&&c.wp===wp)});n.checkins.push({phase:p,wp:wp,t:t});if(n.checkins.length>80)n.checkins=n.checkins.slice(-80)});
-  });
-  document.getElementById('t-undo').addEventListener('click',function(){
-    var p=sel.value,list=state.checkins.filter(function(c){return c.phase===p});
-    if(!list.length){setStatus('Für diese Fahrt gibt es noch keine Meldung.');return}
-    var last=list.reduce(function(a,b){return b.t>a.t?b:a});
-    save(function(n){n.checkins=n.checkins.filter(function(c){return !(c.phase===last.phase&&c.wp===last.wp&&c.t===last.t)})});
-  });
-  document.getElementById('t-msg-save').addEventListener('click',function(){var m=document.getElementById('t-msg').value.trim().slice(0,160);if(!m){setStatus('Die Nachricht ist leer.');return}save(function(n){n.message=m;n.messageAt=Date.now()})});
-  document.getElementById('t-msg-clear').addEventListener('click',function(){save(function(n){n.message='';n.messageAt=null})});
-  document.getElementById('t-gps-save').addEventListener('click',function(){var g=document.getElementById('t-gps').value.trim();if(!/^https:\/\/[^\s"'<>]+$/.test(g)){setStatus('Bitte einen vollständigen Link einfügen, der mit https:// beginnt.');return}save(function(n){n.gpsLink=g})});
-  document.getElementById('t-gps-clear').addEventListener('click',function(){save(function(n){n.gpsLink=''})});
-}
-if(window.claude&&typeof window.claude.use==='function'){
-  Promise.all([window.claude.use('artifact').catch(function(){return null}),window.claude.use('user').catch(function(){return null})]).then(function(res){
-    art=res[0];var u=res[1];
-    if(!art||!u)return;
-    return u.canEdit().then(function(ok){if(ok)showPanel()});
-  }).catch(function(){});
-}
 })();
 </script>
 
