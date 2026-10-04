@@ -384,6 +384,9 @@ svg .poi-mc rect{fill:#da291c} svg .poi-mc text{fill:#ffc72c;font-size:7.5px}
   .tacho{width:92px;padding:4px 4px 5px;border-width:3px;border-radius:12px}
   .tacho .t-unit{font-size:.6rem}
 }
+.tlist li.works{border-left-color:#f08a24}
+svg .mk-works path{fill:#fff;stroke:#f08a24}
+svg .mk-works text{fill:#111}
 </style>
 <script type="application/json" id="state">{"checkins":[],"message":"","messageAt":null,"gpsLink":"","variant":{"hin":"cisa","rueck":"cisa"}}</script>
 <div id="app"></div>
@@ -606,12 +609,13 @@ function label(id,m,anchor,text,cls,k){
 function busMark(lat,lon,m,k){var q=xy(lat,lon,m);return '<g class="busm" transform="translate('+q[0].toFixed(2)+' '+q[1].toFixed(2)+') scale('+(k||1).toFixed(3)+')"><circle class="ring" r="10"/><circle class="dot" r="5.5"/></g>'}
 
 /* Markierungen auf der Karte */
-var EV_LABEL={pause:'Pause',jam:'Stau',slow:'Stockender Verkehr',detour:'Umleitung'};
+var EV_LABEL={pause:'Pause',jam:'Stau',slow:'Stockender Verkehr',detour:'Umleitung',works:'Baustelle'};
 function eventsFor(ph){var p=(ph==='rueck'||ph==='zuhause')?'rueck':'hin';return (events||[]).filter(function(x){return x.phase===p})}
 function mkSvg(kind,x,y,title,k){
   var t='<title>'+esc(title)+'</title>', g='<g class="mk mk-'+kind+'" data-info="'+esc(title)+'" transform="translate('+x.toFixed(2)+' '+y.toFixed(2)+') scale('+(k||1).toFixed(3)+')">'+t;
   if(kind==='pause')return g+'<rect x="-5.5" y="-5.5" width="11" height="11" rx="2"/><text y="3.4">P</text></g>';
   if(kind==='detour')return g+'<path d="M0,-6.5 L6.5,0 L0,6.5 L-6.5,0 Z"/><text y="2.9">U</text></g>';
+  if(kind==='works')return g+'<path d="M0,-7 L6.6,4.6 L-6.6,4.6 Z"/><text y="3.4">B</text></g>';
   return g+'<path d="M0,-7 L6.6,4.6 L-6.6,4.6 Z"/><text y="3.4">!</text></g>';
 }
 function mapMarkers(ph,m,k){
@@ -759,7 +763,7 @@ function updateMarks(ph){
   var items=[];
   if((ph==='vorher'||ph==='hin'||ph==='rueck')&&traffic.items)traffic.items.forEach(function(o){
     if(!isFinite(o.lat))return;
-    items.push({lat:o.lat,lon:o.lon,kind:o.label==='Sperrung'||(o.jam&&!o.slow)?'jam':(o.jam?'slow':'info'),text:'<b>'+esc(o.road+': '+o.label)+'</b><br>'+esc(o.title)+(o.dir?'<br>Richtung '+esc(o.dir.replace(/->/g,'→')):'')});
+    items.push({lat:o.lat,lon:o.lon,kind:o.works?'works':(o.label==='Sperrung'||(o.jam&&!o.slow)?'jam':(o.jam?'slow':'info')),text:'<b>'+esc(o.road+': '+o.label)+'</b><br>'+esc(o.title)+(o.dir?'<br>Richtung '+esc(o.dir.replace(/->/g,'→')):'')});
   });
   eventsFor(ph).forEach(function(ev){items.push({lat:ev.lat,lon:ev.lon,kind:ev.kind,text:'<b>'+tm(ev.t)+' '+esc(EV_LABEL[ev.kind]||'')+'</b><br>'+esc(ev.text)})});
   var sig=JSON.stringify(items);if(sig===mapSig.marks)return;mapSig.marks=sig;
@@ -1034,6 +1038,11 @@ function hero(ph,now,e){
     if(sw==='in')h+='<div class="plates"><span class="plate late">Ihr seid in der Schweiz: mobile Daten aus, wenn dein Tarif die Schweiz nicht enthält</span></div>';
     else if(sw==='soon')h+='<div class="plates"><span class="plate late">Gleich Schweiz: jetzt prüfen, ob dein Handytarif dort gilt</span></div>';
     if(ph==='rueck'&&!e.done)h+='<div class="plates"><span class="plate">Abholung an der Schule ca. '+tm(e.eta)+' Uhr, Nespelerstraße 75</span></div>';
+    var sv=e.live&&gps&&!gps.stopped?curSpeed():null;
+    if(sv!=null&&sv>=3&&sv<40){
+      var rs=(traffic.items||[]).filter(function(o){return !o.works&&o.ahead>-3&&o.ahead<8})[0];
+      h+='<div class="plates"><span class="plate late">Verkehr stockt gerade, ca. '+rnd(sv)+' km/h'+(rs?'. Laut Autobahn GmbH: '+esc(rs.label)+' ('+esc(rs.title)+')':'')+'</span></div>';
+    }
     if(e.live){var dl=Math.round((e.eta-(e.start+route(e.phase,'g-cisa')[route(e.phase,'g-cisa').length-1].off*60000))/60000);h+='<div class="plates"><span class="plate live"><i></i>GPS live, Stand '+tm(gps.t)+' Uhr</span>'+(gps.stopped?'<span class="plate late">'+esc(stopText(now))+'</span>':'')+(e.offRoute?'<span class="plate late">Umleitung: abseits der geplanten Strecke</span>':(Math.abs(dl)>=15?'<span class="plate">Ankunft '+(dl>0?'ca. '+dl+' Min später':'ca. '+(-dl)+' Min früher')+' als geplant</span>':''))+'</div>'}
     else if(e.ck){var d=Math.round(e.delay);h+='<span class="plate'+(d>=10?' late':'')+'">Gemeldet: '+esc(P[e.ck.wp].n)+' um '+tm(e.ck.t)+(Math.abs(d)>=10?', '+(d>0?'+':'−')+Math.abs(d)+' Min zum Plan':'')+'</span>'}
     else h+='<span class="plate">'+(gps&&gps.t>e.start-90*60000?'Kein GPS-Signal seit '+tm(gps.t)+' Uhr, Position geschätzt':'Geschätzt nach Fahrplan')+'</span>';
@@ -1113,9 +1122,9 @@ function pullTraffic(){
   var list=Object.keys(roads);
   if(!list.length){traffic.items=[];traffic.t=now;render();return}
   var reqs=[];
-  list.forEach(function(road){['warning','closure'].forEach(function(kind){
+  list.forEach(function(road){['warning','closure','roadworks'].forEach(function(kind){
     reqs.push(fetch('https://verkehr.autobahn.de/o/autobahn/'+encodeURIComponent(road)+'/services/'+kind).then(function(x){return x.ok?x.json():null}).then(function(j){
-      var arr=j?(j.warning||j.closure||[]):[];
+      var arr=j?(j.warning||j.closure||j.roadworks||[]):[];
       return arr.map(function(it){return {road:road,kind:kind,it:it}});
     }).catch(function(){return []}));
   })});
@@ -1133,16 +1142,41 @@ function pullTraffic(){
         var k0=r[p0.i].km+(r[p0.i+1].km-r[p0.i].km)*p0.f, k1=r[p1.i].km+(r[p1.i+1].km-r[p1.i].km)*p1.f;
         if(k1<k0-0.2)return;
       }
+      if(x.it.future===true||x.it.future==='true')return;
+      var txt=(x.it.title||'')+' '+(x.it.subtitle||'');
+      if(x.kind==='closure'&&(/anschlussstelle|rampe|knotenpunkt|auffahrt|abfahrt|\bAS\b|\bAK\b|\bAD\b|aus richtung|rampenprogramm/i.test(txt)||!/->/.test(x.it.subtitle||'')))return;
       var A=r[pj.i],B=r[pj.i+1],along=A.km+(B.km-A.km)*pj.f,ahead=along-cur;
       if(ahead<-2||ahead>450)return;
+      if(x.kind==='roadworks'){
+        var w=worksInfo(x.it);if(!w||ahead>150)return;
+        out.push({road:x.road,title:String(x.it.title||'').split('|').pop().trim(),dir:String(x.it.subtitle||'').trim(),label:'Baustelle',extra:w,ahead:ahead,works:true,lat:la,lon:lo});
+        return;
+      }
       var title=String(x.it.title||'').split('|').pop().trim(), dir=String(x.it.subtitle||'').trim();
       var label=x.kind==='closure'?'Sperrung':(TRAFFIC_KIND[x.it.abnormalTrafficType]||'Meldung');
       out.push({road:x.road,title:title,dir:dir,label:label,ahead:ahead,jam:!!TRAFFIC_KIND[x.it.abnormalTrafficType],slow:x.it.abnormalTrafficType==='SLOW_TRAFFIC'||x.it.abnormalTrafficType==='QUEUING_TRAFFIC',lat:la,lon:lo});
     })});
-    out.sort(function(a,b){return a.ahead-b.ahead});
+    out.sort(function(a,b){return (a.works?1:0)-(b.works?1:0)||a.ahead-b.ahead});
     var seen={};out=out.filter(function(o){var k=o.road+o.title+o.dir+o.label;if(seen[k])return false;seen[k]=1;return true});
-    traffic.items=out.slice(0,6);traffic.t=Date.now();render();
+    traffic.items=out.filter(function(o){return !o.works}).slice(0,6).concat(out.filter(function(o){return o.works}).slice(0,4));traffic.t=Date.now();render();
   });
+}
+/* Baustelle: gilt sie gerade, und schränkt sie wirklich ein (Tempolimit, gesperrte Spur, enge Fahrbahn)? */
+function worksInfo(it){
+  var d=(it.description||[]).join('\n'), now=Date.now(), active=false, known=false, m, re;
+  var mk=function(dd,mm,yy,h,mi){return Date.parse('20'+yy+'-'+mm+'-'+dd+'T'+h+':'+mi+':00+02:00')};
+  re=/(\d{2})\.(\d{2})\.(\d{2}) von (\d{2}):(\d{2}) bis (\d{2}):(\d{2})/g;
+  while((m=re.exec(d))){known=true;var a=mk(m[1],m[2],m[3],m[4],m[5]),b=mk(m[1],m[2],m[3],m[6],m[7]);if(b<a)b+=86400000;if(now>=a&&now<=b)active=true}
+  var b0=/Beginn: (\d{2})\.(\d{2})\.(\d{2}) um (\d{2}):(\d{2})/.exec(d), e0=/Ende: (\d{2})\.(\d{2})\.(\d{2}) um (\d{2}):(\d{2})/.exec(d);
+  if(b0&&e0){known=true;if(now>=mk(b0[1],b0[2],b0[3],b0[4],b0[5])&&now<=mk(e0[1],e0[2],e0[3],e0[4],e0[5]))active=true}
+  if(!known||!active)return null;
+  var parts=[], sp=/Max\. (\d+) km\/h/.exec(d), wd=/Durchfahrtsbreite: ([\d.]+) m/.exec(d), len=/Länge: ([\d.]+) km/.exec(d);
+  if(sp&&+sp[1]<=80)parts.push('max. '+sp[1]+' km/h');
+  if(/fahrstreifen.*(gesperrt|reduziert|wegfall)|einstreifig|einspurig/i.test(d)||it.isBlocked===true||it.isBlocked==='true')parts.push('Spur gesperrt');
+  else if(wd&&+wd[1]<6.5)parts.push('enge Fahrbahn');
+  if(!parts.length)return null;
+  if(len)parts.push(String(len[1]).replace('.',',')+' km lang');
+  return parts.join(', ');
 }
 function trafficBox(ph,e){
   if(ph!=='vorher'&&ph!=='hin'&&ph!=='rueck')return '';
@@ -1152,7 +1186,7 @@ function trafficBox(ph,e){
   else if(!traffic.items.length){h+='<p class="fine">'+(inDE?'Keine Staus oder Sperrungen in unserer Fahrtrichtung auf der deutschen Strecke gemeldet.':'Für die Schweiz und Italien gibt es keine frei verfügbaren Verkehrsdaten. Steht der Bus im Stau, zeigt die Seite das über das GPS an.')+'</p>'}
   else{
     h+='<ul class="tlist">'+traffic.items.map(function(o){
-      return '<li class="'+(o.jam||o.label==='Sperrung'?'hot':'')+'"><span class="shield de">'+esc(o.road)+'</span><span class="tx"><b>'+esc(o.label)+'</b> '+esc(o.title)+(o.dir?'<small>Richtung '+esc(o.dir.replace(/->/g,'→'))+'</small>':'')+'</span><span class="tk">'+(o.ahead<1?'hier':'in '+n1(o.ahead)+' km')+'</span></li>';
+      return '<li class="'+(o.jam||o.label==='Sperrung'?'hot':(o.works?'works':''))+'"><span class="shield de">'+esc(o.road)+'</span><span class="tx"><b>'+esc(o.label)+'</b> '+esc(o.title)+(o.extra?'<small>'+esc(o.extra)+'</small>':'')+(o.dir?'<small>Richtung '+esc(o.dir.replace(/->/g,'→'))+'</small>':'')+'</span><span class="tk">'+(o.ahead<1?'hier':'in '+n1(o.ahead)+' km')+'</span></li>';
     }).join('')+'</ul><p class="fine">Nur Meldungen in unserer Fahrtrichtung.</p>';
   }
   return h+'</section>';
@@ -1168,7 +1202,7 @@ function render(){
   try{updateMap(ph,e)}catch(err){console.error('Karte',err)}
   put('s-events',function(){return eventsBox(ph)});
   put('s-next',function(){return pauseBox(ph,e,now)+nextStops(ph,e)});
-  put('s-key2',function(){return '<span>'+mkIcon('jam')+'Stau, Unfall, Sperrung</span><span>'+mkIcon('slow')+'zähfließend</span><span>'+mkIcon('pause')+'Pause</span><span>'+mkIcon('detour')+'Umleitung</span>'});
+  put('s-key2',function(){return '<span>'+mkIcon('jam')+'Stau, Unfall, Sperrung</span><span>'+mkIcon('slow')+'zähfließend</span><span>'+mkIcon('works')+'Baustelle mit Einschränkung</span><span>'+mkIcon('pause')+'Pause</span><span>'+mkIcon('detour')+'Umleitung</span>'});
   put('s-dist',function(){return distSign(ph,now,e)});
   put('s-tl',function(){return timeline(ph,now,e)});
   put('s-tus',function(){return tuscanyMap(ph==='vorort'&&D?D.place:null,e)});

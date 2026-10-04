@@ -85,6 +85,54 @@ async function getJSON(url, opts = {}) {
     return r.ok ? await r.json() : null;
   } catch { return null; }
 }
+
+// Echter Straßenverlauf (routes_geo.json neben dem Skript-Ordner), für Vorwarnungen in Deutschland
+let GEO = null;
+try { GEO = JSON.parse(fs.readFileSync(new URL('../routes_geo.json', import.meta.url), 'utf8')); } catch { GEO = null; }
+function alongLine(line, p) {
+  const k = Math.cos(p[0] * Math.PI / 180);
+  let best = Infinity, at = 0, acc = 0;
+  for (let i = 0; i < line.length - 1; i++) {
+    const a = line[i], b = line[i + 1];
+    const ax = (a[1] - p[1]) * 111.32 * k, ay = (a[0] - p[0]) * 110.57, bx = (b[1] - p[1]) * 111.32 * k, by = (b[0] - p[0]) * 110.57;
+    const vx = bx - ax, vy = by - ay, L = vx * vx + vy * vy, t = L ? Math.max(0, Math.min(1, -(ax * vx + ay * vy) / L)) : 0;
+    const seg = Math.sqrt(L), d = Math.hypot(ax + vx * t, ay + vy * t);
+    if (d < best) { best = d; at = acc + t * seg; }
+    acc += seg;
+  }
+  return { at, d: best };
+}
+const KIND = { STATIONARY_TRAFFIC: 'Stau', QUEUING_TRAFFIC: 'Stockender Verkehr', SLOW_TRAFFIC: 'Zähfließender Verkehr' };
+// Staus und Sperrungen auf unserer deutschen Strecke in Fahrtrichtung, mit Abstand in km
+async function deIncidents(phase, here) {
+  if (!GEO || OFFLINE) return [];
+  const line = phase === 'hin' ? GEO.north : GEO.north.slice().reverse();
+  const me = alongLine(line, here);
+  if (me.d > 5) return [];
+  const out = [];
+  for (const road of ['A61', 'A6', 'A5']) {
+    for (const kind of ['warning', 'closure']) {
+      const j = await getJSON(`https://verkehr.autobahn.de/o/autobahn/${road}/services/${kind}`);
+      for (const it of (j && (j.warning || j.closure)) || []) {
+        const g = it.geometry && it.geometry.coordinates;
+        if (!Array.isArray(g) || g.length < 2) continue;
+        const a0 = alongLine(line, [g[0][1], g[0][0]]), a1 = alongLine(line, [g[g.length - 1][1], g[g.length - 1][0]]);
+        if (a0.d > 1.5 || a1.d > 1.5) continue;           // nicht auf unserer Strecke
+        if (a1.at < a0.at - 0.2) continue;                  // Gegenrichtung
+        if (it.future === true || it.future === 'true') continue;          // beginnt erst später
+        const txt = `${it.title || ''} ${it.subtitle || ''}`;
+        // Sperrungen nur, wenn die Hauptfahrbahn betroffen ist (nicht Auffahrten, Rampen, Anschlussstellen)
+        if (kind === 'closure' && (/anschlussstelle|rampe|knotenpunkt|auffahrt|abfahrt|\bAS\b|\bAK\b|\bAD\b|aus richtung|rampenprogramm/i.test(txt) || !/->/.test(it.subtitle || ''))) continue;
+        const label = kind === 'closure' || it.isBlocked === 'true' || it.isBlocked === true ? 'Sperrung' : (KIND[it.abnormalTrafficType] || 'Verkehrsmeldung');
+        if (label === 'Verkehrsmeldung') continue;
+        if (out.some((o) => o.title === String(it.title || '').split('|').pop().trim())) continue;
+        out.push({ id: it.identifier || (road + it.title), road, label, title: String(it.title || '').split('|').pop().trim(), ahead: Math.min(a0.at, a1.at) - me.at, len: Math.abs(a1.at - a0.at) });
+      }
+    }
+  }
+  return out.sort((a, b) => a.ahead - b.ahead);
+}
+
 async function placeName(lat, lon) {
   const j = await getJSON(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=10&accept-language=de&lat=${lat}&lon=${lon}`);
   const a = j && j.address;
@@ -222,7 +270,7 @@ if (phase) {
 
   // Spur: nur während der Fahrt, etwa alle 4 Minuten oder nach 3 km
   const last = track[track.length - 1];
-  if (!last || (t > last[2] && (t - last[2] >= 4 * 60000 || km(last, here) > 3))) track.push([r5(lat), r5(lon), t]);
+  if (!last || (t > last[2] && (t - last[2] >= (km(last, here) < 3 ? 2 : 4) * 60000 || km(last, here) > 3))) track.push([r5(lat), r5(lon), t]);
   if (track.length > 600) track = track.slice(-600);
   const ptrack = track.filter((q) => q[2] >= trip.from && q[2] <= trip.to);
   const first = ptrack[0];
@@ -256,6 +304,21 @@ if (phase) {
     }
   }
 
+  // 4b) Vorwarnung: Stau oder Sperrung bis 60 km voraus (alle 5 Minuten prüfen, jede Meldung nur einmal)
+  let incidents = null;
+  const getIncidents = async () => (incidents ??= underway && country === 'DE' ? await deIncidents(phase, here) : []);
+  if (underway && country === 'DE' && (!ps.trafficAt || t - ps.trafficAt >= 5 * 60000)) {
+    ps.trafficAt = t;
+    ps.alerted ||= {};
+    for (const it of await getIncidents()) {
+      if (it.ahead < 2 || it.ahead > 60 || ps.alerted[it.id]) continue;
+      ps.alerted[it.id] = t;
+      out.push({ title: `${it.label} voraus`, message: `In ca. ${Math.round(it.ahead)} km: ${it.label} auf der ${it.road} (${it.title})${it.len > 0.5 ? ', ca. ' + Math.round(it.len) + ' km lang' : ''}. Kann zu Verspätung führen.`, tags: ['warning'], priority: 4 });
+    }
+  }
+  // Passende offizielle Meldung direkt vor uns (Grund für Stau oder langsames Fahren)
+  const reasonHere = async () => { const r = (await getIncidents()).find((x) => x.ahead > -3 && x.ahead < 8); return r ? ` Laut Autobahn GmbH: ${r.label} (${r.title}).` : ''; };
+
   // 5) Pause oder Stau
   const since = toMs(pos.stoppedSince);
   if (underway && pos.stopped && since) {
@@ -269,7 +332,7 @@ if (phase) {
       } else if (poi === null) {
         ps.stopFor = since; ps.stopKind = 'jam';
         const pl = await placeName(lat, lon);
-        out.push({ kind: 'jam', title: 'Stau', message: `Der Bus steht seit ${Math.round(mins)} Minuten${pl ? ' bei ' + pl : ''}. Keine Raststätte in der Nähe, vermutlich Stau.`, tags: ['warning'], priority: 4 });
+        out.push({ kind: 'jam', title: 'Stau', message: `Der Bus steht seit ${Math.round(mins)} Minuten${pl ? ' bei ' + pl : ''}. Keine Raststätte in der Nähe, vermutlich Stau.${await reasonHere()}`, tags: ['warning'], priority: 4 });
       }
     }
   } else if (underway && moving && ps.stopFor && ps.resumedFor !== ps.stopFor) {
@@ -279,15 +342,15 @@ if (phase) {
       : { title: 'Weiter geht’s', message: 'Die Pause ist vorbei, der Bus fährt weiter.', tags: ['bus'] });
   }
 
-  // 6) Stockender Verkehr: in den letzten 20 Minuten im Schnitt unter 25 km/h, ohne anzuhalten
-  const recent = ptrack.filter((q) => t - q[2] <= 20 * 60000);
+  // 6) Stockender Verkehr: in den letzten 12 Minuten im Schnitt unter 35 km/h, ohne anzuhalten
+  const recent = ptrack.filter((q) => t - q[2] <= 12 * 60000);
   if (underway && moving && recent.length >= 3) {
     const a = recent[0], b = recent[recent.length - 1], dt = (b[2] - a[2]) / 3600000;
-    const avg = dt >= 0.25 ? km(a, b) / dt : null;
-    if (avg !== null && avg < 25 && (!ps.slowAt || t - ps.slowAt > 60 * 60000)) {
+    const avg = dt >= 0.15 ? km(a, b) / dt : null;
+    if (avg !== null && avg < 35 && (!ps.slowAt || t - ps.slowAt > 45 * 60000)) {
       ps.slowAt = t;
       const pl = await placeName(lat, lon);
-      out.push({ kind: 'slow', title: 'Stockender Verkehr', message: `Der Bus kommt gerade nur langsam voran${pl ? ' bei ' + pl : ''}.`, tags: ['warning'] });
+      out.push({ kind: 'slow', title: 'Stockender Verkehr', message: `Der Bus kommt gerade nur langsam voran (ca. ${Math.round(avg)} km/h)${pl ? ' bei ' + pl : ''}.${await reasonHere()}`, tags: ['warning'] });
     }
   }
 
