@@ -320,6 +320,17 @@ svg .poi-mc rect{fill:#da291c} svg .poi-mc text{fill:#ffc72c;font-size:7.5px}
 .pdot{display:block;width:100%;height:100%;border-radius:50%;border:1.5px solid #fff;box-shadow:0 0 2px rgba(0,0,0,.7)}
 .pdot-rs,.pdot-rp{background:var(--de)}
 .pdot-mc{background:#da291c;border-color:#ffc72c}
+/* Pausen-Prognose */
+.pfc{display:flex;flex-direction:column;gap:6px;border-top:2px dashed #3c3f42;padding-top:8px;font-size:.9rem}
+.pfc>b{font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;color:var(--yellow)}
+.pfc ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.pfc li{display:grid;grid-template-columns:20px minmax(0,1fr) auto;gap:8px;align-items:center}
+.pfc li small{display:block;color:var(--paint-dim);font-size:.78rem}
+.pfc .pct{font-weight:900;color:var(--yellow);font-variant-numeric:tabular-nums}
+.pfc-hot{color:var(--yellow);font-weight:800}
+.lpred{background:none;border:0}
+.predr{position:absolute;inset:0;border-radius:50%;border:3px solid var(--yellow);box-shadow:0 0 0 2px rgba(0,0,0,.5),0 0 10px rgba(243,195,22,.6)}
+.predl{position:absolute;left:50%;top:100%;transform:translate(-50%,2px);background:var(--yellow);color:#111;font-weight:900;font-size:.7rem;border-radius:3px;padding:0 4px;white-space:nowrap}
 /* Handy: kompakter, damit Position und Status ohne Scrollen sichtbar sind */
 @media (max-width:600px){
   body{font-size:16px}
@@ -633,9 +644,23 @@ function poiAlong(o,r){
   }
   var pj2=project(r,o.lat,o.lon);if(pj2.dist>8)return null;var A2=r[pj2.i],B2=r[pj2.i+1];return A2.km+(B2.km-A2.km)*pj2.f;
 }
+// Einseitige Raststätten ("… Ost", "… West", "… Nord", "… Süd", "… Est", "… Ovest", "… Sud") nur auf unserer Fahrbahnseite (rechts)
+var ONE_SIDE=/\b(ost|west|nord|süd|sud|est|ovest|nordost|südwest|südost|nordwest)\b/i;
+function poiSideOk(o,phase,key){
+  if(!GEO||!ONE_SIDE.test(o.n||''))return true;
+  o._side=o._side||{};var ck=phase+'|'+key;
+  if(o._side[ck]!==undefined)return o._side[ck];
+  var line=lineForPhase(phase,key), q=distToLine(line,o.lat,o.lon), a=line[q.i], b=line[q.i+1];
+  var k=Math.cos(o.lat*Math.PI/180);
+  var sx=(b[1]-a[1])*k, sy=b[0]-a[0], px=(o.lon-a[1])*k, py=o.lat-a[0];
+  var cross=sx*py-sy*px;           // > 0: links von der Fahrtrichtung
+  return o._side[ck]=(q.d<0.05||cross<0);
+}
 function poiInfo(o,r,cur,started){
   var a=poiAlong(o,r), t='<b>'+esc(poiName(o))+'</b><br>'+(o.k==='s'?'Raststätte':'Rastplatz')+(o.mc?' mit McDonald’s':'')+'<br>';
-  if(a==null)t+='Liegt nicht an dem Weg, den die Seite gerade erkennt.';
+  var ph2=(r[0]&&r[0].id==='mt')?'rueck':'hin';
+  if(a!=null&&!poiSideOk(o,ph2,r.key))t+='Liegt auf der Gegenfahrbahn, für uns nicht erreichbar.';
+  else if(a==null)t+='Liegt nicht an dem Weg, den die Seite gerade erkennt.';
   else if(!started)t+='Ca. '+n1(a)+' km nach der Abfahrt.';
   else if(a>=cur)t+='Noch ca. '+n1(a-cur)+' km bis dorthin.';
   else t+='Schon vorbei.';
@@ -657,6 +682,7 @@ function initMap(){
   LL.done=L.polyline([],{color:'#f3c316',weight:6,opacity:1,lineCap:'round',lineJoin:'round'}).addTo(LM);
   LL.pois=L.layerGroup().addTo(LM);
   LL.marks=L.layerGroup().addTo(LM);
+  LL.pred=L.layerGroup().addTo(LM);
   LL.bus=L.marker([P.mg.lat,P.mg.lon],{icon:L.divIcon({className:'lbus',html:'<span class="ring"></span><span class="dot"></span>',iconSize:[28,28],iconAnchor:[14,14]}),zIndexOffset:1000,keyboard:false,title:'Bus'}).addTo(LM);
   LM.on('zoomend',function(){updatePois()});
   window.tlMap=LM;
@@ -681,7 +707,18 @@ function updateMap(ph,e){
   var bl,bo;
   if(e&&e.eff>0){bl=e.lat;bo=e.lon}else if(ph==='vorort'){bl=P.mt.lat;bo=P.mt.lon}else if(e){bl=e.r[0].lat;bo=e.r[0].lon}else{bl=P.mg.lat;bo=P.mg.lon}
   curMap.bus=[bl,bo];LL.bus.setLatLng([bl,bo]);
-  updateMarks(ph);updatePois();
+  updateMarks(ph);updatePois();updatePred(ph,e);
+}
+function updatePred(ph,e){
+  var f=null;try{f=pauseForecast(ph,e,Date.now())}catch(err){}
+  var list=f&&f.list?f.list:[];
+  var sig=list.map(function(c){return c.o.lat+','+c.o.lon+','+Math.round(c.p*100)}).join('|');
+  if(sig===mapSig.pred)return;mapSig.pred=sig;
+  LL.pred.clearLayers();
+  list.forEach(function(c){
+    L.marker([c.o.lat,c.o.lon],{icon:L.divIcon({className:'lpred',html:'<span class="predr"></span><span class="predl">'+Math.round(c.p*100)+' %</span>',iconSize:[34,34],iconAnchor:[17,17]}),zIndexOffset:800})
+      .bindPopup('<b>Möglicher Halt: '+esc(poiName(c.o))+'</b><br>Wahrscheinlichkeit ca. '+Math.round(c.p*100)+' %<br>in '+n1(c.ahead)+' km').addTo(LL.pred);
+  });
 }
 function updateMarks(ph){
   var items=[];
@@ -711,13 +748,75 @@ function updatePois(){
   });
 }
 
+/* Pausen-Prognose: EU-Lenkzeiten (spätestens nach 4,5 h Fahrt eine Pause), Entfernung und typische Bus-Stopps */
+function lastBreakEnd(phase){
+  var dep=tripState[phase]&&tripState[phase].departed||null, tr=trackFor(phase), end=dep;
+  for(var i=0;i<tr.length;i++){
+    var j=i;
+    while(j+1<tr.length&&kmDist(tr[i][0],tr[i][1],tr[j+1][0],tr[j+1][1])<0.4)j++;
+    if(j>i&&tr[j][2]-tr[i][2]>=12*60000&&(!dep||tr[i][2]>dep))end=Math.max(end||0,tr[j][2]);
+    i=j;
+  }
+  return end;
+}
+function avgSpeed(phase,now){
+  var tr=trackFor(phase).filter(function(q){return now-q[2]<=75*60000});
+  if(tr.length<3)return 80;
+  var d=0;for(var i=1;i<tr.length;i++)d+=kmDist(tr[i-1][0],tr[i-1][1],tr[i][0],tr[i][1]);
+  var h=(tr[tr.length-1][2]-tr[0][2])/3600000;
+  return h>0.3?Math.max(60,Math.min(95,d/h)):80;
+}
+function pauseForecast(ph,e,now){
+  if(!(ph==='hin'||ph==='rueck')||!e||e.offRoute||!pois.length)return null;
+  if(gps&&gpsFresh(now)&&gps.stopped)return {stopped:true};
+  var since0=lastBreakEnd(ph)||e.start, since=Math.max(0,(now-since0)/3600000), v=avgSpeed(ph,now), r=e.r, cur=e.km;
+  var horizon=Math.max(0.5,4.8-since);
+  var b=r.filter(function(w){return w.id===(ph==='hin'?'ba':'ch')})[0];
+  var cands=[];
+  pois.forEach(function(o){
+    if(o.k!=='s'||!poiSideOk(o,ph,r.key))return;
+    var a=poiAlong(o,r);if(a==null||a<=cur+2)return;
+    var ahead=a-cur, eta=ahead/v;if(eta>horizon)return;
+    var hrs=since+eta;
+    // Zeitpunkt: meist nach 3 bis 4 Stunden, spätestens nach 4,5 Stunden
+    var tw=Math.exp(-0.5*Math.pow((hrs-3.4)/0.65,2));
+    if(hrs>4.6)tw=0.02;if(hrs<1.5)tw*=0.3;
+    // Ort: Autohöfe und große Raststätten sind bustauglich; vor der Schweiz wird gern noch günstig getankt
+    var aw=1;
+    if(/autohof|truck|tank/i.test(o.n||''))aw*=1.25;
+    if(o.mc)aw*=1.15;
+    if(b&&a<=b.km&&a>=b.km-70)aw*=ph==='hin'?1.6:1.3;
+    if(!o.n)aw*=0.7;
+    cands.push({o:o,ahead:ahead,eta:eta,hrs:hrs,w:tw*aw});
+  });
+  var sum=cands.reduce(function(t,c){return t+c.w},0);
+  if(!sum)return {since:since,list:[],overdue:since>=4.5};
+  cands.forEach(function(c){c.p=c.w/sum});
+  cands.sort(function(a,b){return b.p-a.p});
+  var mean=cands.reduce(function(t,c){return t+c.p*c.eta},0);
+  return {since:since,list:cands.slice(0,3),meanEta:mean,overdue:since>=4.5};
+}
+function pauseBox(ph,e,now){
+  var f=pauseForecast(ph,e,now);
+  if(!f)return '';
+  if(f.stopped)return '<div class="pfc"><b>Pausen-Prognose</b><p>Der Bus steht gerade. Die nächste Prognose kommt, sobald es weitergeht.</p></div>';
+  var h='<div class="pfc"><b>Pausen-Prognose</b><p>Seit der letzten Pause gefahren: <strong>'+dur(f.since*60)+'</strong>. Spätestens nach 4½ Stunden Fahrt muss der Fahrer pausieren (EU-Lenkzeiten).</p>';
+  if(f.overdue)h+='<p class="pfc-hot">Eine Pause ist jetzt jederzeit wahrscheinlich.</p>';
+  if(f.list.length){
+    h+='<p>Wahrscheinlicher nächster Halt, ungefähr gegen <strong>'+tm(now+f.meanEta*3600000)+' Uhr</strong>:</p><ul>'+f.list.map(function(c){
+      return '<li>'+poiBadge(c.o.mc?'mc':'rs')+'<span>'+esc(poiName(c.o))+'<small>in '+n1(c.ahead)+' km, ca. '+tm(now+c.eta*3600000)+' Uhr</small></span><span class="pct">'+Math.round(c.p*100)+' %</span></li>';
+    }).join('')+'</ul>';
+  }
+  return h+'<p class="fine">Schätzung aus Lenkzeiten, Tempo und typischen Bus-Stopps. Der Fahrer entscheidet selbst.</p></div>';
+}
+
 /* Nächste Raststätten und nächster McDonald's vor dem Bus */
 function nextStops(ph,e){
   if(!pois.length||(ph!=='vorher'&&ph!=='hin'&&ph!=='rueck'))return '';
   var rp=ph==='rueck'?'rueck':'hin', r=e?e.r:route(rp), cur=(e&&e.eff>0)?e.km:0;
   if(e&&e.offRoute)return '';
   var list=[];
-  pois.forEach(function(o){if(o.k!=='s')return;var a=poiAlong(o,r);if(a!=null&&a>cur+1)list.push({o:o,ahead:a-cur})});
+  pois.forEach(function(o){if(o.k!=='s'||!poiSideOk(o,rp,r.key))return;var a=poiAlong(o,r);if(a!=null&&a>cur+1)list.push({o:o,ahead:a-cur})});
   list.sort(function(a,b){return a.ahead-b.ahead});
   if(!list.length)return '';
   var mc=list.filter(function(x){return x.o.mc})[0];
@@ -995,7 +1094,7 @@ function render(){
   put('s-traffic',function(){return trafficBox(ph,e)});
   try{updateMap(ph,e)}catch(err){console.error('Karte',err)}
   put('s-events',function(){return eventsBox(ph)});
-  put('s-next',function(){return nextStops(ph,e)});
+  put('s-next',function(){return pauseBox(ph,e,now)+nextStops(ph,e)});
   put('s-key2',function(){return '<span>'+mkIcon('jam')+'Stau, Unfall, Sperrung</span><span>'+mkIcon('slow')+'zähfließend</span><span>'+mkIcon('pause')+'Pause</span><span>'+mkIcon('detour')+'Umleitung</span>'});
   put('s-dist',function(){return distSign(ph,now,e)});
   put('s-tl',function(){return timeline(ph,now,e)});
@@ -1217,12 +1316,14 @@ function useGps(p){
   render();
 }
 var TRACK_RAW='https://raw.githubusercontent.com/F1NN303/toskana-2026/live/track.json';
-var events=[];
+var events=[], tripState={};
 var STATE_RAW='https://raw.githubusercontent.com/F1NN303/toskana-2026/live/state.json';
 function pullEvents(){
   if(!window.fetch||location.protocol==='file:')return;
   fetch(STATE_RAW+'?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.json():null}).then(function(j){
-    if(!j||!Array.isArray(j.log))return;
+    if(!j)return;
+    if(j.hin)tripState.hin=j.hin;if(j.rueck)tripState.rueck=j.rueck;
+    if(!Array.isArray(j.log)){render();return}
     events=j.log.filter(function(x){return x&&isFinite(x.lat)&&isFinite(x.lon)&&isFinite(x.t)&&typeof x.kind==='string'});
     render();
   }).catch(function(){});
