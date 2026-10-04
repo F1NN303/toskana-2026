@@ -254,6 +254,26 @@ footer{font-size:.85rem;color:var(--muted);max-width:72ch}
 @media (max-width:600px){.top-r{width:100%;align-items:flex-start}.helpbtn{font-size:.8rem;padding:5px 12px}}
 .linkbtn{font:inherit;font-weight:800;background:none;border:0;padding:0;color:#111;text-decoration:underline;cursor:pointer}
 .ob-cta:disabled{opacity:.6}
+/* Kartenmarkierungen */
+svg .mk path,svg .mk rect{stroke-width:1.7;stroke-linejoin:round}
+svg .mk text{font-family:var(--f-sign);font-size:7.5px;font-weight:900;text-anchor:middle}
+svg .mk-jam path,svg .mk-info path{fill:#fff;stroke:var(--red)}
+svg .mk-slow path{fill:#fff;stroke:var(--amber)}
+svg .mk-jam text,svg .mk-slow text,svg .mk-info text{fill:#111}
+svg .mk-info path{stroke:var(--paint-dim)}
+svg .mk-pause rect{fill:var(--de);stroke:#fff}
+svg .mk-pause text{fill:#fff}
+svg .mk-detour path{fill:#f08a24;stroke:#fff}
+svg .mk-detour text{fill:#111;font-size:6.5px}
+.mki{width:16px;height:16px;vertical-align:-3px;margin-right:6px;flex:none}
+#s-key2{margin-top:-2px}
+#s-key2 span{display:inline-flex;align-items:center}
+.evl{display:flex;flex-direction:column;gap:6px;border-top:2px dashed #3c3f42;padding-top:8px}
+.evl b{font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;color:var(--paint-dim)}
+.evl ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.evl li{display:grid;grid-template-columns:16px 3rem minmax(0,1fr);gap:8px;align-items:start;font-size:.88rem}
+.evl li .mki{margin:2px 0 0}
+.evl li .num{color:var(--paint-dim);font-size:.8rem;padding-top:1px}
 /* Handy: kompakter, damit Position und Status ohne Scrollen sichtbar sind */
 @media (max-width:600px){
   body{font-size:16px}
@@ -506,6 +526,30 @@ function label(id,m,anchor,text,cls){
 }
 function busMark(lat,lon,m){var q=xy(lat,lon,m);return '<g class="busm" transform="translate('+q[0].toFixed(1)+' '+q[1].toFixed(1)+')"><circle class="ring" r="10"/><circle class="dot" r="5.5"/></g>'}
 
+/* Markierungen auf der Karte */
+var EV_LABEL={pause:'Pause',jam:'Stau',slow:'Stockender Verkehr',detour:'Umleitung'};
+function eventsFor(ph){var p=(ph==='rueck'||ph==='zuhause')?'rueck':'hin';return events.filter(function(x){return x.phase===p})}
+function mkSvg(kind,x,y,title){
+  var t='<title>'+esc(title)+'</title>', g='<g class="mk mk-'+kind+'" transform="translate('+x.toFixed(1)+' '+y.toFixed(1)+')">'+t;
+  if(kind==='pause')return g+'<rect x="-5.5" y="-5.5" width="11" height="11" rx="2"/><text y="3.4">P</text></g>';
+  if(kind==='detour')return g+'<path d="M0,-6.5 L6.5,0 L0,6.5 L-6.5,0 Z"/><text y="2.9">U</text></g>';
+  return g+'<path d="M0,-7 L6.6,4.6 L-6.6,4.6 Z"/><text y="3.4">!</text></g>';
+}
+function mapMarkers(ph,m){
+  var s='';
+  if((ph==='vorher'||ph==='hin'||ph==='rueck')&&traffic.items)traffic.items.forEach(function(o){
+    if(!isFinite(o.lat))return;var q=xy(o.lat,o.lon,m);
+    s+=mkSvg(o.label==='Sperrung'||(o.jam&&!o.slow)?'jam':(o.jam?'slow':'info'),q[0],q[1],o.road+': '+o.label+' '+o.title);
+  });
+  eventsFor(ph).forEach(function(ev){var q=xy(ev.lat,ev.lon,m);s+=mkSvg(ev.kind,q[0],q[1],tm(ev.t)+' '+(EV_LABEL[ev.kind]||'')+': '+ev.text)});
+  return s;
+}
+function mkIcon(kind){return '<svg class="mki" viewBox="-8 -8 16 16" aria-hidden="true">'+mkSvg(kind,0,0,EV_LABEL[kind]||'')+'</svg>'}
+function eventsBox(ph){
+  var ev=eventsFor(ph).slice().reverse().slice(0,6);
+  if(!ev.length)return '';
+  return '<div class="evl"><b>Unterwegs</b><ul>'+ev.map(function(x){return '<li>'+mkIcon(x.kind)+'<span class="num">'+tm(x.t)+'</span><span>'+esc(x.text)+'</span></li>'}).join('')+'</ul></div>';
+}
 function mainMap(ph,e){
   var w=W(M),h=H(M),rp=(ph==='vorher'||ph==='hin')?'hin':'rueck';
   var active=e?e.r.key:route(rp).key, ar=route('hin',active), ll=function(p){return [p.lat,p.lon]};
@@ -537,6 +581,7 @@ function mainMap(ph,e){
   Object.keys(LBL).forEach(function(id){if(ids[id]||LBL_ALWAYS[id])s+=label(id,M,LBL[id],null,'lbl')});
   var bl,bo;
   if(e&&e.eff>0){bl=e.lat;bo=e.lon}else if(ph==='vorort'){bl=P.mt.lat;bo=P.mt.lon}else if(e){bl=e.r[0].lat;bo=e.r[0].lon}else{bl=P.mg.lat;bo=P.mg.lon}
+  s+=mapMarkers(ph,M);
   s+=busMark(bl,bo,M);
   return s+'</svg>';
 }
@@ -768,11 +813,19 @@ function pullTraffic(){
       var c=x.it.coordinate;if(!c)return;
       var la=+c.lat, lo=+c.long;if(!isFinite(la)||!isFinite(lo))return;
       var pj=project(r,la,lo);if(pj.dist>6)return;
+      // Nur unsere Fahrtrichtung: die Linie der Meldung muss entlang unserer Route vorwärts laufen
+      var gc=x.it.geometry&&x.it.geometry.coordinates;
+      if(Array.isArray(gc)&&gc.length>1&&Array.isArray(gc[0])){
+        var g0=gc[0],g1=gc[gc.length-1];
+        var p0=project(r,+g0[1],+g0[0]),p1=project(r,+g1[1],+g1[0]);
+        var k0=r[p0.i].km+(r[p0.i+1].km-r[p0.i].km)*p0.f, k1=r[p1.i].km+(r[p1.i+1].km-r[p1.i].km)*p1.f;
+        if(k1<k0-0.2)return;
+      }
       var A=r[pj.i],B=r[pj.i+1],along=A.km+(B.km-A.km)*pj.f,ahead=along-cur;
       if(ahead<-2||ahead>450)return;
       var title=String(x.it.title||'').split('|').pop().trim(), dir=String(x.it.subtitle||'').trim();
       var label=x.kind==='closure'?'Sperrung':(TRAFFIC_KIND[x.it.abnormalTrafficType]||'Meldung');
-      out.push({road:x.road,title:title,dir:dir,label:label,ahead:ahead,jam:!!TRAFFIC_KIND[x.it.abnormalTrafficType]});
+      out.push({road:x.road,title:title,dir:dir,label:label,ahead:ahead,jam:!!TRAFFIC_KIND[x.it.abnormalTrafficType],slow:x.it.abnormalTrafficType==='SLOW_TRAFFIC'||x.it.abnormalTrafficType==='QUEUING_TRAFFIC',lat:la,lon:lo});
     })});
     out.sort(function(a,b){return a.ahead-b.ahead});
     var seen={};out=out.filter(function(o){var k=o.road+o.title+o.dir+o.label;if(seen[k])return false;seen[k]=1;return true});
@@ -784,11 +837,11 @@ function trafficBox(ph,e){
   var inDE=ph==='vorher'||(e&&countryAt(e.lat,e.lon)==='DE');
   var h='<section class="traffic" aria-label="Verkehr"><div class="traffic-h"><h2>Verkehr vor uns</h2><span class="small">'+(traffic.t?'Stand '+tm(traffic.t)+', Autobahn GmbH':'wird geladen …')+'</span></div>';
   if(traffic.items===null){h+='<p class="fine">Verkehrsmeldungen werden geladen …</p>'}
-  else if(!traffic.items.length){h+='<p class="fine">'+(inDE?'Keine Staus oder Sperrungen auf der deutschen Strecke vor uns gemeldet.':'Für die Schweiz und Italien gibt es keine frei verfügbaren Verkehrsdaten. Steht der Bus im Stau, zeigt die Seite das über das GPS an.')+'</p>'}
+  else if(!traffic.items.length){h+='<p class="fine">'+(inDE?'Keine Staus oder Sperrungen in unserer Fahrtrichtung auf der deutschen Strecke gemeldet.':'Für die Schweiz und Italien gibt es keine frei verfügbaren Verkehrsdaten. Steht der Bus im Stau, zeigt die Seite das über das GPS an.')+'</p>'}
   else{
     h+='<ul class="tlist">'+traffic.items.map(function(o){
       return '<li class="'+(o.jam||o.label==='Sperrung'?'hot':'')+'"><span class="shield de">'+esc(o.road)+'</span><span class="tx"><b>'+esc(o.label)+'</b> '+esc(o.title)+(o.dir?'<small>Richtung '+esc(o.dir.replace(/->/g,'→'))+'</small>':'')+'</span><span class="tk">'+(o.ahead<1?'hier':'in '+n1(o.ahead)+' km')+'</span></li>';
-    }).join('')+'</ul><p class="fine">Meldungen gelten für die Autobahn, oft nur für eine Fahrtrichtung. Wichtig ist die Richtung, in die wir fahren.</p>';
+    }).join('')+'</ul><p class="fine">Nur Meldungen in unserer Fahrtrichtung.</p>';
   }
   return h+'</section>';
 }
@@ -801,6 +854,8 @@ function render(){
   put('s-hero',function(){return hero(ph,now,e)});
   put('s-traffic',function(){return trafficBox(ph,e)});
   put('s-map',function(){return mainMap(ph,e)});
+  put('s-events',function(){return eventsBox(ph)});
+  put('s-key2',function(){return '<span>'+mkIcon('jam')+'Stau, Unfall, Sperrung</span><span>'+mkIcon('slow')+'zähfließend</span><span>'+mkIcon('pause')+'Pause</span><span>'+mkIcon('detour')+'Umleitung</span>'});
   put('s-dist',function(){return distSign(ph,now,e)});
   put('s-tl',function(){return timeline(ph,now,e)});
   put('s-tus',function(){return tuscanyMap(ph==='vorort'&&D?D.place:null,e)});
@@ -817,7 +872,7 @@ document.getElementById('app').innerHTML=
  '<div id="s-traffic"></div>'+
  '<div class="lane"></div>'+
  '<div class="grid"><div class="nav"><div class="nav-head"><span>Strecke · schematisch</span><span id="s-upd"></span></div><div id="s-map"></div>'+
- '<div class="key"><span><i></i>geschafft</span><span><i class="r"></i>noch vor uns</span><span><i class="a"></i>anderer möglicher Weg</span></div></div>'+
+ '<div class="key"><span><i></i>geschafft</span><span><i class="r"></i>noch vor uns</span><span><i class="a"></i>anderer möglicher Weg</span></div><div class="key" id="s-key2"></div><div id="s-events"></div></div>'+
  '<div class="stack" style="gap:24px"><div id="s-dist"></div><section class="stack" id="s-tl"></section></div></div>'+
  '<div class="lane"></div>'+
  '<section class="stack"><div class="sec-title"><h2>Unsere Woche</h2><span class="small">Hotel Concordia, Via della Salute 16, 51016 Montecatini Terme</span></div>'+
@@ -995,6 +1050,16 @@ function useGps(p){
   render();
 }
 var TRACK_RAW='https://raw.githubusercontent.com/F1NN303/toskana-2026/live/track.json';
+var events=[];
+var STATE_RAW='https://raw.githubusercontent.com/F1NN303/toskana-2026/live/state.json';
+function pullEvents(){
+  if(!window.fetch||location.protocol==='file:')return;
+  fetch(STATE_RAW+'?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.json():null}).then(function(j){
+    if(!j||!Array.isArray(j.log))return;
+    events=j.log.filter(function(x){return x&&isFinite(x.lat)&&isFinite(x.lon)&&isFinite(x.t)&&typeof x.kind==='string'});
+    render();
+  }).catch(function(){});
+}
 function pullTrack(){
   if(!window.fetch||location.protocol==='file:')return;
   fetch(TRACK_RAW+'?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.json():null}).then(function(j){
@@ -1010,7 +1075,7 @@ function pullGps(){
     return fetch(GPS_RAW+'?t='+Date.now(),{cache:'no-store'}).then(function(r2){return r2.ok?r2.json():null});
   }).then(useGps).catch(function(){});
 }
-pullStatus();setInterval(pullStatus,60000);pullGps();setInterval(pullGps,75000);pullWx();setInterval(pullWx,3600000);pullTrack();setInterval(pullTrack,300000);pullTraffic();setInterval(pullTraffic,300000);
+pullStatus();setInterval(pullStatus,60000);pullGps();setInterval(pullGps,75000);pullWx();setInterval(pullWx,3600000);pullTrack();setInterval(pullTrack,300000);pullEvents();setInterval(pullEvents,180000);pullTraffic();setInterval(pullTraffic,300000);
 
 })();
 </script>

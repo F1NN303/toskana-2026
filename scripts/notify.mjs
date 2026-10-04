@@ -266,11 +266,11 @@ if (phase) {
       if (poi === undefined) { poi = await restStop(lat, lon); if (poi !== undefined) { ps.poiFor = since; ps.poi = poi; } }
       if (poi && mins >= 15) {
         ps.stopFor = since; ps.stopKind = 'pause';
-        out.push({ title: 'Pause', message: `Wir machen Pause: ${stopLabel(poi)}.`, tags: ['coffee'] });
+        out.push({ kind: 'pause', title: 'Pause', message: `Wir machen Pause: ${stopLabel(poi)}.`, tags: ['coffee'] });
       } else if (poi === null) {
         ps.stopFor = since; ps.stopKind = 'jam';
         const pl = await placeName(lat, lon);
-        out.push({ title: 'Stau', message: `Der Bus steht seit ${Math.round(mins)} Minuten${pl ? ' bei ' + pl : ''}. Keine Raststätte in der Nähe, vermutlich Stau.`, tags: ['warning'], priority: 4 });
+        out.push({ kind: 'jam', title: 'Stau', message: `Der Bus steht seit ${Math.round(mins)} Minuten${pl ? ' bei ' + pl : ''}. Keine Raststätte in der Nähe, vermutlich Stau.`, tags: ['warning'], priority: 4 });
       }
     }
   } else if (underway && moving && ps.stopFor && ps.resumedFor !== ps.stopFor) {
@@ -288,7 +288,7 @@ if (phase) {
     if (avg !== null && avg < 25 && (!ps.slowAt || t - ps.slowAt > 60 * 60000)) {
       ps.slowAt = t;
       const pl = await placeName(lat, lon);
-      out.push({ title: 'Stockender Verkehr', message: `Der Bus kommt gerade nur langsam voran${pl ? ' bei ' + pl : ''}.`, tags: ['warning'] });
+      out.push({ kind: 'slow', title: 'Stockender Verkehr', message: `Der Bus kommt gerade nur langsam voran${pl ? ' bei ' + pl : ''}.`, tags: ['warning'] });
     }
   }
 
@@ -297,7 +297,7 @@ if (phase) {
   if (underway && off > 40 && (!ps.offAt || t - ps.offAt > 2 * 3600000)) {
     ps.offAt = t;
     const pl = await placeName(lat, lon);
-    out.push({ title: 'Umleitung', message: `Der Bus fährt gerade eine andere Strecke${pl ? ', aktuell bei ' + pl : ''}. Auf der Seite siehst du die echte Position.`, tags: ['twisted_rightwards_arrows'] });
+    out.push({ kind: 'detour', title: 'Umleitung', message: `Der Bus fährt gerade eine andere Strecke${pl ? ', aktuell bei ' + pl : ''}. Auf der Seite siehst du die echte Position.`, tags: ['twisted_rightwards_arrows'] });
   }
 
   // 8) Ankunft
@@ -309,6 +309,14 @@ if (phase) {
   }
 }
 
+// Ereignisse mit Ort für die Karte merken (nur während der Fahrt)
+if (phase) {
+  for (const n of out) {
+    if (!n.kind) continue;
+    (st.log ||= []).push({ t, lat: r5(lat), lon: r5(lon), kind: n.kind, phase, text: n.message });
+  }
+  if (st.log && st.log.length > 60) st.log = st.log.slice(-60);
+}
 for (const n of out) await send(n);
 if (JSON.stringify([st, track, subs]) !== before) {
   fs.writeFileSync(path.join(DIR, 'state.json'), JSON.stringify(st));
