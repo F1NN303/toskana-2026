@@ -1,4 +1,4 @@
-<!doctype html><html lang="de"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><meta name="robots" content="noindex,nofollow"><title>Toskana-Fahrt Live</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link id="fonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800;900&family=Overpass+Mono:wght@500;700&family=Doto:wght@700;900&display=swap"><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect x=%221%22 y=%221%22 width=%2230%22 height=%2230%22 rx=%225%22 fill=%22%230a5aa8%22 stroke=%22white%22 stroke-width=%222%22/%3E%3Cpath d=%22M16 6l8 9h-5v11h-6V15H8z%22 fill=%22white%22/%3E%3C/svg%3E"><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#232527"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bus Live"></head><body>
+<!doctype html><html lang="de"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><meta name="robots" content="noindex,nofollow"><title>Toskana-Fahrt Live</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link id="fonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800;900&family=Overpass+Mono:wght@500;700&family=Doto:wght@700;900&display=swap"><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect x=%221%22 y=%221%22 width=%2230%22 height=%2230%22 rx=%225%22 fill=%22%230a5aa8%22 stroke=%22white%22 stroke-width=%222%22/%3E%3Cpath d=%22M16 6l8 9h-5v11h-6V15H8z%22 fill=%22white%22/%3E%3C/svg%3E"><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#232527"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bus Live"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script></head><body>
 
 
 <style id="css">
@@ -274,24 +274,6 @@ svg .mk-detour text{fill:#111;font-size:6.5px}
 .evl li{display:grid;grid-template-columns:16px 3rem minmax(0,1fr);gap:8px;align-items:start;font-size:.88rem}
 .evl li .mki{margin:2px 0 0}
 .evl li .num{color:var(--paint-dim);font-size:.8rem;padding-top:1px}
-/* Zoombare Karte */
-.mapwrap{position:relative}
-#s-map{touch-action:pan-y;user-select:none;-webkit-user-select:none;overflow:hidden;border-radius:4px}
-svg.zmap .lbl{font-size:calc(8px * var(--k,1));stroke-width:calc(2.6px * var(--k,1))}
-svg.zmap .country,svg.zmap .region{font-size:calc(7px * var(--k,1))}
-svg.zmap .route{stroke-width:calc(2.4px * var(--k,1))}
-svg.zmap .route-alt{stroke-width:calc(1.4px * var(--k,1));stroke-dasharray:calc(3px * var(--k,1)) calc(3px * var(--k,1))}
-svg.zmap .done{stroke-width:calc(3.2px * var(--k,1))}
-svg.zmap .border{stroke-width:calc(.8px * var(--k,1));stroke-dasharray:calc(3px * var(--k,1)) calc(2px * var(--k,1))}
-svg.zmap .wp{stroke-width:calc(1px * var(--k,1))}
-svg.zmap .alps{stroke-width:20px}
-.zoombtns{position:absolute;top:8px;right:8px;display:flex;flex-direction:column;gap:6px}
-.zoombtns button{font:inherit;font-weight:900;font-size:1.15rem;width:38px;height:38px;border-radius:6px;border:2px solid #111;background:var(--paint);color:#111;cursor:pointer;line-height:1;box-shadow:0 2px 0 rgba(0,0,0,.5)}
-.zoombtns button.wide{font-size:.72rem}
-.mapchips{display:flex;gap:8px;flex-wrap:wrap}
-.chipbtn{font:inherit;font-weight:800;font-size:.85rem;padding:6px 12px;border-radius:999px;border:2px solid var(--paint-dim);background:transparent;color:var(--paint);cursor:pointer}
-.chipbtn.on{background:var(--paint);color:#111;border-color:var(--paint)}
-.chipbtn.on#f-mc{background:#da291c;color:#ffc72c;border-color:#da291c}
 .maphint{font-size:.75rem;color:var(--muted);font-family:var(--f-mono)}
 .poiinfo{background:var(--paint);color:#111;border-radius:5px;padding:8px 10px;font-weight:700;font-size:.9rem}
 svg .poi rect{stroke:#fff;stroke-width:1.2}
@@ -306,6 +288,38 @@ svg .poi-mc rect{fill:#da291c} svg .poi-mc text{fill:#ffc72c;font-size:7.5px}
 .nxs .num{font-weight:800;font-variant-numeric:tabular-nums}
 .mcb{display:inline-block;background:#da291c;color:#ffc72c;font-weight:900;font-size:.7rem;border-radius:3px;padding:0 4px;margin-left:4px;vertical-align:1px}
 .nxmc{font-size:.88rem}
+/* Echte Karte */
+.mapwrap{position:relative;border-radius:4px;overflow:hidden}
+.lmap{height:520px;background:#1d1f21}
+@media (max-width:600px){.lmap{height:420px}}
+.mapwrap.fs{position:fixed;inset:0;z-index:90;border-radius:0;background:#1d1f21}
+.mapwrap.fs .lmap{height:100%}
+.mapchips{position:absolute;top:10px;left:10px;z-index:500;display:flex;gap:6px;flex-wrap:wrap;max-width:60%}
+.mapwrap.fs .mapchips{top:max(10px,env(safe-area-inset-top))}
+.mapbtns{position:absolute;top:10px;right:10px;z-index:500;display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.mapwrap.fs .mapbtns{top:max(10px,env(safe-area-inset-top))}
+.mapbtns button{font:inherit;font-weight:900;font-size:.8rem;padding:7px 11px;border-radius:6px;border:2px solid #111;background:var(--paint);color:#111;cursor:pointer;box-shadow:0 2px 0 rgba(0,0,0,.5)}
+.mapbtns #m-fs{background:var(--yellow)}
+.chipbtn{font:inherit;font-weight:800;font-size:.8rem;padding:6px 11px;border-radius:999px;border:2px solid #111;background:rgba(236,235,228,.92);color:#111;cursor:pointer;box-shadow:0 2px 0 rgba(0,0,0,.5)}
+.chipbtn.on{background:var(--de);color:#fff;border-color:#fff}
+.chipbtn.on#f-mc{background:#da291c;color:#ffc72c;border-color:#ffc72c}
+.leaflet-container{font-family:var(--f-sign)}
+.leaflet-popup-content{font-size:.9rem;line-height:1.35;margin:10px 12px}
+.leaflet-control-attribution{font-size:9px}
+.leaflet-bottom.leaflet-right{margin-bottom:env(safe-area-inset-bottom)}
+.lbus .ring{position:absolute;inset:0;border-radius:50%;background:rgba(255,174,0,.35);animation:ping 2.2s ease-out infinite}
+.lbus .dot{position:absolute;inset:7px;border-radius:50%;background:var(--amber);border:3px solid #fff;box-shadow:0 0 0 2px rgba(0,0,0,.4)}
+@media (prefers-reduced-motion:reduce){.lbus .ring{animation:none}}
+.lmk,.lpoi{background:none;border:0}
+.pm{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:4px;border:2px solid #fff;font-weight:900;font-size:.72rem;line-height:1;box-shadow:0 1px 2px rgba(0,0,0,.6);flex:none}
+.pm-rs{background:var(--de);color:#fff}
+.pm-rp{background:#3e6fa8;color:#fff;width:16px;height:16px;font-size:.6rem}
+.pm-mc{background:#da291c;color:#ffc72c}
+.nxs li .pm{width:18px;height:18px;font-size:.65rem}
+.darktiles{filter:invert(1) hue-rotate(180deg) brightness(.92) contrast(.85) saturate(.6)}
+.pdot{display:block;width:100%;height:100%;border-radius:50%;border:1.5px solid #fff;box-shadow:0 0 2px rgba(0,0,0,.7)}
+.pdot-rs,.pdot-rp{background:var(--de)}
+.pdot-mc{background:#da291c;border-color:#ffc72c}
 /* Handy: kompakter, damit Position und Status ohne Scrollen sichtbar sind */
 @media (max-width:600px){
   body{font-size:16px}
@@ -561,7 +575,7 @@ function busMark(lat,lon,m,k){var q=xy(lat,lon,m);return '<g class="busm" transf
 
 /* Markierungen auf der Karte */
 var EV_LABEL={pause:'Pause',jam:'Stau',slow:'Stockender Verkehr',detour:'Umleitung'};
-function eventsFor(ph){var p=(ph==='rueck'||ph==='zuhause')?'rueck':'hin';return events.filter(function(x){return x.phase===p})}
+function eventsFor(ph){var p=(ph==='rueck'||ph==='zuhause')?'rueck':'hin';return (events||[]).filter(function(x){return x.phase===p})}
 function mkSvg(kind,x,y,title,k){
   var t='<title>'+esc(title)+'</title>', g='<g class="mk mk-'+kind+'" data-info="'+esc(title)+'" transform="translate('+x.toFixed(2)+' '+y.toFixed(2)+') scale('+(k||1).toFixed(3)+')">'+t;
   if(kind==='pause')return g+'<rect x="-5.5" y="-5.5" width="11" height="11" rx="2"/><text y="3.4">P</text></g>';
@@ -583,86 +597,118 @@ function eventsBox(ph){
   if(!ev.length)return '';
   return '<div class="evl"><b>Unterwegs</b><ul>'+ev.map(function(x){return '<li>'+mkIcon(x.kind)+'<span class="num">'+tm(x.t)+'</span><span>'+esc(x.text)+'</span></li>'}).join('')+'</ul></div>';
 }
-/* Zoombarer Kartenausschnitt (in Karteneinheiten) */
-var VIEW=null;
-function viewFull(){VIEW={x:0,y:0,w:W(M),h:H(M)}}
-function mapZoom(){return W(M)/VIEW.w}
-function clampView(){
-  var fw=W(M),fh=H(M);
-  VIEW.w=Math.max(fw/14,Math.min(fw,VIEW.w));VIEW.h=VIEW.w*fh/fw;
-  VIEW.x=Math.max(0,Math.min(fw-VIEW.w,VIEW.x));VIEW.y=Math.max(0,Math.min(fh-VIEW.h,VIEW.y));
+/* Echter Straßenverlauf (einmal mit OSRM berechnet, routes_geo.json) */
+var GEO=null, geoCache={};
+function pullGeo(){if(!window.fetch)return;fetch('routes_geo.json').then(function(r){return r.ok?r.json():null}).then(function(j){if(j&&j.north){GEO=j;geoCache={};mapSig={};render();fitAll()}}).catch(function(){})}
+function lineFor(key){
+  if(!GEO)return route('hin',key).map(function(p){return [p.lat,p.lon]});
+  if(geoCache[key])return geoCache[key];
+  var out=[];ROUTES[key].forEach(function(leg,i){var g=GEO[leg]||[];out=out.concat(i?g.slice(1):g)});
+  return geoCache[key]=out;
 }
-viewFull();
+function lineForPhase(phase,key){var l=lineFor(key);return phase==='hin'?l:l.slice().reverse()}
+function distToLine(line,lat,lon){
+  var k=Math.cos(lat*Math.PI/180),best=1e9,bi=0;
+  for(var j=0;j<line.length-1;j++){
+    var ax=(line[j][1]-lon)*111.32*k,ay=(line[j][0]-lat)*110.57,bx=(line[j+1][1]-lon)*111.32*k,by=(line[j+1][0]-lat)*110.57;
+    var vx=bx-ax,vy=by-ay,L2=vx*vx+vy*vy,t=L2?Math.max(0,Math.min(1,-(ax*vx+ay*vy)/L2)):0,d=Math.hypot(ax+vx*t,ay+vy*t);
+    if(d<best){best=d;bi=j}
+  }
+  return {d:best,i:bi};
+}
+function sliceTo(line,lat,lon){var q=distToLine(line,lat,lon);return line.slice(0,q.i+1).concat([[lat,lon]])}
 
 /* Raststätten und McDonald's (aus OpenStreetMap, als pois.json neben der Seite) */
 var pois=[], mapFilter={rast:false,mc:false};
 try{var mf=JSON.parse(localStorage.getItem('tl-filter')||'null');if(mf)mapFilter={rast:!!mf.rast,mc:!!mf.mc}}catch(e){}
 function pullPois(){if(!window.fetch)return;fetch('pois.json').then(function(r){return r.ok?r.json():null}).then(function(j){if(Array.isArray(j)){pois=j;render()}}).catch(function(){})}
 function poiName(o){return o.n||(o.k==='s'?'Raststätte':'Rastplatz')}
-function poiAlong(o,r){var pj=project(r,o.lat,o.lon);if(pj.dist>8)return null;var A=r[pj.i],B=r[pj.i+1];return A.km+(B.km-A.km)*pj.f}
+// km entlang der Route (in Fahrtrichtung von r) oder null, wenn nicht direkt an dieser Route
+function poiAlong(o,r){
+  o._on=o._on||{};
+  if(GEO){
+    if(o._on[r.key]===undefined)o._on[r.key]=distToLine(lineFor(r.key),o.lat,o.lon).d<=1.5;
+    if(!o._on[r.key])return null;
+    var pj=project(r,o.lat,o.lon),A=r[pj.i],B=r[pj.i+1];return A.km+(B.km-A.km)*pj.f;
+  }
+  var pj2=project(r,o.lat,o.lon);if(pj2.dist>8)return null;var A2=r[pj2.i],B2=r[pj2.i+1];return A2.km+(B2.km-A2.km)*pj2.f;
+}
 function poiInfo(o,r,cur,started){
-  var a=poiAlong(o,r), t=poiName(o)+(o.mc?' · mit McDonald’s':'')+' · '+(o.k==='s'?'Raststätte':'Rastplatz')+'. ';
+  var a=poiAlong(o,r), t='<b>'+esc(poiName(o))+'</b><br>'+(o.k==='s'?'Raststätte':'Rastplatz')+(o.mc?' mit McDonald’s':'')+'<br>';
   if(a==null)t+='Liegt nicht an dem Weg, den die Seite gerade erkennt.';
   else if(!started)t+='Ca. '+n1(a)+' km nach der Abfahrt.';
   else if(a>=cur)t+='Noch ca. '+n1(a-cur)+' km bis dorthin.';
   else t+='Schon vorbei.';
   return t;
 }
-function poiSvg(o,x,y,k,info){
-  var kind=(mapFilter.mc&&o.mc)?'mc':(o.k==='s'?'rs':'rp');
-  var g='<g class="poi poi-'+kind+'" data-info="'+esc(info)+'" transform="translate('+x.toFixed(2)+' '+y.toFixed(2)+') scale('+k.toFixed(3)+')"><title>'+esc(info)+'</title>';
-  if(kind==='mc')return g+'<rect x="-5" y="-5" width="10" height="10" rx="2.2"/><text y="3.3">M</text></g>';
-  if(kind==='rs')return g+'<rect x="-4.5" y="-4.5" width="9" height="9" rx="1.6"/><text y="3">R</text></g>';
-  return g+'<rect x="-3.5" y="-3.5" width="7" height="7" rx="1.2"/><text y="2.4">P</text></g>';
+function poiBadge(kind){return '<span class="pm pm-'+kind+'">'+(kind==='mc'?'M':kind==='rs'?'R':'P')+'</span>'}
+
+/* Die Karte selbst */
+var LM=null, LL={}, mapSig={}, curMap={ph:'vorher',e:null,bus:null};
+var isMobile=window.matchMedia&&matchMedia('(pointer:coarse)').matches;
+function initMap(){
+  if(LM)return true;
+  if(!window.L||!document.getElementById('s-map'))return false;
+  LM=L.map('s-map',{zoomControl:false,scrollWheelZoom:false,dragging:!isMobile,tap:true,minZoom:5,maxZoom:17,zoomSnap:0.5});
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,className:'darktiles',attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>-Mitwirkende'}).addTo(LM);
+  L.control.zoom({position:'bottomright',zoomInTitle:'Hineinzoomen',zoomOutTitle:'Herauszoomen'}).addTo(LM);
+  LL.alt=L.layerGroup().addTo(LM);
+  LL.route=L.polyline([],{color:'#9aa0a6',weight:5,opacity:.85,lineCap:'round',lineJoin:'round'}).addTo(LM);
+  LL.done=L.polyline([],{color:'#f3c316',weight:6,opacity:1,lineCap:'round',lineJoin:'round'}).addTo(LM);
+  LL.pois=L.layerGroup().addTo(LM);
+  LL.marks=L.layerGroup().addTo(LM);
+  LL.bus=L.marker([P.mg.lat,P.mg.lon],{icon:L.divIcon({className:'lbus',html:'<span class="ring"></span><span class="dot"></span>',iconSize:[28,28],iconAnchor:[14,14]}),zIndexOffset:1000,keyboard:false,title:'Bus'}).addTo(LM);
+  LM.on('zoomend',function(){updatePois()});
+  window.tlMap=LM;
+  fitAll();
+  return true;
 }
-var curMap={ph:'vorher',e:null,bus:null};
-function mainMap(ph,e){
+function fitAll(){if(LM)LM.fitBounds(L.latLngBounds(lineFor('g-cisa').concat(lineFor('sb-bolo'))),{padding:[18,18]})}
+function updateMap(ph,e){
+  if(!initMap())return;
   curMap.ph=ph;curMap.e=e;
-  var w=W(M),h=H(M),rp=(ph==='vorher'||ph==='hin')?'hin':'rueck', z=mapZoom(), k=1/z;
-  var active=e?e.r.key:route(rp).key, ar=route('hin',active), ll=function(p){return [p.lat,p.lon]};
-  var ids={};ar.forEach(function(p){ids[p.id]=1});
-  var s='<svg class="map zmap" viewBox="'+VIEW.x.toFixed(2)+' '+VIEW.y.toFixed(2)+' '+VIEW.w.toFixed(2)+' '+VIEW.h.toFixed(2)+'" style="--k:'+k.toFixed(4)+'" role="img" aria-label="Karte der Busstrecke Mönchengladbach – Montecatini Terme">';
-  s+='<rect class="land" x="0" y="0" width="'+w.toFixed(1)+'" height="'+h.toFixed(1)+'"/>';
-  s+='<polyline class="alps" points="'+pts(ALPS,M)+'"/>';
-  s+='<polygon class="sea" points="'+pts(SEA,M)+'"/>';
-  BORDERS.forEach(function(b){s+='<polyline class="border" points="'+pts(b,M)+'"/>'});
-  CLABELS.forEach(function(c){var q=xy(c[1],c[2],M);s+='<text class="'+c[3]+'" x="'+q[0].toFixed(1)+'" y="'+q[1].toFixed(1)+'">'+esc(c[0])+'</text>'});
-  // andere mögliche Wege gestrichelt, der erkannte Weg durchgezogen
-  ROUTE_KEYS.forEach(function(kk){if(kk!==active)s+='<polyline class="route-alt" points="'+pts(route('hin',kk).map(ll),M)+'"/>'});
-  s+='<polyline class="route" points="'+pts(ar.map(ll),M)+'"/>';
-  var passed={};
-  if(e&&e.eff>0){
-    var tr=trackFor(e.phase);
-    e.r.slice(0,e.i+1).forEach(function(p){passed[p.id]=1});
-    if(tr.length>1){var line=tr.map(function(q){return [q[0],q[1]]});line.push([e.lat,e.lon]);s+='<polyline class="done" points="'+pts(line,M)+'"/>'}
-    else{var dn=e.r.slice(0,e.i+1).map(ll);dn.push([e.lat,e.lon]);s+='<polyline class="done" points="'+pts(dn,M)+'"/>'}
+  var rp=(ph==='vorher'||ph==='hin')?'hin':'rueck', active=e?e.r.key:route(rp).key;
+  var sig=active+'|'+(GEO?1:0);
+  if(mapSig.routes!==sig){
+    mapSig.routes=sig;LL.alt.clearLayers();
+    ROUTE_KEYS.forEach(function(k){if(k!==active)LL.alt.addLayer(L.polyline(lineFor(k),{color:'#6b7075',weight:3,dashArray:'6 7',opacity:.8,interactive:false}))});
+    LL.route.setLatLngs(lineFor(active));
   }
-  if(ph==='vorort'||ph==='zuhause'){
-    var tr2=trackFor(ph==='vorort'?'hin':'rueck');
-    ar.forEach(function(p){passed[p.id]=1});
-    s+='<polyline class="done" points="'+pts(tr2.length>1?tr2.map(function(q){return [q[0],q[1]]}):ar.map(ll),M)+'"/>';
-  }
-  var dotted={};
-  ROUTE_KEYS.forEach(function(kk){if(kk===active)return;route('hin',kk).forEach(function(p){if(ids[p.id]||dotted[p.id])return;dotted[p.id]=1;var q=xy(p.lat,p.lon,M);s+='<circle class="wp" cx="'+q[0].toFixed(1)+'" cy="'+q[1].toFixed(1)+'" r="'+(1.6*k).toFixed(3)+'"/>'})});
-  ar.forEach(function(p){var q=xy(p.lat,p.lon,M);s+='<circle class="wp'+(passed[p.id]?' passed':'')+'" cx="'+q[0].toFixed(1)+'" cy="'+q[1].toFixed(1)+'" r="'+(2.3*k).toFixed(3)+'"/>'});
-  // Raststätten / McDonald's je nach Filter
-  if((mapFilter.rast||mapFilter.mc)&&pois.length){
-    var er=e?e.r:route(rp), cur=e?e.km:0, started=!!(e&&e.eff>0);
-    pois.forEach(function(o){
-      var show=(mapFilter.mc&&o.mc)||(mapFilter.rast&&(o.k==='s'||z>=2.5));
-      if(!show)return;
-      var q=xy(o.lat,o.lon,M);
-      if(q[0]<VIEW.x-10||q[0]>VIEW.x+VIEW.w+10||q[1]<VIEW.y-10||q[1]>VIEW.y+VIEW.h+10)return;
-      s+=poiSvg(o,q[0],q[1],k,poiInfo(o,er,cur,started));
-    });
-  }
-  Object.keys(LBL).forEach(function(id){if(ids[id]||LBL_ALWAYS[id])s+=label(id,M,LBL[id],null,'lbl',k)});
+  var done=[];
+  if(e&&e.eff>0){var tr=trackFor(e.phase);if(tr.length>1){done=tr.map(function(q){return [q[0],q[1]]});done.push([e.lat,e.lon])}else done=sliceTo(lineForPhase(e.phase,active),e.lat,e.lon)}
+  else if(ph==='vorort'||ph==='zuhause'){var tr2=trackFor(ph==='vorort'?'hin':'rueck');done=tr2.length>1?tr2.map(function(q){return [q[0],q[1]]}):lineFor(active)}
+  LL.done.setLatLngs(done);
   var bl,bo;
   if(e&&e.eff>0){bl=e.lat;bo=e.lon}else if(ph==='vorort'){bl=P.mt.lat;bo=P.mt.lon}else if(e){bl=e.r[0].lat;bo=e.r[0].lon}else{bl=P.mg.lat;bo=P.mg.lon}
-  curMap.bus=[bl,bo];
-  s+=mapMarkers(ph,M,k);
-  s+=busMark(bl,bo,M,k);
-  return s+'</svg>';
+  curMap.bus=[bl,bo];LL.bus.setLatLng([bl,bo]);
+  updateMarks(ph);updatePois();
+}
+function updateMarks(ph){
+  var items=[];
+  if((ph==='vorher'||ph==='hin'||ph==='rueck')&&traffic.items)traffic.items.forEach(function(o){
+    if(!isFinite(o.lat))return;
+    items.push({lat:o.lat,lon:o.lon,kind:o.label==='Sperrung'||(o.jam&&!o.slow)?'jam':(o.jam?'slow':'info'),text:'<b>'+esc(o.road+': '+o.label)+'</b><br>'+esc(o.title)+(o.dir?'<br>Richtung '+esc(o.dir.replace(/->/g,'→')):'')});
+  });
+  eventsFor(ph).forEach(function(ev){items.push({lat:ev.lat,lon:ev.lon,kind:ev.kind,text:'<b>'+tm(ev.t)+' '+esc(EV_LABEL[ev.kind]||'')+'</b><br>'+esc(ev.text)})});
+  var sig=JSON.stringify(items);if(sig===mapSig.marks)return;mapSig.marks=sig;
+  LL.marks.clearLayers();
+  items.forEach(function(it){L.marker([it.lat,it.lon],{icon:L.divIcon({className:'lmk',html:'<svg viewBox="-8 -8 16 16" width="26" height="26">'+mkSvg(it.kind,0,0,'')+'</svg>',iconSize:[26,26],iconAnchor:[13,13]}),zIndexOffset:500}).bindPopup(it.text).addTo(LL.marks)});
+}
+function updatePois(){
+  if(!LM)return;
+  var e=curMap.e, rp=(curMap.ph==='vorher'||curMap.ph==='hin')?'hin':'rueck', r=e?e.r:route(rp), cur=e?e.km:0, started=!!(e&&e.eff>0), z=LM.getZoom();
+  var sig=[mapFilter.rast,mapFilter.mc,pois.length,z>=9,z>=7.5,GEO?1:0,r.key,rp,Math.round(cur/10)].join('|');
+  if(sig===mapSig.pois)return;mapSig.pois=sig;
+  LL.pois.clearLayers();
+  if(!(mapFilter.rast||mapFilter.mc)||!pois.length)return;
+  pois.forEach(function(o){
+    var show=(mapFilter.mc&&o.mc)||(mapFilter.rast&&(o.k==='s'||z>=9));
+    if(!show)return;
+    var kind=(mapFilter.mc&&o.mc)?'mc':(o.k==='s'?'rs':'rp');
+    // weit herausgezoomt nur kleine Punkte, damit die Karte lesbar bleibt
+    var small=z<7.5, sz=small?(kind==='mc'?14:9):22;
+    L.marker([o.lat,o.lon],{icon:L.divIcon({className:'lpoi',html:small?'<span class="pdot pdot-'+kind+'"></span>':poiBadge(kind),iconSize:[sz,sz],iconAnchor:[sz/2,sz/2]}),title:poiName(o),zIndexOffset:kind==='mc'?200:0}).bindPopup(function(){return poiInfo(o,r,cur,started)}).addTo(LL.pois);
+  });
 }
 
 /* Nächste Raststätten und nächster McDonald's vor dem Bus */
@@ -675,8 +721,8 @@ function nextStops(ph,e){
   list.sort(function(a,b){return a.ahead-b.ahead});
   if(!list.length)return '';
   var mc=list.filter(function(x){return x.o.mc})[0];
-  var row=function(x,icon){return '<li>'+icon+'<span>'+esc(poiName(x.o))+(x.o.mc?' <span class="mcb">M</span>':'')+'</span><span class="num">'+n1(x.ahead)+' km</span></li>'};
-  return '<div class="nxs"><b>Nächste Raststätten</b><ul>'+list.slice(0,3).map(function(x){return row(x,'<svg class="mki" viewBox="-8 -8 16 16" aria-hidden="true">'+poiSvg({k:'s'},0,0,1.3,'')+'</svg>')}).join('')+'</ul>'+
+  var row=function(x){return '<li>'+poiBadge(x.o.mc?'mc':'rs')+'<span>'+esc(poiName(x.o))+'</span><span class="num">'+n1(x.ahead)+' km</span></li>'};
+  return '<div class="nxs"><b>Nächste Raststätten</b><ul>'+list.slice(0,3).map(row).join('')+'</ul>'+
     (mc?'<p class="nxmc">Nächster McDonald’s an der Strecke: <b>'+esc(poiName(mc.o))+'</b>, in ca. '+n1(mc.ahead)+' km</p>':'')+'</div>';
 }
 
@@ -947,7 +993,7 @@ function render(){
   var put=function(id,fn,text){try{var el=document.getElementById(id);if(!el)return;var v=fn();if(text)el.textContent=v;else el.innerHTML=v}catch(err){console.error(id,err)}};
   put('s-hero',function(){return hero(ph,now,e)});
   put('s-traffic',function(){return trafficBox(ph,e)});
-  put('s-map',function(){return mainMap(ph,e)});
+  try{updateMap(ph,e)}catch(err){console.error('Karte',err)}
   put('s-events',function(){return eventsBox(ph)});
   put('s-next',function(){return nextStops(ph,e)});
   put('s-key2',function(){return '<span>'+mkIcon('jam')+'Stau, Unfall, Sperrung</span><span>'+mkIcon('slow')+'zähfließend</span><span>'+mkIcon('pause')+'Pause</span><span>'+mkIcon('detour')+'Umleitung</span>'});
@@ -967,9 +1013,10 @@ document.getElementById('app').innerHTML=
  '<div id="s-traffic"></div>'+
  '<div class="lane"></div>'+
  '<div class="grid"><div class="nav"><div class="nav-head"><span>Strecke · schematisch</span><span id="s-upd"></span></div>'+
+ '<div class="mapwrap" id="mapwrap"><div id="s-map" class="lmap"></div>'+
  '<div class="mapchips" role="group" aria-label="Auf der Karte zeigen"><button type="button" class="chipbtn" id="f-rast" aria-pressed="false">Raststätten</button><button type="button" class="chipbtn" id="f-mc" aria-pressed="false">McDonald’s</button></div>'+
- '<div class="mapwrap"><div id="s-map"></div><div class="zoombtns"><button type="button" id="z-in" aria-label="Hineinzoomen">+</button><button type="button" id="z-out" aria-label="Herauszoomen">−</button><button type="button" id="z-bus" class="wide">Bus</button><button type="button" id="z-all" class="wide">Alles</button></div></div>'+
- '<p class="maphint">Mit zwei Fingern zoomen, Symbole antippen.</p><div class="poiinfo" id="poi-info" hidden></div><div id="s-next"></div>'+
+ '<div class="mapbtns"><button type="button" id="m-fs" aria-label="Karte im Vollbild">Vollbild</button><button type="button" id="m-bus">Bus</button><button type="button" id="m-all">Ganze Strecke</button></div></div>'+
+ '<p class="maphint" id="maphint"></p><div id="s-next"></div>'+
  '<div class="key"><span><i></i>geschafft</span><span><i class="r"></i>noch vor uns</span><span><i class="a"></i>anderer möglicher Weg</span></div><div class="key" id="s-key2"></div><div id="s-events"></div></div>'+
  '<div class="stack" style="gap:24px"><div id="s-dist"></div><section class="stack" id="s-tl"></section></div></div>'+
  '<div class="lane"></div>'+
@@ -988,60 +1035,25 @@ document.getElementById('app').innerHTML=
 render();
 setInterval(render,30000);
 
-/* Karte: Filter, Zoomen mit zwei Fingern oder Knöpfen, Verschieben, Antippen */
+/* Karte: Filter, Vollbild, Bus, ganze Strecke */
 (function(){
-  var box=document.getElementById('s-map'), info=document.getElementById('poi-info');
-  function svg(){return box.querySelector('svg')}
-  function redraw(){try{box.innerHTML=mainMap(curMap.ph,curMap.e)}catch(err){console.error(err)}box.style.touchAction=mapZoom()>1.01?'none':'pan-y'}
-  var redrawT=null;
-  function apply(fast){var el=svg();if(el)el.setAttribute('viewBox',VIEW.x+' '+VIEW.y+' '+VIEW.w+' '+VIEW.h);clearTimeout(redrawT);if(fast)redrawT=setTimeout(redraw,180);else redraw()}
-  function toMap(cx,cy){var el=svg(),r=el.getBoundingClientRect();return [VIEW.x+(cx-r.left)/r.width*VIEW.w,VIEW.y+(cy-r.top)/r.height*VIEW.h]}
-  function zoomAt(mx,my,f){var nw=VIEW.w/f;var fw=W(M);nw=Math.max(fw/14,Math.min(fw,nw));var sc=nw/VIEW.w;VIEW.x=mx-(mx-VIEW.x)*sc;VIEW.y=my-(my-VIEW.y)*sc;VIEW.w=nw;VIEW.h=nw*H(M)/fw;clampView()}
-  function centerZoom(f){zoomAt(VIEW.x+VIEW.w/2,VIEW.y+VIEW.h/2,f);apply(false)}
-  document.getElementById('z-in').onclick=function(){centerZoom(1.8)};
-  document.getElementById('z-out').onclick=function(){centerZoom(1/1.8)};
-  document.getElementById('z-all').onclick=function(){viewFull();info.hidden=true;apply(false)};
-  document.getElementById('z-bus').onclick=function(){
-    if(!curMap.bus)return;var q=xy(curMap.bus[0],curMap.bus[1],M),fw=W(M);
-    VIEW.w=fw/5;VIEW.h=VIEW.w*H(M)/fw;VIEW.x=q[0]-VIEW.w/2;VIEW.y=q[1]-VIEW.h/2;clampView();apply(false);
-  };
+  var wrap=document.getElementById('mapwrap'), fs=document.getElementById('m-fs'), hint=document.getElementById('maphint');
+  hint.textContent=isMobile?'Mit zwei Fingern zoomen. Zum Verschieben „Vollbild“ öffnen. Symbole antippen.':'Mit + und − oder Doppelklick zoomen, ziehen zum Verschieben. Symbole anklicken.';
   function setChip(id,on){var b=document.getElementById(id);b.setAttribute('aria-pressed',on?'true':'false');b.classList.toggle('on',on)}
   function saveFilter(){try{localStorage.setItem('tl-filter',JSON.stringify(mapFilter))}catch(e){}}
   setChip('f-rast',mapFilter.rast);setChip('f-mc',mapFilter.mc);
-  document.getElementById('f-rast').onclick=function(){mapFilter.rast=!mapFilter.rast;setChip('f-rast',mapFilter.rast);saveFilter();render()};
-  document.getElementById('f-mc').onclick=function(){mapFilter.mc=!mapFilter.mc;setChip('f-mc',mapFilter.mc);saveFilter();render()};
-
-  var ptrs={}, start=null, moved=false;
-  function snapshot(){var ids=Object.keys(ptrs);var a=ptrs[ids[0]],b=ptrs[ids[1]];start={view:{x:VIEW.x,y:VIEW.y,w:VIEW.w,h:VIEW.h},n:ids.length,a:{x:a.x,y:a.y}};if(b){start.mid={x:(a.x+b.x)/2,y:(a.y+b.y)/2};start.d=Math.hypot(a.x-b.x,a.y-b.y)||1;start.midMap=toMap(start.mid.x,start.mid.y)}}
-  box.addEventListener('pointerdown',function(ev){if(!svg())return;ptrs[ev.pointerId]={x:ev.clientX,y:ev.clientY};moved=false;snapshot()});
-  box.addEventListener('pointermove',function(ev){
-    if(!ptrs[ev.pointerId]||!start)return;
-    ptrs[ev.pointerId]={x:ev.clientX,y:ev.clientY};
-    var ids=Object.keys(ptrs), el=svg(), r=el.getBoundingClientRect(), upx=start.view.w/r.width;
-    if(ids.length>=2&&start.n>=2){
-      var a=ptrs[ids[0]],b=ptrs[ids[1]],d=Math.hypot(a.x-b.x,a.y-b.y)||1,mid={x:(a.x+b.x)/2,y:(a.y+b.y)/2};
-      VIEW={x:start.view.x,y:start.view.y,w:start.view.w,h:start.view.h};
-      zoomAt(start.midMap[0],start.midMap[1],d/start.d);
-      var u2=VIEW.w/r.width;VIEW.x-=(mid.x-start.mid.x)*u2;VIEW.y-=(mid.y-start.mid.y)*u2;clampView();
-      moved=true;ev.preventDefault();apply(true);
-    } else if(ids.length===1&&start.n===1&&mapZoom()>1.01){
-      var dx=ev.clientX-start.a.x,dy=ev.clientY-start.a.y;
-      if(Math.abs(dx)+Math.abs(dy)>6)moved=true;
-      if(moved){VIEW.x=start.view.x-dx*upx;VIEW.y=start.view.y-dy*upx;clampView();ev.preventDefault();apply(true)}
-    } else if(ids.length===1){var d1=Math.abs(ev.clientX-start.a.x)+Math.abs(ev.clientY-start.a.y);if(d1>8)moved=true}
-  });
-  function end(ev){
-    var was=ptrs[ev.pointerId];delete ptrs[ev.pointerId];
-    if(was&&!moved&&ev.type==='pointerup'&&Object.keys(ptrs).length===0){
-      var t=document.elementFromPoint(ev.clientX,ev.clientY), g=t&&t.closest&&t.closest('[data-info]');
-      if(g&&box.contains(g)){info.textContent=g.getAttribute('data-info');info.hidden=false}else info.hidden=true;
-    }
-    if(Object.keys(ptrs).length)snapshot();else start=null;
+  document.getElementById('f-rast').onclick=function(){mapFilter.rast=!mapFilter.rast;setChip('f-rast',mapFilter.rast);saveFilter();updatePois()};
+  document.getElementById('f-mc').onclick=function(){mapFilter.mc=!mapFilter.mc;setChip('f-mc',mapFilter.mc);saveFilter();updatePois()};
+  document.getElementById('m-all').onclick=function(){fitAll()};
+  document.getElementById('m-bus').onclick=function(){if(LM&&curMap.bus)LM.flyTo(curMap.bus,10,{duration:.8})};
+  var open=false;
+  function setFs(on){
+    open=on;wrap.classList.toggle('fs',on);document.body.classList.toggle('noscroll',on);
+    fs.textContent=on?'Schließen':'Vollbild';fs.setAttribute('aria-label',on?'Vollbild schließen':'Karte im Vollbild');
+    if(LM){if(on){LM.dragging.enable();LM.scrollWheelZoom.enable()}else{if(isMobile)LM.dragging.disable();LM.scrollWheelZoom.disable()}setTimeout(function(){LM.invalidateSize()},60)}
   }
-  box.addEventListener('pointerup',end);box.addEventListener('pointercancel',end);
-  box.addEventListener('wheel',function(ev){if(!ev.ctrlKey&&!ev.metaKey&&mapZoom()<=1.01)return;ev.preventDefault();var m=toMap(ev.clientX,ev.clientY);zoomAt(m[0],m[1],Math.exp(-ev.deltaY*0.0025));apply(true)},{passive:false});
-  box.addEventListener('dblclick',function(ev){var m=toMap(ev.clientX,ev.clientY);zoomAt(m[0],m[1],2);apply(false)});
-  box.style.touchAction='pan-y';
+  fs.onclick=function(){setFs(!open)};
+  document.addEventListener('keydown',function(ev){if(ev.key==='Escape'&&open)setFs(false)});
 })();
 
 
@@ -1230,7 +1242,7 @@ function pullGps(){
     return fetch(GPS_RAW+'?t='+Date.now(),{cache:'no-store'}).then(function(r2){return r2.ok?r2.json():null});
   }).then(useGps).catch(function(){});
 }
-pullStatus();setInterval(pullStatus,60000);pullGps();setInterval(pullGps,75000);pullWx();setInterval(pullWx,3600000);pullTrack();setInterval(pullTrack,300000);pullPois();pullEvents();setInterval(pullEvents,180000);pullTraffic();setInterval(pullTraffic,300000);
+pullStatus();setInterval(pullStatus,60000);pullGps();setInterval(pullGps,75000);pullWx();setInterval(pullWx,3600000);pullTrack();setInterval(pullTrack,300000);pullPois();pullGeo();pullEvents();setInterval(pullEvents,180000);pullTraffic();setInterval(pullTraffic,300000);
 
 })();
 </script>
