@@ -363,6 +363,27 @@ svg .poi-mc rect{fill:#da291c} svg .poi-mc text{fill:#ffc72c;font-size:7.5px}
   .nav-head{font-size:.66rem;letter-spacing:.04em}
   .nav-head span{white-space:nowrap}
 }
+/* Tacho */
+.top{flex-wrap:nowrap;align-items:flex-start}
+.top>div:first-child{min-width:0}
+.top-r{align-items:flex-end}
+.tacho{position:relative;width:110px;flex:none;background:#0b0b0b;border:4px solid #3b3e41;border-radius:16px;padding:6px 6px 7px;box-shadow:0 3px 0 rgba(0,0,0,.45);text-align:center}
+.tacho svg{display:block;width:100%;height:auto;overflow:visible}
+.tacho .t-bg{fill:none;stroke:#2a2c2e;stroke-width:7;stroke-linecap:round}
+.tacho .t-val{fill:none;stroke:var(--amber);stroke-width:7;stroke-linecap:round;filter:drop-shadow(0 0 3px rgba(255,174,0,.6))}
+.tacho .t-ticks line{stroke:#6b6f73;stroke-width:1.6;stroke-linecap:round}
+.tacho .t-needle{stroke:#fff;stroke-width:2.6;stroke-linecap:round}
+.tacho .t-hub{fill:#fff}
+.tacho text.t-num{font-family:var(--f-led);font-weight:900;font-size:24px;text-anchor:middle;fill:var(--amber);filter:drop-shadow(0 0 3px rgba(255,174,0,.55))}
+.tacho text.t-num.dim{fill:#6b6f73;filter:none;font-size:20px}
+.tacho .t-unit{margin-top:-2px;font-family:var(--f-mono);font-size:.68rem;font-weight:700;color:var(--paint-dim);text-transform:uppercase;letter-spacing:.06em}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.top .helpbtn{margin-top:10px}
+@media (max-width:600px){
+  .top-r{width:auto}
+  .tacho{width:92px;padding:4px 4px 5px;border-width:3px;border-radius:12px}
+  .tacho .t-unit{font-size:.6rem}
+}
 </style>
 <script type="application/json" id="state">{"checkins":[],"message":"","messageAt":null,"gpsLink":"","variant":{"hin":"cisa","rueck":"cisa"}}</script>
 <div id="app"></div>
@@ -626,6 +647,16 @@ function distToLine(line,lat,lon){
     if(d<best){best=d;bi=j}
   }
   return {d:best,i:bi};
+}
+/* Restkilometer entlang des echten Straßenverlaufs */
+var geoCum={};
+function geoRemainKm(phase,key,lat,lon){
+  if(!GEO)return null;
+  var line=lineForPhase(phase,key), ck=phase+'|'+key, cum=geoCum[ck];
+  if(!cum){cum=[0];for(var i=1;i<line.length;i++)cum.push(cum[i-1]+kmDist(line[i-1][0],line[i-1][1],line[i][0],line[i][1]));geoCum[ck]=cum}
+  var q=distToLine(line,lat,lon);if(q.d>3)return null;
+  var a=line[q.i],b=line[q.i+1],seg=kmDist(a[0],a[1],b[0],b[1]),part=Math.min(seg,kmDist(a[0],a[1],lat,lon));
+  return Math.max(0,cum[cum.length-1]-(cum[q.i]+part));
 }
 function sliceTo(line,lat,lon){var q=distToLine(line,lat,lon);return line.slice(0,q.i+1).concat([[lat,lon]])}
 
@@ -951,6 +982,35 @@ function curSpeed(){
   if(!best)return null;
   return kmDist(best[0],best[1],gps.lat,gps.lon)/((gps.t-best[2])/3600000);
 }
+/* Tacho: Halbrund 0 bis 130 km/h */
+function arcPath(cx,cy,r,a0,a1){
+  var p=function(a){var t=(a-90)*Math.PI/180;return [cx+r*Math.cos(t),cy+r*Math.sin(t)]};
+  var s0=p(a0),s1=p(a1),large=(a1-a0)>180?1:0;
+  return 'M'+s0[0].toFixed(2)+' '+s0[1].toFixed(2)+' A'+r+' '+r+' 0 '+large+' 1 '+s1[0].toFixed(2)+' '+s1[1].toFixed(2);
+}
+function tachoHtml(v,mode){
+  var MAX=130, A0=-120, A1=120, val=Math.max(0,Math.min(MAX,v||0)), ang=A0+(A1-A0)*val/MAX;
+  var ticks='';for(var k=0;k<=120;k+=20){var a=(A0+(A1-A0)*k/MAX-90)*Math.PI/180;ticks+='<line x1="'+(50+33*Math.cos(a)).toFixed(1)+'" y1="'+(52+33*Math.sin(a)).toFixed(1)+'" x2="'+(50+39*Math.cos(a)).toFixed(1)+'" y2="'+(52+39*Math.sin(a)).toFixed(1)+'"/>'}
+  var na=(ang-90)*Math.PI/180;
+  var label=mode==='stop'?'steht':(mode==='none'?'kein GPS':'km/h');
+  var num=mode==='none'?'––':String(Math.round(val));
+  return '<svg viewBox="0 0 100 92" aria-hidden="true">'+
+    '<path class="t-bg" d="'+arcPath(50,52,42,A0,A1)+'"/>'+
+    (val>0&&mode==='live'?'<path class="t-val" d="'+arcPath(50,52,42,A0,ang)+'"/>':'')+
+    '<g class="t-ticks">'+ticks+'</g>'+
+    (mode==='live'?'<line class="t-needle" x1="50" y1="52" x2="'+(50+28*Math.cos(na)).toFixed(1)+'" y2="'+(52+28*Math.sin(na)).toFixed(1)+'"/><circle class="t-hub" cx="50" cy="52" r="3.5"/>':'')+
+    '<text class="t-num'+(mode!=='live'?' dim':'')+'" x="50" y="80">'+num+'</text>'+
+    '</svg><div class="t-unit">'+label+'</div>'+
+    '<span class="sr">'+(mode==='live'?'Der Bus fährt '+num+' km/h':(mode==='stop'?'Der Bus steht':'Kein GPS-Signal'))+'</span>';
+}
+function updateTacho(ph,e,now){
+  var el=document.getElementById('tacho');if(!el)return;
+  if(!(ph==='hin'||ph==='rueck')||!e){el.hidden=true;return}
+  el.hidden=false;
+  var mode='none',v=0;
+  if(e.live&&gps){if(gps.stopped){mode='stop'}else{v=curSpeed();mode=v==null?'none':'live';if(v!=null&&v<3)mode='stop'}}
+  el.innerHTML=tachoHtml(v,mode);
+}
 function hero(ph,now,e){
   var h='';
   var msg=state.message, msgAt=state.messageAt;
@@ -967,14 +1027,14 @@ function hero(ph,now,e){
   } else if(ph==='hin'||ph==='rueck'){
     var cc=countryOf(e), last=e.r[e.r.length-1];
     h+='<div class="gantry"><div class="sign '+cc+'"><div class="in hero-in"><div class="where"><span class="small">'+(ph==='hin'?'Hinfahrt – wir sind gerade':'Heimfahrt – wir sind gerade')+'</span><strong>'+esc(whereText(e))+'</strong></div>'+
-       '<div class="dest">'+ARROW+'<span class="to">'+esc(last.n)+'</span><span class="km">'+n1(e.kmTotal-e.km)+' km</span><span class="eta">Ankunft ca. '+tm(e.eta)+', noch '+dur(e.remain)+'</span></div></div></div></div>';
+       '<div class="dest">'+ARROW+'<span class="to">'+esc(last.n)+'</span><span class="km">'+n1((e.live&&!e.offRoute&&geoRemainKm(e.phase,e.r.key,e.lat,e.lon))||(e.kmTotal-e.km))+' km</span><span class="eta">Ankunft ca. '+tm(e.eta)+', noch '+dur(e.remain)+'</span></div></div></div></div>';
     var nx=nextEvent(e);
     if(nx&&!e.done)h+=nextBox('Als Nächstes',nx.n,inMin(nx.min));
     var sw=swissState(e);
     if(sw==='in')h+='<div class="plates"><span class="plate late">Ihr seid in der Schweiz: mobile Daten aus, wenn dein Tarif die Schweiz nicht enthält</span></div>';
     else if(sw==='soon')h+='<div class="plates"><span class="plate late">Gleich Schweiz: jetzt prüfen, ob dein Handytarif dort gilt</span></div>';
     if(ph==='rueck'&&!e.done)h+='<div class="plates"><span class="plate">Abholung an der Schule ca. '+tm(e.eta)+' Uhr, Nespelerstraße 75</span></div>';
-    if(e.live){var dl=Math.round((e.eta-(e.start+route(e.phase,'g-cisa')[route(e.phase,'g-cisa').length-1].off*60000))/60000);h+='<div class="plates"><span class="plate live"><i></i>GPS live, Stand '+tm(gps.t)+' Uhr</span>'+(gps.stopped?'<span class="plate late">'+esc(stopText(now))+'</span>':(curSpeed()>=5?'<span class="plate">fährt '+rnd(curSpeed())+' km/h</span>':''))+(e.offRoute?'<span class="plate late">Umleitung: abseits der geplanten Strecke</span>':(Math.abs(dl)>=15?'<span class="plate">Ankunft '+(dl>0?'ca. '+dl+' Min später':'ca. '+(-dl)+' Min früher')+' als geplant</span>':''))+'</div>'}
+    if(e.live){var dl=Math.round((e.eta-(e.start+route(e.phase,'g-cisa')[route(e.phase,'g-cisa').length-1].off*60000))/60000);h+='<div class="plates"><span class="plate live"><i></i>GPS live, Stand '+tm(gps.t)+' Uhr</span>'+(gps.stopped?'<span class="plate late">'+esc(stopText(now))+'</span>':'')+(e.offRoute?'<span class="plate late">Umleitung: abseits der geplanten Strecke</span>':(Math.abs(dl)>=15?'<span class="plate">Ankunft '+(dl>0?'ca. '+dl+' Min später':'ca. '+(-dl)+' Min früher')+' als geplant</span>':''))+'</div>'}
     else if(e.ck){var d=Math.round(e.delay);h+='<span class="plate'+(d>=10?' late':'')+'">Gemeldet: '+esc(P[e.ck.wp].n)+' um '+tm(e.ck.t)+(Math.abs(d)>=10?', '+(d>0?'+':'−')+Math.abs(d)+' Min zum Plan':'')+'</span>'}
     else h+='<span class="plate">'+(gps&&gps.t>e.start-90*60000?'Kein GPS-Signal seit '+tm(gps.t)+' Uhr, Position geschätzt':'Geschätzt nach Fahrplan')+'</span>';
     h+=roadStrip(e,e.km/e.kmTotal*100);
@@ -1114,13 +1174,14 @@ function render(){
   put('s-tus',function(){return tuscanyMap(ph==='vorort'&&D?D.place:null,e)});
   put('s-week',function(){return week(now)});
   put('s-upd',function(){return dy(now)+' '+tm(now)},true);
+  try{updateTacho(ph,e,now)}catch(err){console.error('Tacho',err)}
 }
 
 /* Grundgerüst */
 document.getElementById('app').innerHTML=
 '<div class="wrap">'+
- '<header class="top"><div class="stack" style="gap:8px"><p>Stufenfahrt der Hans-Jonas-Gesamtschule, <span style="white-space:nowrap">04.–09.10.2026</span></p><h1>Wo ist <span>unser Bus?</span></h1></div>'+
- '<div class="top-r"><button type="button" class="helpbtn" id="help">Benachrichtigungen &amp; App</button><div class="ovals" aria-label="Länder: Deutschland, Schweiz, Italien"><span class="oval">D</span><span class="oval">CH</span><span class="oval">I</span></div></div></header>'+
+ '<header class="top"><div class="stack" style="gap:8px"><p>Stufenfahrt der Hans-Jonas-Gesamtschule, <span style="white-space:nowrap">04.–09.10.2026</span></p><h1>Wo ist <span>unser Bus?</span></h1><div><button type="button" class="helpbtn" id="help">Benachrichtigungen &amp; App</button></div></div>'+
+ '<div class="top-r"><div class="tacho" id="tacho" hidden aria-live="polite"></div><div class="ovals" aria-label="Länder: Deutschland, Schweiz, Italien"><span class="oval">D</span><span class="oval">CH</span><span class="oval">I</span></div></div></header>'+
  '<section class="stack" id="s-hero" aria-live="polite"></section>'+
  '<div id="s-traffic"></div>'+
  '<div class="lane"></div>'+
