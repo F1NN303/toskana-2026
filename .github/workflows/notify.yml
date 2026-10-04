@@ -1,0 +1,50 @@
+name: Benachrichtigungen
+
+# Läuft bei jeder neuen Position im Branch "live" und schickt bei Bedarf eine ntfy-Nachricht.
+on:
+  push:
+    branches: [live]
+    paths: ['pos.json']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: notify
+  cancel-in-progress: false
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: live
+          path: live
+
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: app
+          sparse-checkout: scripts
+
+      - name: Prüfen und benachrichtigen
+        env:
+          NTFY_TOPIC: toskana26-bus-4mq8tz
+        run: node app/scripts/notify.mjs live
+
+      - name: Zustand speichern
+        working-directory: live
+        run: |
+          git config user.name "toskana-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add state.json track.json 2>/dev/null || true
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -q -m "state"
+          for i in 1 2 3 4 5; do
+            git push -q origin HEAD:live && exit 0
+            git pull -q --rebase origin live
+          done
+          exit 1
