@@ -192,6 +192,20 @@ svg .day.today{fill:var(--yellow)}
 footer{font-size:.85rem;color:var(--muted);max-width:72ch}
 
 
+/* Nächstes Ereignis und Wetter */
+.next{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:baseline;gap:4px 14px;background:var(--asphalt-hi);border-left:6px solid var(--yellow);padding:12px 16px;border-radius:4px}
+.next-l{font-size:.78rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--paint-dim)}
+.next b{font-size:1.3rem;font-weight:900;min-width:0}
+.next-t{font-size:1.3rem;font-weight:900;color:var(--yellow);white-space:nowrap;font-variant-numeric:tabular-nums}
+.plate.wx{gap:6px;align-items:center}
+.wxi{width:18px;height:18px;flex:none}
+.wxline{display:flex;gap:8px;align-items:center;font-size:.88rem;background:rgba(0,0,0,.18);border-radius:5px;padding:5px 8px}
+.wxline .wxi{width:22px;height:22px}
+@media (max-width:600px){
+  .next{grid-template-columns:minmax(0,1fr) auto;padding:10px 12px}
+  .next-l{grid-column:1 / -1}
+  .next b,.next-t{font-size:1.1rem}
+}
 /* Handy: kompakter, damit Position und Status ohne Scrollen sichtbar sind */
 @media (max-width:600px){
   body{font-size:16px}
@@ -458,6 +472,78 @@ function roadStrip(ee,pct){
   marks.forEach(function(m){h+='<span class="oval sm" style="left:'+(kmOf(m[0])/kt*100).toFixed(1)+'%">'+m[1]+'</span>'});
   return h+'</div></div>';
 }
+/* Smarte Hinweise: nächstes Ereignis, Schweiz-Roaming, Tagesplan, Wetter */
+function wpOff(e,id){var w=e.r.filter(function(x){return x.id===id})[0];return w?w.off:null}
+function nextEvent(e){
+  if(e.offRoute)return {n:'Ankunft '+(e.phase==='hin'?'im Hotel':'an der Schule'),min:e.remain};
+  var hin=e.phase==='hin';
+  var ev=hin?[['ba','Grenze Schweiz'],['go','Gotthard-Tunnel'],['ch','Grenze Italien']]:[['ch','Grenze Schweiz'],['ai','Gotthard-Tunnel'],['ba','Grenze Deutschland']];
+  var list=ev.map(function(x){var o=wpOff(e,x[0]);return o==null?null:{n:x[1],off:o}}).filter(Boolean);
+  list.push({n:'Ankunft '+(hin?'im Hotel':'an der Schule'),off:e.total});
+  for(var i=0;i<list.length;i++)if(list[i].off>e.eff+1)return {n:list[i].n,min:list[i].off-e.eff};
+  return null;
+}
+function countryOf(e){
+  var b=wpOff(e,'ba'),c=wpOff(e,'ch');
+  if(e.offRoute||b==null||c==null)return CC[e.f<.5?e.a.c:e.b.c];
+  if(e.phase==='hin')return e.eff<b?'de':(e.eff<c?'ch':'it');
+  return e.eff<c?'it':(e.eff<b?'ch':'de');
+}
+function swissState(e){
+  if(e.offRoute)return null;
+  var a=wpOff(e,'ba'),b=wpOff(e,'ch');if(a==null||b==null)return null;
+  var lo=Math.min(a,b),hi=Math.max(a,b);
+  if(e.eff>=lo&&e.eff<=hi)return 'in';
+  if(e.eff<lo&&lo-e.eff<=20)return 'soon';
+  return null;
+}
+function nextBox(label,title,when){return '<div class="next"><span class="next-l">'+label+'</span><b>'+esc(title)+'</b><span class="next-t">'+esc(when)+'</span></div>'}
+function inMin(m){m=Math.max(1,Math.round(m));return m<60?'in '+m+' Min':'in '+dur(m)}
+function pad2(n){return (n<10?'0':'')+n}
+function planItems(){
+  var all=[];
+  DAYS.forEach(function(d){d.items.forEach(function(it){var m=/(\d{1,2}):(\d{2})/.exec(it[0]);if(m)all.push({t:Date.parse(d.date+'T'+pad2(+m[1])+':'+m[2]+':00+02:00'),txt:it[1],d:d})})});
+  return all.sort(function(a,b){return a.t-b.t});
+}
+function nextPlan(now){var a=planItems();for(var i=0;i<a.length;i++)if(a[i].t>now)return a[i];return null}
+
+var WX_PLACES=[['mg',51.19,6.44],['mt',43.88,10.77],['si',43.318,11.331],['fi',43.77,11.25],['pi',43.716,10.401]];
+var wx={};
+function pullWx(){
+  if(!window.fetch)return;
+  var u='https://api.open-meteo.com/v1/forecast?latitude='+WX_PLACES.map(function(x){return x[1]}).join(',')+'&longitude='+WX_PLACES.map(function(x){return x[2]}).join(',')+
+    '&current=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Europe%2FBerlin&forecast_days=10';
+  fetch(u).then(function(r){return r.ok?r.json():null}).then(function(j){
+    if(!j)return;var arr=Array.isArray(j)?j:[j];
+    arr.forEach(function(x,i){if(WX_PLACES[i])wx[WX_PLACES[i][0]]=x});
+    render();
+  }).catch(function(){});
+}
+function wxDay(place,date){
+  var x=wx[place];if(!x||!x.daily||!x.daily.time)return null;
+  var i=x.daily.time.indexOf(date);if(i<0)return null;
+  return {code:x.daily.weather_code[i],max:x.daily.temperature_2m_max[i],min:x.daily.temperature_2m_min[i],rain:x.daily.precipitation_probability_max[i]};
+}
+function wxNow(place){var x=wx[place];return x&&x.current?{code:x.current.weather_code,temp:x.current.temperature_2m}:null}
+function wxKind(c){
+  if(c===0)return ['sonnig','sun'];if(c<=2)return ['heiter','part'];if(c===3)return ['bewölkt','cloud'];
+  if(c===45||c===48)return ['Nebel','fog'];if(c>=95)return ['Gewitter','storm'];
+  if((c>=51&&c<=67)||(c>=80&&c<=82))return ['Regen','rain'];if((c>=71&&c<=77)||c===85||c===86)return ['Schnee','rain'];
+  return ['wechselhaft','cloud'];
+}
+var WXI={
+  sun:'<circle cx="12" cy="12" r="4.5" fill="currentColor"/><g stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></g>',
+  part:'<circle cx="9" cy="9" r="3.6" fill="currentColor"/><g stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 2.5v1.6M2.5 9h1.6M4.4 4.4l1.1 1.1M13.6 4.4l-1.1 1.1"/></g><path d="M8 20h10a4 4 0 0 0 0-8 5 5 0 0 0-9.6 1.5A3.3 3.3 0 0 0 8 20z" fill="currentColor" opacity=".85"/>',
+  cloud:'<path d="M6.5 19h11a4.5 4.5 0 0 0 .4-9 6 6 0 0 0-11.5 1.8A3.6 3.6 0 0 0 6.5 19z" fill="currentColor"/>',
+  rain:'<path d="M6.5 14h11a4 4 0 0 0 .4-8 5.5 5.5 0 0 0-10.6 1.7A3.2 3.2 0 0 0 6.5 14z" fill="currentColor"/><g stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 17l-1 3M12 17l-1 3M16 17l-1 3"/></g>',
+  storm:'<path d="M6.5 13h11a4 4 0 0 0 .4-8 5.5 5.5 0 0 0-10.6 1.7A3.2 3.2 0 0 0 6.5 13z" fill="currentColor"/><path d="M12.5 14l-3 5h3l-1.5 4 4.5-6h-3l1.5-3z" fill="currentColor"/>',
+  fog:'<g stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9h16M3 13h18M5 17h14"/></g>'
+};
+function wxIcon(c){return '<svg class="wxi" viewBox="0 0 24 24" aria-hidden="true">'+WXI[wxKind(c)[1]]+'</svg>'}
+function rnd(x){return Math.round(x)}
+var WXNAME={mg:'Mönchengladbach',mt:'Montecatini',si:'Siena',fi:'Florenz',pi:'Pisa'};
+function wxPlateNow(place,label){var w=wxNow(place);if(!w)return '';return '<span class="plate wx">'+wxIcon(w.code)+esc(label)+': '+rnd(w.temp)+' °C, '+wxKind(w.code)[0]+'</span>'}
+
 function hero(ph,now,e){
   var h='';
   var msg=state.message, msgAt=state.messageAt;
@@ -468,19 +554,31 @@ function hero(ph,now,e){
     h+='<div class="vms"><div class="l1">Abfahrt in</div><div class="l2">'+dur((HIN_START-now)/60000)+'</div><div class="l3">So 04.10. · Treffen 22:15 · Abfahrt 22:30 · Nespelerstraße 75</div></div>';
     h+='<div class="gantry"><div class="sign de"><div class="in hero-in"><div class="where"><span class="small">Start</span><strong>Mönchengladbach</strong></div>'+
        '<div class="dest">'+ARROW+'<span class="to">Montecatini Terme</span><span class="km">'+n1(ee.kmTotal)+' km</span><span class="eta">Ankunft Mo 05.10. ca. 14:00</span></div></div></div></div>';
+    var wv=wxPlateNow('mg','Mönchengladbach jetzt');
+    if(wv)h+='<div class="plates">'+wv+'</div>';
     h+=roadStrip(ee,0);
   } else if(ph==='hin'||ph==='rueck'){
-    var cc=CC[e.f<.5?e.a.c:e.b.c], last=e.r[e.r.length-1];
+    var cc=countryOf(e), last=e.r[e.r.length-1];
     h+='<div class="gantry"><div class="sign '+cc+'"><div class="in hero-in"><div class="where"><span class="small">'+(ph==='hin'?'Hinfahrt – wir sind gerade':'Heimfahrt – wir sind gerade')+'</span><strong>'+esc(whereText(e))+'</strong></div>'+
        '<div class="dest">'+ARROW+'<span class="to">'+esc(last.n)+'</span><span class="km">'+n1(e.kmTotal-e.km)+' km</span><span class="eta">Ankunft ca. '+tm(e.eta)+', noch '+dur(e.remain)+'</span></div></div></div></div>';
-    if(e.live){var dl=Math.round(e.delay);h+='<div class="plates"><span class="plate live"><i></i>GPS live, Stand '+tm(gps.t)+' Uhr</span>'+(gps.stopped?'<span class="plate late">'+esc(stopText(now))+'</span>':'')+(e.offRoute?'<span class="plate late">Umleitung: abseits der geplanten Strecke</span>':(Math.abs(dl)>=15?'<span class="plate">'+(dl>0?dl+' Min hinter':(-dl)+' Min vor')+' dem Plan</span>':''))+'</div>'}
+    var nx=nextEvent(e);
+    if(nx&&!e.done)h+=nextBox('Als Nächstes',nx.n,inMin(nx.min));
+    var sw=swissState(e);
+    if(sw==='in')h+='<div class="plates"><span class="plate late">Ihr seid in der Schweiz: mobile Daten aus, wenn dein Tarif die Schweiz nicht enthält</span></div>';
+    else if(sw==='soon')h+='<div class="plates"><span class="plate late">Gleich Schweiz: jetzt prüfen, ob dein Handytarif dort gilt</span></div>';
+    if(ph==='rueck'&&!e.done)h+='<div class="plates"><span class="plate">Abholung an der Schule ca. '+tm(e.eta)+' Uhr, Nespelerstraße 75</span></div>';
+    if(e.live){var dl=Math.round(e.delay);h+='<div class="plates"><span class="plate live"><i></i>GPS live, Stand '+tm(gps.t)+' Uhr</span>'+(gps.stopped?'<span class="plate late">'+esc(stopText(now))+'</span>':(gps.speed>=5?'<span class="plate">fährt '+rnd(gps.speed)+' km/h</span>':''))+(e.offRoute?'<span class="plate late">Umleitung: abseits der geplanten Strecke</span>':(Math.abs(dl)>=15?'<span class="plate">'+(dl>0?dl+' Min hinter':(-dl)+' Min vor')+' dem Plan</span>':''))+'</div>'}
     else if(e.ck){var d=Math.round(e.delay);h+='<span class="plate'+(d>=10?' late':'')+'">Gemeldet: '+esc(P[e.ck.wp].n)+' um '+tm(e.ck.t)+(Math.abs(d)>=10?', '+(d>0?'+':'−')+Math.abs(d)+' Min zum Plan':'')+'</span>'}
     else h+='<span class="plate">'+(gps&&gps.t>e.start-90*60000?'Kein GPS-Signal seit '+tm(gps.t)+' Uhr, Position geschätzt':'Geschätzt nach Fahrplan')+'</span>';
     h+=roadStrip(e,e.km/e.kmTotal*100);
   } else if(ph==='vorort'){
-    var today=berlinDate(now), D=DAYS.filter(function(d){return d.date===today})[0];
-    h+='<div class="gantry"><div class="sign brown"><div class="in hero-in"><div class="where"><span class="small">'+(D?D.wd+' '+D.dm+' · heute':'In der Toskana')+'</span><strong>'+esc(D?D.title:'Montecatini Terme')+'</strong></div>'+
-       '<div class="dest">'+ARROW+'<span class="to">'+esc(D?D.items[0][1]:'Hotel Concordia')+'</span><span class="km">'+esc(D?D.items[0][0]:'')+'</span><span class="eta">Heimfahrt: Fr 09.10. um 08:00</span></div></div></div></div>';
+    var today=berlinDate(now), D=DAYS.filter(function(d){return d.date===today})[0], np=nextPlan(now);
+    var npDay=np?(np.d.date===today?'':(np.d.date===berlinDate(now+86400000)?'Morgen ':np.d.wd+' ')):'';
+    h+='<div class="gantry"><div class="sign brown"><div class="in hero-in"><div class="where"><span class="small">'+(D?D.wd+' '+D.dm+' – heute':'In der Toskana')+'</span><strong>'+esc(D?D.title:'Montecatini Terme')+'</strong></div>'+
+       (np?'<div class="dest">'+ARROW+'<span class="to">'+esc(np.txt)+'</span><span class="km">'+npDay+tm(np.t)+'</span><span class="eta">'+(np.t-now<36*3600000?inMin((np.t-now)/60000):'')+'</span></div>':'')+'</div></div></div>';
+    var pl=wxPlateNow('mt','Montecatini jetzt');
+    if(D&&D.place&&D.place!=='mt'&&D.place!=='mg'){var wd=wxDay(D.place,today);if(wd)pl+='<span class="plate wx">'+wxIcon(wd.code)+esc(WXNAME[D.place])+' heute: '+rnd(wd.max)+'° / '+rnd(wd.min)+'°, '+wxKind(wd.code)[0]+', Regenrisiko '+rnd(wd.rain||0)+' %</span>'}
+    if(pl)h+='<div class="plates">'+pl+'</div>';
   } else {
     h+='<div class="gantry"><div class="sign de"><div class="in"><div class="where"><span class="small">Fr 09.10.</span><strong>Willkommen zurück in Mönchengladbach</strong></div></div></div></div>';
   }
@@ -503,7 +601,7 @@ function distSign(ph,now,e){
   if(ph==='zuhause')return '';
   var up=r.filter(function(w){return w.km>cur+1&&MAJOR[w.id]}), last=r[r.length-1];
   var rows=(e&&e.offRoute)?[]:up.filter(function(w){return w.id!==last.id}).slice(0,3);
-  var cc=ph==='vorort'?'it':(ph==='vorher'?'de':CC[ee.f<.5?ee.a.c:ee.b.c]);
+  var cc=ph==='vorort'?'it':(ph==='vorher'?'de':countryOf(ee));
   var h='<div class="sign dist '+cc+'"><div class="in"><div class="head">'+ARROW+'<span>'+(rp==='hin'?'Hinfahrt':'Rückfahrt')+' – nächste Orte</span></div>';
   rows.forEach(function(w){h+='<div class="drow"><span>'+esc(w.n)+'</span><b>'+n1(w.km-cur)+' km</b></div>'});
   h+='<div class="drow final"><span>'+esc(last.n)+'</span><b>'+n1(last.km-cur)+' km</b></div>';
@@ -530,6 +628,7 @@ function week(now){
     var cls=d.date===today?' today':(d.date<today?' past':'');
     return '<article class="tsign'+cls+'"><div class="sign '+d.sign+'"><div class="in"><div class="when"><span>'+d.wd+' '+d.dm+'</span>'+(d.date===today?'<span class="todayplate">Heute</span>':'')+'</div>'+
       '<h3>'+esc(d.title)+'<small>'+esc(d.sub)+'</small></h3><ul>'+d.items.map(function(it){return '<li><span class="num">'+esc(it[0])+'</span><span>'+esc(it[1])+'</span></li>'}).join('')+'</ul>'+
+      (function(){var w=wxDay(d.place,d.date);return w?'<p class="wxline">'+wxIcon(w.code)+'<span><b>'+esc(WXNAME[d.place])+'</b> '+rnd(w.max)+'° / '+rnd(w.min)+'°, '+wxKind(w.code)[0]+', Regenrisiko '+rnd(w.rain||0)+' %</span></p>':''})()+
       (d.note?'<p class="hint">'+esc(d.note)+'</p>':'')+'</div></div><div class="post"></div></article>';
   }).join('');
 }
@@ -627,7 +726,10 @@ function useGps(p){
   if(!p||typeof p!=='object')return;
   var lat=+p.lat,lon=+p.lon,t=toMs(p.t);
   if(!isFinite(lat)||!isFinite(lon)||!isFinite(t)||Math.abs(lat)>90||Math.abs(lon)>180||(lat===0&&lon===0)){lat=0;lon=0;t=0}
-  gps={lat:lat,lon:lon,t:t,acc:+p.acc||null,stopped:!!p.stopped,stoppedSince:p.stoppedSince?toMs(p.stoppedSince):null,msg:typeof p.msg==='string'?p.msg.slice(0,200):'',msgAt:p.msgAt?toMs(p.msgAt):null};
+  var prev=gps, sp=+p.speed;
+  if(!(isFinite(sp)&&p.speed!==null&&p.speed!==undefined&&sp>=0)){sp=null;if(prev&&prev.t&&t>prev.t&&t-prev.t>=20000&&t-prev.t<=600000)sp=kmDist(prev.lat,prev.lon,lat,lon)/((t-prev.t)/3600000)}
+  if(prev&&prev.t===t)sp=prev.speed;
+  gps={speed:sp,lat:lat,lon:lon,t:t,acc:+p.acc||null,stopped:!!p.stopped,stoppedSince:p.stoppedSince?toMs(p.stoppedSince):null,msg:typeof p.msg==='string'?p.msg.slice(0,200):'',msgAt:p.msgAt?toMs(p.msgAt):null};
   lookupStop();
   render();
 }
@@ -638,7 +740,7 @@ function pullGps(){
     return fetch(GPS_RAW+'?t='+Date.now(),{cache:'no-store'}).then(function(r2){return r2.ok?r2.json():null});
   }).then(useGps).catch(function(){});
 }
-pullStatus();setInterval(pullStatus,60000);pullGps();setInterval(pullGps,75000);
+pullStatus();setInterval(pullStatus,60000);pullGps();setInterval(pullGps,75000);pullWx();setInterval(pullWx,3600000);
 
 })();
 </script>

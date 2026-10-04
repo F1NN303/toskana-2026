@@ -177,6 +177,7 @@ final class Tracker: NSObject, ObservableObject, CLLocationManagerDelegate {
             p["acc"] = Int(l.horizontalAccuracy)
             p["stopped"] = stopSince != nil
             p["stoppedSince"] = stopSince.map { Int($0.timeIntervalSince1970 * 1000) } ?? NSNull()
+            p["speed"] = l.speed >= 0 ? Int((l.speed * 3.6).rounded()) : NSNull()
         }
         return p
     }

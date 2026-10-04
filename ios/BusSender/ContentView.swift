@@ -66,7 +66,7 @@ struct ContentView: View {
             Text("Einmalig: Schlüssel eintragen").font(.headline.weight(.heavy))
             Text("Der GitHub-Token erlaubt diesem Handy, den Standort zu speichern. Er bleibt nur auf diesem Gerät.")
                 .font(.subheadline)
-            SecureField("github_pat_…", text: $tokenInput)
+            SecureField("", text: $tokenInput, prompt: Text("github_pat_…").foregroundColor(.gray))
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
                 .padding(10)
@@ -111,7 +111,10 @@ struct ContentView: View {
 
     private func row(_ label: String, _ value: String) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 12) {
-            Text(label).frame(width: 92, alignment: .leading)
+            Text(label)
+                .lineLimit(1)
+                .fixedSize()
+                .frame(minWidth: 96, alignment: .leading)
             Text(value).bold()
         }
     }
@@ -121,7 +124,7 @@ struct ContentView: View {
             Text("Nachricht an alle").font(.headline.weight(.heavy))
             Text("Erscheint auf der Schülerseite als Leuchtanzeige, z. B. „Pause bis 03:30“.")
                 .font(.subheadline)
-            TextField("Nachricht", text: $messageInput)
+            TextField("", text: $messageInput, prompt: Text("z. B. Pause bis 03:30").foregroundColor(.gray))
                 .padding(10)
                 .background(Color.white)
                 .foregroundStyle(Color.black)

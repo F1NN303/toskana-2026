@@ -142,7 +142,7 @@ function updateStop(){
 }
 function payload(){
   var p={t:last?last.t:Date.now(),msg:msg.text,msgAt:msg.at};
-  if(last){updateStop();p.lat=+last.lat.toFixed(5);p.lon=+last.lon.toFixed(5);p.acc=Math.round(last.acc);p.stopped=!!stopSince;p.stoppedSince=stopSince}
+  if(last){updateStop();p.lat=+last.lat.toFixed(5);p.lon=+last.lon.toFixed(5);p.acc=Math.round(last.acc);p.stopped=!!stopSince;p.stoppedSince=stopSince;p.speed=last.speed!=null?Math.round(last.speed*3.6):null}
   return p;
 }
 function send(force){
@@ -158,7 +158,7 @@ function send(force){
   }).then(function(){busy=false});
 }
 function onPos(p){
-  last={lat:p.coords.latitude,lon:p.coords.longitude,acc:p.coords.accuracy||0,t:p.timestamp||Date.now()};
+  last={lat:p.coords.latitude,lon:p.coords.longitude,acc:p.coords.accuracy||0,t:p.timestamp||Date.now(),speed:(p.coords.speed!=null&&p.coords.speed>=0)?p.coords.speed:null};
   hist.push(last);hist=hist.filter(function(h){return last.t-h.t<15*60000});
   $('fix').textContent=tm(last.t)+' · ±'+Math.round(last.acc)+' m';$('fix').className='ok';
   send(false);
