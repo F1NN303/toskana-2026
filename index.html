@@ -942,6 +942,15 @@ function rnd(x){return Math.round(x)}
 var WXNAME={mg:'Mönchengladbach',mt:'Montecatini',si:'Siena',fi:'Florenz',pi:'Pisa'};
 function wxPlateNow(place,label){var w=wxNow(place);if(!w)return '';return '<span class="plate wx">'+wxIcon(w.code)+esc(label)+': '+rnd(w.temp)+' °C, '+wxKind(w.code)[0]+'</span>'}
 
+/* Tempo: vom Handy, sonst aus der aktuellen Position und einem Spurpunkt 2 bis 12 Minuten davor */
+function curSpeed(){
+  if(!gps||!gps.t)return null;
+  if(gps.speed!=null&&isFinite(gps.speed))return gps.speed;
+  var tr=track, best=null;
+  for(var i=tr.length-1;i>=0;i--){var dt=gps.t-tr[i][2];if(dt>=2*60000&&dt<=12*60000){best=tr[i];break}}
+  if(!best)return null;
+  return kmDist(best[0],best[1],gps.lat,gps.lon)/((gps.t-best[2])/3600000);
+}
 function hero(ph,now,e){
   var h='';
   var msg=state.message, msgAt=state.messageAt;
@@ -965,7 +974,7 @@ function hero(ph,now,e){
     if(sw==='in')h+='<div class="plates"><span class="plate late">Ihr seid in der Schweiz: mobile Daten aus, wenn dein Tarif die Schweiz nicht enthält</span></div>';
     else if(sw==='soon')h+='<div class="plates"><span class="plate late">Gleich Schweiz: jetzt prüfen, ob dein Handytarif dort gilt</span></div>';
     if(ph==='rueck'&&!e.done)h+='<div class="plates"><span class="plate">Abholung an der Schule ca. '+tm(e.eta)+' Uhr, Nespelerstraße 75</span></div>';
-    if(e.live){var dl=Math.round((e.eta-(e.start+route(e.phase,'g-cisa')[route(e.phase,'g-cisa').length-1].off*60000))/60000);h+='<div class="plates"><span class="plate live"><i></i>GPS live, Stand '+tm(gps.t)+' Uhr</span>'+(gps.stopped?'<span class="plate late">'+esc(stopText(now))+'</span>':(gps.speed>=5?'<span class="plate">fährt '+rnd(gps.speed)+' km/h</span>':''))+(e.offRoute?'<span class="plate late">Umleitung: abseits der geplanten Strecke</span>':(Math.abs(dl)>=15?'<span class="plate">Ankunft '+(dl>0?'ca. '+dl+' Min später':'ca. '+(-dl)+' Min früher')+' als geplant</span>':''))+'</div>'}
+    if(e.live){var dl=Math.round((e.eta-(e.start+route(e.phase,'g-cisa')[route(e.phase,'g-cisa').length-1].off*60000))/60000);h+='<div class="plates"><span class="plate live"><i></i>GPS live, Stand '+tm(gps.t)+' Uhr</span>'+(gps.stopped?'<span class="plate late">'+esc(stopText(now))+'</span>':(curSpeed()>=5?'<span class="plate">fährt '+rnd(curSpeed())+' km/h</span>':''))+(e.offRoute?'<span class="plate late">Umleitung: abseits der geplanten Strecke</span>':(Math.abs(dl)>=15?'<span class="plate">Ankunft '+(dl>0?'ca. '+dl+' Min später':'ca. '+(-dl)+' Min früher')+' als geplant</span>':''))+'</div>'}
     else if(e.ck){var d=Math.round(e.delay);h+='<span class="plate'+(d>=10?' late':'')+'">Gemeldet: '+esc(P[e.ck.wp].n)+' um '+tm(e.ck.t)+(Math.abs(d)>=10?', '+(d>0?'+':'−')+Math.abs(d)+' Min zum Plan':'')+'</span>'}
     else h+='<span class="plate">'+(gps&&gps.t>e.start-90*60000?'Kein GPS-Signal seit '+tm(gps.t)+' Uhr, Position geschätzt':'Geschätzt nach Fahrplan')+'</span>';
     h+=roadStrip(e,e.km/e.kmTotal*100);
