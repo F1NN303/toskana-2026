@@ -365,11 +365,10 @@ var LEG={
  sanb:[['zh',65,85,'ch:A3'],['cu',85,120,'ch:A13'],['sb',50,60,'tun:San Bernardino'],['be',40,55,'ch:A13']],
  south:[['lg',30,30,'ch:A2'],['ch',25,25,'ch:A2'],['mi',60,50,'it:A9'],['pc',60,65,'it:A1'],['pr',35,60,'it:A1']],
  cisa:[['sp',70,110,'it:A15'],['vi',40,50,'it:A12'],['lc',20,25,'it:A11'],['mt',30,30,'it:A11']],
- bolo:[['bo',60,95,'it:A1'],['fi',60,105,'it:A1'],['mt',40,50,'it:A11']],
- brenner:[['mg',0,0,''],['kn',45,60,'de:A61'],['ff',140,190,'de:A3'],['wu',85,120,'de:A3'],['nu',80,110,'de:A3'],['mu',115,170,'de:A9'],['ku',65,85,'de:A93'],['ib',55,75,'at:A12'],['br',30,35,'at:A13'],['bz',65,85,'it:A22'],['vr',110,150,'it:A22'],['mo',75,100,'it:A22'],['bo',30,40,'it:A1'],['fi',75,105,'it:A1'],['mt',40,50,'it:A11']]
+ bolo:[['bo',60,95,'it:A1'],['fi',60,105,'it:A1'],['mt',40,50,'it:A11']]
 };
-var ROUTES={'g-cisa':['north','gott','south','cisa'],'g-bolo':['north','gott','south','bolo'],'sb-cisa':['north','sanb','south','cisa'],'sb-bolo':['north','sanb','south','bolo'],'br':['brenner']};
-var ROUTE_NAME={'g-cisa':'Gotthard und La Spezia','g-bolo':'Gotthard und Bologna','sb-cisa':'San Bernardino und La Spezia','sb-bolo':'San Bernardino und Bologna','br':'Brenner'};
+var ROUTES={'g-cisa':['north','gott','south','cisa'],'g-bolo':['north','gott','south','bolo'],'sb-cisa':['north','sanb','south','cisa'],'sb-bolo':['north','sanb','south','bolo']};
+var ROUTE_NAME={'g-cisa':'Gotthard und La Spezia','g-bolo':'Gotthard und Bologna','sb-cisa':'San Bernardino und La Spezia','sb-bolo':'San Bernardino und Bologna'};
 var ROUTE_KEYS=Object.keys(ROUTES);
 var MAJOR={ko:1,ka:1,ba:1,lu:1,go:1,lg:1,mi:1,pr:1,sp:1,bo:1,fi:1,fr:1,mt:1,mg:1,zh:1,cu:1,sb:1,ff:1,nu:1,mu:1,ib:1,br:1,vr:1};
 
@@ -614,7 +613,7 @@ var CC={DE:'de',CH:'ch',IT:'it'};
 var BORDER_CODE={'Grenze Schweiz':'CH','Grenze Italien':'I','Grenze Österreich':'A','Grenze Deutschland':'D'};
 function roadStrip(ee,pct){
   var r=ee.r, kt=r[r.length-1].km, hin=ee.phase==='hin';
-  var k=r.key||'g-cisa', g=k==='br'?'br':(k.indexOf('sb')===0?'sb':'g');
+  var k=r.key||'g-cisa', g=k.indexOf('sb')===0?'sb':'g';
   var marks=[];
   EVENTS[ee.phase][g].forEach(function(x){
     var code=BORDER_CODE[x[1]], w=r.filter(function(p){return p.id===x[0]})[0];
@@ -629,13 +628,13 @@ function roadStrip(ee,pct){
 /* Smarte Hinweise: nächstes Ereignis, Schweiz-Roaming, Tagesplan, Wetter */
 function wpOff(e,id){var w=e.r.filter(function(x){return x.id===id})[0];return w?w.off:null}
 var EVENTS={
- hin:{g:[['ba','Grenze Schweiz'],['go','Gotthard-Tunnel'],['ch','Grenze Italien']],sb:[['ba','Grenze Schweiz'],['sb','San-Bernardino-Tunnel'],['ch','Grenze Italien']],br:[['ku','Grenze Österreich'],['br','Grenze Italien']]},
- rueck:{g:[['ch','Grenze Schweiz'],['ai','Gotthard-Tunnel'],['ba','Grenze Deutschland']],sb:[['ch','Grenze Schweiz'],['sb','San-Bernardino-Tunnel'],['ba','Grenze Deutschland']],br:[['br','Grenze Österreich'],['ku','Grenze Deutschland']]}
+ hin:{g:[['ba','Grenze Schweiz'],['go','Gotthard-Tunnel'],['ch','Grenze Italien']],sb:[['ba','Grenze Schweiz'],['sb','San-Bernardino-Tunnel'],['ch','Grenze Italien']]},
+ rueck:{g:[['ch','Grenze Schweiz'],['ai','Gotthard-Tunnel'],['ba','Grenze Deutschland']],sb:[['ch','Grenze Schweiz'],['sb','San-Bernardino-Tunnel'],['ba','Grenze Deutschland']]}
 };
 function nextEvent(e){
   var hin=e.phase==='hin', fin='Ankunft '+(hin?'im Hotel':'an der Schule');
   if(e.offRoute)return {n:fin,min:e.remain};
-  var k=e.r.key||'g-cisa', g=k==='br'?'br':(k.indexOf('sb')===0?'sb':'g');
+  var k=e.r.key||'g-cisa', g=k.indexOf('sb')===0?'sb':'g';
   var list=EVENTS[e.phase][g].map(function(x){var o=wpOff(e,x[0]);return o==null?null:{n:x[1],off:o}}).filter(Boolean);
   list.push({n:fin,off:e.total});
   for(var i=0;i<list.length;i++)if(list[i].off>e.eff+1)return {n:list[i].n,min:list[i].off-e.eff};
@@ -775,7 +774,7 @@ function timeline(ph,now,e){
     h+='<span class="nm">'+esc(w.n)+(ck?'<span class="ok">✓ gemeldet</span>':'')+(w.sub?'<small>'+esc(w.sub)+'</small>':'')+(next?'<span class="here">Als Nächstes, noch ca. '+dur(w.off-ee.eff)+'</span>':'')+'</span>';
     h+='<span class="sd">'+shield(w.road)+'<span class="num">'+n1(w.km)+' km</span></span></li>';
   });
-  return h+'</ol><p class="fine">Erkannter Weg: <b>'+esc(ROUTE_NAME[r.key]||'')+'</b>. Die Seite erkennt am GPS, ob der Bus über den Gotthard oder den San Bernardino fährt, ab Parma über La Spezia oder Bologna, oder ganz über den Brenner. Die anderen möglichen Wege sind auf der Karte gestrichelt.</p>';
+  return h+'</ol><p class="fine">Erkannter Weg: <b>'+esc(ROUTE_NAME[r.key]||'')+'</b>. Die Seite erkennt am GPS, ob der Bus über den Gotthard oder den San Bernardino fährt, und ab Parma über La Spezia oder Bologna. Die anderen möglichen Wege sind auf der Karte gestrichelt.</p>';
 }
 function week(now){
   var today=berlinDate(now);
