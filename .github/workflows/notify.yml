@@ -1,10 +1,13 @@
 name: Benachrichtigungen
 
-# Läuft bei jeder neuen Position im Branch "live" und schickt bei Bedarf eine ntfy-Nachricht.
+# Läuft bei jeder neuen Position im Branch "live" und alle 15 Minuten (neue Anmeldungen abholen).
+# Schickt bei Bedarf Push-Nachrichten an angemeldete Handys und an das ntfy-Thema.
 on:
   push:
     branches: [live]
     paths: ['pos.json']
+  schedule:
+    - cron: '*/15 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -17,7 +20,7 @@ concurrency:
 jobs:
   notify:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 6
     steps:
       - uses: actions/checkout@v4
         with:
@@ -30,9 +33,16 @@ jobs:
           path: app
           sparse-checkout: scripts
 
+      - name: Push-Paket installieren
+        working-directory: app
+        run: npm install --no-save --no-audit --no-fund web-push@3
+
       - name: Prüfen und benachrichtigen
         env:
           NTFY_TOPIC: toskana26-bus-4mq8tz
+          SUBS_TOPIC: toskana26-subs-r8x2kp
+          VAPID_PUBLIC: BEUcM2EYTTmgcaBX2OWDhRxC6rD02HrXhDZqLjjzZ_YZ0leAIYj__XqZJ6Xo6QJeRj0N3TEklowThK79ErVGQMc
+          VAPID_PRIVATE: ${{ secrets.VAPID_PRIVATE }}
         run: node app/scripts/notify.mjs live
 
       - name: Zustand speichern
@@ -40,7 +50,7 @@ jobs:
         run: |
           git config user.name "toskana-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add state.json track.json 2>/dev/null || true
+          git add state.json track.json subs.json 2>/dev/null || true
           if git diff --cached --quiet; then exit 0; fi
           git commit -q -m "state"
           for i in 1 2 3 4 5; do

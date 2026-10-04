@@ -11,6 +11,17 @@ const NOW = process.env.NOW ? Date.parse(process.env.NOW) : Date.now();
 const PAGE = 'https://f1nn303.github.io/toskana-2026/';
 const UA = 'toskana-2026-bus-tracker (https://github.com/F1NN303/toskana-2026)';
 const OFFLINE = process.env.OFFLINE === '1'; // Tests ohne Netz
+// Web-Push: Handys melden sich über einen ntfy-Briefkasten an, wir schicken mit unserem VAPID-Schlüssel
+const SUBS_TOPIC = process.env.SUBS_TOPIC || '';
+const VAPID_PUBLIC = process.env.VAPID_PUBLIC || '';
+const VAPID_PRIVATE = process.env.VAPID_PRIVATE || '';
+let webpush = null;
+if (VAPID_PUBLIC && VAPID_PRIVATE) {
+  try {
+    webpush = (await import('web-push')).default;
+    webpush.setVapidDetails(PAGE, VAPID_PUBLIC, VAPID_PRIVATE);
+  } catch (e) { console.log('web-push nicht verfügbar:', String(e)); webpush = null; }
+}
 
 const TRIPS = {
   hin: { from: Date.parse('2026-10-04T21:00:00+02:00'), to: Date.parse('2026-10-05T20:00:00+02:00'), dest: [43.882, 10.772], near: 2.5 },
@@ -103,6 +114,18 @@ async function restStop(lat, lon) {
 }
 const stopLabel = (p) => (/rast|area|autogrill|services|aire|tankstelle|stazione/i.test(p.name) ? p.name : p.kind + (p.name ? ' ' + p.name : ''));
 
+async function pushTo(endpointKey, sub, n) {
+  if (!webpush) return true;
+  try {
+    await webpush.sendNotification(sub, JSON.stringify({ title: n.title, body: n.message, url: PAGE, tag: n.tag || '' }), { TTL: 6 * 3600, urgency: n.priority >= 4 ? 'high' : 'normal' });
+    return true;
+  } catch (e) {
+    const code = e && e.statusCode;
+    console.log('Push Fehler', code || String(e));
+    // 404/410: Handy hat sich abgemeldet oder die App wurde gelöscht
+    return !(code === 404 || code === 410);
+  }
+}
 async function send(n) {
   const body = { topic: TOPIC, title: n.title, message: n.message, tags: n.tags || [], priority: n.priority || 3, click: PAGE };
   if (DRY || !TOPIC) { console.log('[Nachricht]', n.title, '|', n.message); return; }
@@ -110,6 +133,42 @@ async function send(n) {
     const r = await fetch('https://ntfy.sh/', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: AbortSignal.timeout(15000) });
     console.log('ntfy', r.status, n.title);
   } catch (e) { console.log('ntfy Fehler', String(e)); }
+  let ok = 0;
+  for (const [key, sub] of Object.entries(subs)) {
+    if (await pushTo(key, sub, n)) ok++; else { delete subs[key]; }
+  }
+  if (Object.keys(subs).length || ok) console.log('Push an', ok, 'Handys:', n.title);
+}
+
+// Neue An- und Abmeldungen aus dem ntfy-Briefkasten holen
+async function harvestSubs(st) {
+  if (!SUBS_TOPIC || OFFLINE) return [];
+  // Zeitstempel statt Nachrichten-ID: ntfy löscht alte Nachrichten nach 12 Stunden.
+  // Doppelte Anmeldungen schaden nicht, sie überschreiben sich.
+  const since = st.subsSince ? String(st.subsSince) : '24h';
+  let text = '';
+  try {
+    const r = await fetch(`https://ntfy.sh/${SUBS_TOPIC}/json?poll=1&since=${encodeURIComponent(since)}`, { signal: AbortSignal.timeout(15000) });
+    if (!r.ok) return [];
+    text = await r.text();
+  } catch { return []; }
+  const added = [];
+  for (const line of text.split('\n')) {
+    if (!line.trim()) continue;
+    let m; try { m = JSON.parse(line); } catch { continue; }
+    if (m.event !== 'message') continue;
+    if (m.time && (!st.subsSince || m.time > st.subsSince)) st.subsSince = m.time;
+    let d; try { d = JSON.parse(m.message); } catch { continue; }
+    const sub = d && d.sub;
+    if (d.type === 'sub' && sub && typeof sub.endpoint === 'string' && /^https:\/\//.test(sub.endpoint) && sub.keys && sub.keys.p256dh && sub.keys.auth) {
+      const isNew = !subs[sub.endpoint];
+      subs[sub.endpoint] = { endpoint: sub.endpoint, keys: { p256dh: String(sub.keys.p256dh), auth: String(sub.keys.auth) } };
+      if (isNew) added.push(sub.endpoint);
+    } else if (d.type === 'unsub' && typeof d.endpoint === 'string') {
+      delete subs[d.endpoint];
+    }
+  }
+  return added;
 }
 
 const BORDER = {
@@ -129,8 +188,18 @@ const BORDER = {
 const pos = readJSON('pos.json', {});
 const st = readJSON('state.json', {});
 let track = readJSON('track.json', []);
-const before = JSON.stringify([st, track]);
+const subs = readJSON('subs.json', {});
+const before = JSON.stringify([st, track, subs]);
 const out = [];
+
+// 0) Neue Anmeldungen: kurze Bestätigung an genau dieses Handy
+const added = await harvestSubs(st);
+for (const key of added) {
+  if (DRY) { console.log('[Willkommen]', key.slice(0, 40)); continue; }
+  const ok = await pushTo(key, subs[key], { title: 'Du bist angemeldet', message: 'Ab jetzt bekommst du Nachrichten zur Fahrt: Abfahrt, Grenzen, Pausen, Stau und Ankunft.', tag: 'welcome' });
+  if (!ok) delete subs[key];
+}
+if (added.length) console.log('Neue Anmeldungen:', added.length, 'insgesamt:', Object.keys(subs).length);
 
 // 1) Nachricht aus dem Bus weiterleiten
 const msgAt = toMs(pos.msgAt);
@@ -238,8 +307,9 @@ if (phase) {
 }
 
 for (const n of out) await send(n);
-if (JSON.stringify([st, track]) !== before) {
+if (JSON.stringify([st, track, subs]) !== before) {
   fs.writeFileSync(path.join(DIR, 'state.json'), JSON.stringify(st));
   fs.writeFileSync(path.join(DIR, 'track.json'), JSON.stringify(track));
+  fs.writeFileSync(path.join(DIR, 'subs.json'), JSON.stringify(subs));
   console.log('Zustand gespeichert');
 }

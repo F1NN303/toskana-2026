@@ -252,6 +252,11 @@ footer{font-size:.85rem;color:var(--muted);max-width:72ch}
 .lg-vms{background:#0b0b0b;border:3px solid #3b3e41;position:relative}
 .lg-vms::after{content:"";position:absolute;left:5px;right:5px;top:6px;height:3px;background:var(--amber);box-shadow:0 0 4px var(--amber)}
 @media (max-width:600px){.top-r{width:100%;align-items:flex-start}.helpbtn{font-size:.8rem;padding:5px 12px}}
+.ob details.alt{border-top:2px solid rgba(0,0,0,.25);padding-top:8px}
+.ob details.alt summary{cursor:pointer;font-weight:800}
+.ob details.alt ol{margin-top:8px}
+.linkbtn{font:inherit;font-weight:800;background:none;border:0;padding:0;color:#111;text-decoration:underline;cursor:pointer}
+.ob-cta:disabled{opacity:.6}
 /* Handy: kompakter, damit Position und Status ohne Scrollen sichtbar sind */
 @media (max-width:600px){
   body{font-size:16px}
@@ -849,13 +854,63 @@ function obSteps(){
   return [
     {t:'Wo ist unser Bus?',b:'<p>Hier siehst du live, wo unser Bus gerade ist.</p><ul class="ob-legend"><li><span class="lg-sign"></span><span><b>Großes Schild:</b> wo wir gerade sind, wie weit es noch ist und wann wir ankommen.</span></li><li><span class="lg-next"></span><span><b>Als Nächstes:</b> Grenze, Tunnel oder Ankunft mit Countdown.</span></li><li><span class="lg-plate"></span><span><b>Gelbe Hinweise:</b> wichtig, zum Beispiel Pause, Stau oder Handy-Tipps für die Schweiz.</span></li><li><span class="lg-vms"></span><span><b>Leuchtanzeige:</b> Nachricht direkt aus dem Bus.</span></li></ul>'},
     {t:'Als App speichern',b:'<p>Dann öffnest du die Seite mit einem Tipp vom Home-Bildschirm, ohne Browserleiste.</p>'+app},
-    {t:'Benachrichtigungen',b:'<p>Bei Abfahrt, Grenzen, Pausen, Stau, Umleitungen und Ankunft bekommst du eine Nachricht aufs Handy. Dafür nutzen wir die kostenlose App <b>ntfy</b>, ohne Anmeldung.</p>'+
-      '<ol><li>ntfy installieren: <a href="https://apps.apple.com/app/ntfy/id1625396347" target="_blank" rel="noopener">iPhone</a> · <a href="https://play.google.com/store/apps/details?id=io.heckel.ntfy" target="_blank" rel="noopener">Android</a></li>'+
-      '<li>In ntfy auf <b>+</b> tippen und dieses Thema eintragen:<div class="topic"><code id="ob-topic">'+NTFY_TOPIC+'</code><button type="button" id="ob-copy">Kopieren</button></div></li>'+
-      '<li><b>Abonnieren</b> tippen und Benachrichtigungen erlauben.</li></ol><p class="fine">Abmelden geht jederzeit in ntfy. Diese Erklärung findest du oben unter „Benachrichtigungen &amp; App“.</p>'}
+    {t:'Benachrichtigungen',b:pushStepHtml()}
   ];
 }
 function selectTopic(){var el=document.getElementById('ob-topic');if(!el)return;var r=document.createRange();r.selectNodeContents(el);var sel=getSelection();sel.removeAllRanges();sel.addRange(r)}
+
+/* Push-Benachrichtigungen direkt über die Seite (iPhone: nur als App vom Home-Bildschirm) */
+var VAPID_PUBLIC='BEUcM2EYTTmgcaBX2OWDhRxC6rD02HrXhDZqLjjzZ_YZ0leAIYj__XqZJ6Xo6QJeRj0N3TEklowThK79ErVGQMc';
+var SUBS_TOPIC='toskana26-subs-r8x2kp';
+var isSecure=location.protocol==='https:'||location.hostname==='localhost';
+function pushSupported(){return 'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window&&isSecure}
+function b64ToU8(b){var p='='.repeat((4-b.length%4)%4);var s2=atob((b+p).replace(/-/g,'+').replace(/_/g,'/'));var u=new Uint8Array(s2.length);for(var i=0;i<s2.length;i++)u[i]=s2.charCodeAt(i);return u}
+function postSub(sub){
+  return fetch('https://ntfy.sh/'+SUBS_TOPIC,{method:'POST',body:JSON.stringify({type:'sub',sub:sub.toJSON(),at:Date.now()})}).then(function(r){
+    if(!r.ok)throw new Error('Anmeldung fehlgeschlagen ('+r.status+')');
+    try{localStorage.setItem('tl-push-at',String(Date.now()))}catch(e){}
+  });
+}
+function ntfyHtml(){
+  return '<details class="alt"><summary>Alternative: App ntfy</summary><ol><li>ntfy installieren: <a href="https://apps.apple.com/app/ntfy/id1625396347" target="_blank" rel="noopener">iPhone</a> · <a href="https://play.google.com/store/apps/details?id=io.heckel.ntfy" target="_blank" rel="noopener">Android</a></li>'+
+    '<li>In ntfy auf <b>+</b> tippen und dieses Thema eintragen:<div class="topic"><code id="ob-topic">'+NTFY_TOPIC+'</code><button type="button" id="ob-copy">Kopieren</button></div></li><li><b>Abonnieren</b> tippen.</li></ol></details>';
+}
+function pushStepHtml(){
+  var intro='<p>Bei Abfahrt, Grenzen, Pausen, Stau, Umleitungen und Ankunft bekommst du eine Nachricht aufs Handy.</p>';
+  if(!pushSupported())return intro+'<p>Dein Browser kann keine Benachrichtigungen von Webseiten empfangen. Nutze stattdessen die kostenlose App ntfy:</p>'+ntfyHtml().replace('<details class="alt"><summary>Alternative: App ntfy</summary>','<div>').replace('</details>','</div>');
+  if(isIOS&&!isStandalone)return intro+'<ol><li>Speichere die Seite zuerst als App (Schritt 2).</li><li>Öffne sie dann <b>über das neue Symbol auf dem Home-Bildschirm</b>.</li><li>Dort tippst du auf <b>„Benachrichtigungen einschalten“</b>.</li></ol><p class="fine">Auf dem iPhone geht das nur in der gespeicherten App, nicht in Safari.</p>'+ntfyHtml();
+  var perm=Notification.permission;
+  if(perm==='denied')return intro+'<p class="ok-line">Benachrichtigungen sind für diese Seite blockiert.</p><p class="fine">Erlaube sie in den Einstellungen deines Handys (iPhone: Einstellungen › Mitteilungen › Bus Live).</p>'+ntfyHtml();
+  return intro+'<button type="button" class="ob-cta ob-inst" id="ob-push">Benachrichtigungen einschalten</button><p class="fine" id="ob-push-st" role="status"></p>'+ntfyHtml();
+}
+function wirePush(){
+  var btn=document.getElementById('ob-push'), st=document.getElementById('ob-push-st');
+  if(!btn)return;
+  navigator.serviceWorker.getRegistration().then(function(reg){
+    if(!reg)return;
+    reg.pushManager.getSubscription().then(function(sub){
+      if(sub&&Notification.permission==='granted'){btn.textContent='Benachrichtigungen sind an';st.innerHTML='Du bist angemeldet. <button type="button" class="linkbtn" id="ob-push-off">Ausschalten</button>';
+        var off=document.getElementById('ob-push-off');
+        off.onclick=function(){var ep=sub.endpoint;sub.unsubscribe().then(function(){return fetch('https://ntfy.sh/'+SUBS_TOPIC,{method:'POST',body:JSON.stringify({type:'unsub',endpoint:ep})})}).then(function(){try{localStorage.removeItem('tl-push-at')}catch(e){}obShow()},function(){st.textContent='Ausschalten hat nicht geklappt. Bitte nochmal versuchen.'})};
+      }
+    });
+  });
+  btn.onclick=function(){
+    btn.disabled=true;st.textContent='Wird eingeschaltet …';
+    Promise.resolve(Notification.requestPermission()).then(function(perm){
+      if(perm!=='granted'){btn.disabled=false;st.textContent=perm==='denied'?'Du hast Benachrichtigungen abgelehnt. Du kannst sie in den Einstellungen wieder erlauben.':'Nicht eingeschaltet. Tippe nochmal und wähle „Erlauben“.';return}
+      return navigator.serviceWorker.ready.then(function(reg){
+        return reg.pushManager.getSubscription().then(function(old){return old||reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64ToU8(VAPID_PUBLIC)})}).then(function(sub){
+          return postSub(sub).then(function(){
+            reg.showNotification('Benachrichtigungen sind an',{body:'So sehen die Nachrichten zur Fahrt aus.',icon:'icon-192.png',badge:'icon-192.png',tag:'local-test'});
+            btn.textContent='Benachrichtigungen sind an';
+            st.textContent='Fertig. In spätestens 15 Minuten bekommst du eine Bestätigung, dann bist du für alle Nachrichten zur Fahrt angemeldet.';
+          });
+        });
+      });
+    }).catch(function(err){btn.disabled=false;st.textContent='Das hat nicht geklappt: '+(err&&err.message?err.message:err)+'. Bitte nochmal versuchen.'});
+  };
+}
 function obShow(){
   var st=obSteps(), x=st[obStep];
   document.getElementById('ob-count').textContent='Schritt '+(obStep+1)+' von '+st.length;
@@ -865,6 +920,7 @@ function obShow(){
   document.getElementById('ob-back').style.visibility=obStep===0?'hidden':'visible';
   var ins=document.getElementById('ob-install');
   if(ins)ins.onclick=function(){if(!installEvt)return;installEvt.prompt();installEvt.userChoice.then(function(){installEvt=null;obShow()},function(){})};
+  if(pushSupported())wirePush();
   var cp=document.getElementById('ob-copy');
   if(cp)cp.onclick=function(){
     var ok=function(){cp.textContent='Kopiert'};
@@ -880,8 +936,15 @@ document.getElementById('ob-next').onclick=function(){if(obStep<obSteps().length
 document.getElementById('ob').addEventListener('keydown',function(ev){if(ev.key==='Escape')obClose()});
 document.getElementById('help').onclick=function(){obOpenAt(0)};
 var seenOb=false;try{seenOb=localStorage.getItem('tl-ob1')==='1'}catch(e){}
-if(!seenOb)obOpenAt(0);
-if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(function(){});
+if(isStandalone&&pushSupported()&&Notification.permission==='default')obOpenAt(2);
+else if(!seenOb)obOpenAt(0);
+if(pushSupported()&&Notification.permission==='granted'){
+  navigator.serviceWorker.ready.then(function(reg){return reg.pushManager.getSubscription()}).then(function(sub){
+    if(!sub)return;var last=0;try{last=+localStorage.getItem('tl-push-at')||0}catch(e){}
+    if(Date.now()-last>6*3600000)postSub(sub).catch(function(){});
+  }).catch(function(){});
+}
+if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'))navigator.serviceWorker.register('sw.js').catch(function(){});
 
 
 /* Statische Version: Meldungen kommen aus status.json neben der Seite */
