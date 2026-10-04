@@ -17,3 +17,7 @@ Die Seite liest alle 60 Sekunden `status.json`. Zum Melden die Datei auf GitHub 
 `sender.html` (oder die iOS-App in `ios/`) auf dem Handy im Bus öffnen, einmalig einen GitHub-Token eintragen (Fine-grained, nur Repository `toskana-2026`, Berechtigung „Contents: Read and write“) und „Tracking starten“ tippen. Das Handy schreibt etwa jede Minute seine Position in `pos.json` im Branch `live`. Die Schülerseite liest sie von dort.
 
 Nach der Fahrt: Branch `live` löschen, damit der Streckenverlauf nicht öffentlich bleibt, und den Token auf GitHub widerrufen.
+
+## Benachrichtigungen
+
+Bei jeder neuen Position im Branch `live` läuft `.github/workflows/notify.yml` (auch im Branch `live` abgelegt) und ruft `scripts/notify.mjs` auf. Das Skript schickt bei Abfahrt, Grenzen, Tunneln, Pausen, Stau, Umleitungen, Ankunft und bei Nachrichten aus der App eine Meldung an das ntfy-Thema `toskana26-bus-4mq8tz`. Gemeldetes merkt es sich in `state.json`, die gefahrene Spur steht in `track.json` (nur während der Fahrten).
