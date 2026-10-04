@@ -252,9 +252,6 @@ footer{font-size:.85rem;color:var(--muted);max-width:72ch}
 .lg-vms{background:#0b0b0b;border:3px solid #3b3e41;position:relative}
 .lg-vms::after{content:"";position:absolute;left:5px;right:5px;top:6px;height:3px;background:var(--amber);box-shadow:0 0 4px var(--amber)}
 @media (max-width:600px){.top-r{width:100%;align-items:flex-start}.helpbtn{font-size:.8rem;padding:5px 12px}}
-.ob details.alt{border-top:2px solid rgba(0,0,0,.25);padding-top:8px}
-.ob details.alt summary{cursor:pointer;font-weight:800}
-.ob details.alt ol{margin-top:8px}
 .linkbtn{font:inherit;font-weight:800;background:none;border:0;padding:0;color:#111;text-decoration:underline;cursor:pointer}
 .ob-cta:disabled{opacity:.6}
 /* Handy: kompakter, damit Position und Status ohne Scrollen sichtbar sind */
@@ -839,7 +836,6 @@ render();
 setInterval(render,30000);
 
 /* Einführung beim ersten Öffnen: als App speichern und Benachrichtigungen einrichten */
-var NTFY_TOPIC='toskana26-bus-4mq8tz';
 var installEvt=null, obOpen=false, obStep=0;
 window.addEventListener('beforeinstallprompt',function(ev){ev.preventDefault();installEvt=ev;if(obOpen)obShow()});
 var isIOS=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
@@ -857,7 +853,6 @@ function obSteps(){
     {t:'Benachrichtigungen',b:pushStepHtml()}
   ];
 }
-function selectTopic(){var el=document.getElementById('ob-topic');if(!el)return;var r=document.createRange();r.selectNodeContents(el);var sel=getSelection();sel.removeAllRanges();sel.addRange(r)}
 
 /* Push-Benachrichtigungen direkt über die Seite (iPhone: nur als App vom Home-Bildschirm) */
 var VAPID_PUBLIC='BEUcM2EYTTmgcaBX2OWDhRxC6rD02HrXhDZqLjjzZ_YZ0leAIYj__XqZJ6Xo6QJeRj0N3TEklowThK79ErVGQMc';
@@ -871,17 +866,12 @@ function postSub(sub){
     try{localStorage.setItem('tl-push-at',String(Date.now()))}catch(e){}
   });
 }
-function ntfyHtml(){
-  return '<details class="alt"><summary>Alternative: App ntfy</summary><ol><li>ntfy installieren: <a href="https://apps.apple.com/app/ntfy/id1625396347" target="_blank" rel="noopener">iPhone</a> · <a href="https://play.google.com/store/apps/details?id=io.heckel.ntfy" target="_blank" rel="noopener">Android</a></li>'+
-    '<li>In ntfy auf <b>+</b> tippen und dieses Thema eintragen:<div class="topic"><code id="ob-topic">'+NTFY_TOPIC+'</code><button type="button" id="ob-copy">Kopieren</button></div></li><li><b>Abonnieren</b> tippen.</li></ol></details>';
-}
 function pushStepHtml(){
-  var intro='<p>Bei Abfahrt, Grenzen, Pausen, Stau, Umleitungen und Ankunft bekommst du eine Nachricht aufs Handy.</p>';
-  if(!pushSupported())return intro+'<p>Dein Browser kann keine Benachrichtigungen von Webseiten empfangen. Nutze stattdessen die kostenlose App ntfy:</p>'+ntfyHtml().replace('<details class="alt"><summary>Alternative: App ntfy</summary>','<div>').replace('</details>','</div>');
-  if(isIOS&&!isStandalone)return intro+'<ol><li>Speichere die Seite zuerst als App (Schritt 2).</li><li>Öffne sie dann <b>über das neue Symbol auf dem Home-Bildschirm</b>.</li><li>Dort tippst du auf <b>„Benachrichtigungen einschalten“</b>.</li></ol><p class="fine">Auf dem iPhone geht das nur in der gespeicherten App, nicht in Safari.</p>'+ntfyHtml();
-  var perm=Notification.permission;
-  if(perm==='denied')return intro+'<p class="ok-line">Benachrichtigungen sind für diese Seite blockiert.</p><p class="fine">Erlaube sie in den Einstellungen deines Handys (iPhone: Einstellungen › Mitteilungen › Bus Live).</p>'+ntfyHtml();
-  return intro+'<button type="button" class="ob-cta ob-inst" id="ob-push">Benachrichtigungen einschalten</button><p class="fine" id="ob-push-st" role="status"></p>'+ntfyHtml();
+  var intro='<p>Bei Abfahrt, Grenzen, Pausen, Stau, Umleitungen und Ankunft bekommst du eine Nachricht aufs Handy. Du musst dafür nichts installieren.</p>';
+  if(!pushSupported())return intro+'<p class="ok-line">Dieser Browser kann leider keine Benachrichtigungen empfangen.</p><p class="fine">Auf dem iPhone braucht es iOS 16.4 oder neuer. Alles Wichtige siehst du trotzdem jederzeit hier auf der Seite.</p>';
+  if(isIOS&&!isStandalone)return intro+'<ol><li>Speichere die Seite zuerst als App (Schritt 2).</li><li>Öffne sie dann <b>über das neue Symbol auf dem Home-Bildschirm</b>.</li><li>Dort tippst du auf <b>„Benachrichtigungen einschalten“</b>.</li></ol><p class="fine">Auf dem iPhone geht das nur in der gespeicherten App, nicht in Safari.</p>';
+  if(Notification.permission==='denied')return intro+'<p class="ok-line">Benachrichtigungen sind für diese Seite blockiert.</p><p class="fine">Erlaube sie in den Einstellungen deines Handys (iPhone: Einstellungen › Mitteilungen › Bus Live).</p>';
+  return intro+'<button type="button" class="ob-cta ob-inst" id="ob-push">Benachrichtigungen einschalten</button><p class="fine" id="ob-push-st" role="status"></p>';
 }
 function wirePush(){
   var btn=document.getElementById('ob-push'), st=document.getElementById('ob-push-st');
@@ -921,11 +911,7 @@ function obShow(){
   var ins=document.getElementById('ob-install');
   if(ins)ins.onclick=function(){if(!installEvt)return;installEvt.prompt();installEvt.userChoice.then(function(){installEvt=null;obShow()},function(){})};
   if(pushSupported())wirePush();
-  var cp=document.getElementById('ob-copy');
-  if(cp)cp.onclick=function(){
-    var ok=function(){cp.textContent='Kopiert'};
-    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(NTFY_TOPIC).then(ok,selectTopic);else selectTopic();
-  };
+
 }
 function obOpenAt(i){obStep=i||0;obOpen=true;document.getElementById('ob').hidden=false;document.body.classList.add('noscroll');obShow();document.getElementById('ob-next').focus()}
 function obClose(){obOpen=false;document.getElementById('ob').hidden=true;document.body.classList.remove('noscroll');try{localStorage.setItem('tl-ob1','1')}catch(e){}}

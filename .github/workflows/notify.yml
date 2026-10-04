@@ -1,7 +1,8 @@
 name: Benachrichtigungen
 
 # Läuft bei jeder neuen Position im Branch "live" und alle 15 Minuten (neue Anmeldungen abholen).
-# Schickt bei Bedarf Push-Nachrichten an angemeldete Handys und an das ntfy-Thema.
+# Schickt bei Bedarf Push-Nachrichten an angemeldete Handys. Anmeldungen kommen über einen
+# unsichtbaren ntfy-Briefkasten (SUBS_TOPIC); die Nutzer brauchen dafür keine App.
 on:
   push:
     branches: [live]
@@ -39,7 +40,6 @@ jobs:
 
       - name: Prüfen und benachrichtigen
         env:
-          NTFY_TOPIC: toskana26-bus-4mq8tz
           SUBS_TOPIC: toskana26-subs-r8x2kp
           VAPID_PUBLIC: BEUcM2EYTTmgcaBX2OWDhRxC6rD02HrXhDZqLjjzZ_YZ0leAIYj__XqZJ6Xo6QJeRj0N3TEklowThK79ErVGQMc
           VAPID_PRIVATE: ${{ secrets.VAPID_PRIVATE }}

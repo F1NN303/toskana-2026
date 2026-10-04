@@ -127,12 +127,15 @@ async function pushTo(endpointKey, sub, n) {
   }
 }
 async function send(n) {
-  const body = { topic: TOPIC, title: n.title, message: n.message, tags: n.tags || [], priority: n.priority || 3, click: PAGE };
-  if (DRY || !TOPIC) { console.log('[Nachricht]', n.title, '|', n.message); return; }
-  try {
-    const r = await fetch('https://ntfy.sh/', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: AbortSignal.timeout(15000) });
-    console.log('ntfy', r.status, n.title);
-  } catch (e) { console.log('ntfy Fehler', String(e)); }
+  if (DRY) { console.log('[Nachricht]', n.title, '|', n.message); return; }
+  // Optional zusätzlich an ein ntfy-Thema (nur wenn NTFY_TOPIC gesetzt ist)
+  if (TOPIC) {
+    const body = { topic: TOPIC, title: n.title, message: n.message, tags: n.tags || [], priority: n.priority || 3, click: PAGE };
+    try {
+      const r = await fetch('https://ntfy.sh/', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: AbortSignal.timeout(15000) });
+      console.log('ntfy', r.status, n.title);
+    } catch (e) { console.log('ntfy Fehler', String(e)); }
+  }
   let ok = 0;
   for (const [key, sub] of Object.entries(subs)) {
     if (await pushTo(key, sub, n)) ok++; else { delete subs[key]; }

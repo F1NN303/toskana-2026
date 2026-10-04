@@ -20,4 +20,8 @@ Nach der Fahrt: Branch `live` löschen, damit der Streckenverlauf nicht öffentl
 
 ## Benachrichtigungen
 
-Bei jeder neuen Position im Branch `live` läuft `.github/workflows/notify.yml` (auch im Branch `live` abgelegt) und ruft `scripts/notify.mjs` auf. Das Skript schickt bei Abfahrt, Grenzen, Tunneln, Pausen, Stau, Umleitungen, Ankunft und bei Nachrichten aus der App eine Meldung an das ntfy-Thema `toskana26-bus-4mq8tz`. Gemeldetes merkt es sich in `state.json`, die gefahrene Spur steht in `track.json` (nur während der Fahrten).
+Echte Push-Benachrichtigungen über die Webseite (PWA), ohne Zusatz-App. Auf dem iPhone muss die Seite dafür als App auf dem Home-Bildschirm gespeichert sein (iOS 16.4+).
+
+- Anmelden: In der Einführung auf „Benachrichtigungen einschalten“ tippen. Das Handy legt seine Push-Adresse in einem unsichtbaren ntfy-Briefkasten ab (`toskana26-subs-r8x2kp`).
+- `.github/workflows/notify.yml` läuft bei jeder neuen Position im Branch `live` und alle 15 Minuten. `scripts/notify.mjs` holt neue Anmeldungen ab (`subs.json`), erkennt Abfahrt, Grenzen, Tunnel, Pausen, Stau, Umleitungen und Ankunft und schickt die Push-Nachrichten mit dem VAPID-Schlüssel (Secret `VAPID_PRIVATE`).
+- Gemeldetes steht in `state.json`, die gefahrene Spur in `track.json` (nur während der Fahrten).
