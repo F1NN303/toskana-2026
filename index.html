@@ -451,6 +451,15 @@ svg .mk-works text{fill:#111}
 .fd-rast li{display:grid;grid-template-columns:18px minmax(0,1fr) auto;gap:9px;align-items:center}
 .fd-rast .num{font-family:var(--f-mono);font-size:.82rem;font-weight:700}
 .fd-rast small{color:var(--paint-dim)}
+
+.fd-pic{height:auto;aspect-ratio:16/9;max-width:100%;padding:9px;align-items:flex-end;background:#2a2d30}
+.fd-pic img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.fd-pic::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.55),rgba(0,0,0,0) 45%)}
+.fd-pic .fd-tag{z-index:1}
+.fd-card{box-shadow:0 3px 0 rgba(0,0,0,.4)}
+.fd-nm b{font-size:1.05rem}
+.credits{margin:6px 0 0;padding-left:18px;font-size:.78rem;color:var(--paint-dim)}
+.credits a{color:var(--paint-dim)}
 </style>
 <script type="application/json" id="state">{"checkins":[],"message":"","messageAt":null,"gpsLink":"","variant":{"hin":"cisa","rueck":"cisa"}}</script>
 <div id="app"></div>
@@ -1306,7 +1315,7 @@ function render(){
   var now=Date.now(), ph='vorher', e=null, D=null;
   try{ph=phaseNow(now);if(ph==='hin'||ph==='rueck')e=estimate(ph,now)}catch(err){console.error(err)}
   try{var today=berlinDate(now);D=DAYS.filter(function(d){return d.date===today})[0]}catch(err){}
-  var put=function(id,fn,text){try{var el=document.getElementById(id);if(!el)return;var v=fn();if(text)el.textContent=v;else el.innerHTML=v}catch(err){console.error(id,err)}};
+  var put=function(id,fn,text){try{var el=document.getElementById(id);if(!el)return;var v=fn();if(el._v===v)return;el._v=v;if(text)el.textContent=v;else el.innerHTML=v}catch(err){console.error(id,err)}};
   put('s-hero',function(){return hero(ph,now,e)});
   put('s-traffic',function(){return trafficBox(ph,e)});
   try{updateMap(ph,e)}catch(err){console.error('Karte',err)}
@@ -1386,6 +1395,16 @@ function foodAuto(ph,now){
   if(d==='2026-10-08')return t<13*60+30?'pi':(t<17*60?'vi':'mt');
   return 'mt';
 }
+var FPH={pizza:['pizza1','pizza2','pizza3','pizza4'],taglio:['taglio1','taglio2'],panini:['panino1','panino2','panino3'],snack:['panino1','panino3','panino2'],kebab:['kebab1'],gelato:['gelato1','gelato2'],burger:['burger1','burger2'],rest:['pasta1','pasta2','pasta3'],asia:['asia1']};
+function fHash(t){var h=0;for(var i=0;i<t.length;i++)h=(h*31+t.charCodeAt(i))|0;return Math.abs(h)}
+function foodPhoto(s){
+  if(s.img)return s.img;
+  var n=(s.n||'').toLowerCase(), k=s.c;
+  if(/kebab|döner|doner/.test(n))k='kebab';else if(s.c==='pizza'&&s.ff)k='taglio';
+  var a=FPH[k]||FPH.rest;return a[fHash(s.n||'')%a.length];
+}
+var FOOD_CREDITS=[{"k": "pizza1", "a": "Valerio Capello", "l": "CC BY-SA 3.0", "u": "https://commons.wikimedia.org/wiki/File:Eq_it-na_pizza-margherita_sep2005_sml.jpg"}, {"k": "pizza2", "a": "CDibisceglia", "l": "CC BY-SA 4.0", "u": "https://commons.wikimedia.org/wiki/File:Pizza_Napoletana_Contemporanea.jpg"}, {"k": "pizza3", "a": "bnilsen from Nashville, USA", "l": "CC BY-SA 2.0", "u": "https://commons.wikimedia.org/wiki/File:Tony%27s_Napoletana_Margherita_Pizza_(5991972038).jpg"}, {"k": "pizza4", "a": "Thomas", "l": "CC BY 2.0", "u": "https://commons.wikimedia.org/wiki/File:Pizza_Napoletana_(33247617972).jpg"}, {"k": "taglio1", "a": "Shoebill2", "l": "CC0", "u": "https://commons.wikimedia.org/wiki/File:Pizza_al_taglio_(cropped).jpg"}, {"k": "taglio2", "a": "Shoebill2", "l": "Public domain", "u": "https://commons.wikimedia.org/wiki/File:Pizza_al_taglio.jpg"}, {"k": "panino1", "a": "François Nguyen", "l": "CC BY 2.0", "u": "https://commons.wikimedia.org/wiki/File:Black_truffle_flavor_chicken_focaccia_sandwich_(1).jpg"}, {"k": "panino2", "a": "Pava", "l": "CC BY-SA 3.0 it", "u": "https://commons.wikimedia.org/wiki/File:%22_15_-_ITALY_-_sandwich_with_Prosciutto_Crudo_PARMA_32_mesi_(32_months)_and_FIORE_Sardo_DOP_cheese.jpg"}, {"k": "panino3", "a": "Andy Li", "l": "CC0", "u": "https://commons.wikimedia.org/wiki/File:Focaccia_sandwiches_for_sale_on_the_counter_of_Fabio%27s_2026-02-12.jpg"}, {"k": "kebab1", "a": "AleGranholm", "l": "CC BY 2.0", "u": "https://commons.wikimedia.org/wiki/File:D%C3%B6ner_Kebab,_Berlin,_2010_(01).jpg"}, {"k": "gelato1", "a": "Sue Reynolds", "l": "CC BY-SA 2.0", "u": "https://commons.wikimedia.org/wiki/File:Gelato,_Florence,_Italy_2016.jpg"}, {"k": "gelato2", "a": "Nicholas Astore", "l": "CC BY-SA 4.0", "u": "https://commons.wikimedia.org/wiki/File:White_Chocolate_Gelato.jpg"}, {"k": "burger1", "a": "Mosa Meat", "l": "CC BY 4.0", "u": "https://commons.wikimedia.org/wiki/File:Cultivated_hamburger,_2013.jpg"}, {"k": "burger2", "a": "Luke", "l": "Public domain", "u": "https://commons.wikimedia.org/wiki/File:Burger_King_double_cheeseburger.jpg"}, {"k": "pasta1", "a": "Catia Giaccherini", "l": "CC BY-SA 3.0", "u": "https://commons.wikimedia.org/wiki/File:Tagliatelle_al_rag%C3%B9_03.jpg"}, {"k": "pasta2", "a": "Ivan Vighetto", "l": "CC BY-SA 3.0", "u": "https://commons.wikimedia.org/wiki/File:Tagliatelle_al_rag%C3%B9_(image_modified).jpg"}, {"k": "pasta3", "a": "Luca Nebuloni", "l": "CC BY 2.0", "u": "https://commons.wikimedia.org/wiki/File:Pici_with_finocchiona_(31531968526).jpg"}, {"k": "asia1", "a": "Nesnad", "l": "CC BY 2.5", "u": "https://commons.wikimedia.org/wiki/File:2007feb-sushi-odaiba-manytypes.jpg"}, {"k": "vinaio", "a": "KGghj", "l": "CC0", "u": "https://commons.wikimedia.org/wiki/File:All%27AnticoVinaio_ottobre2025.jpg"}, {"k": "lampredotto", "a": "Lamacchiacosta", "l": "CC BY-SA 4.0", "u": "https://commons.wikimedia.org/wiki/File:Panino_lampredotto.jpg"}, {"k": "cecina", "a": "Alessio Sbarbaro", "l": "CC BY-SA 3.0", "u": "https://commons.wikimedia.org/wiki/File:Farinata_di_ceci_01.jpg"}];
+function foodCredits(){return FOOD_CREDITS.map(function(c){return '<li><a href="'+esc(c.u)+'" target="_blank" rel="noopener">'+esc(c.k)+'</a>: '+esc(c.a)+', '+esc(c.l)+'</li>'}).join('')}
 function foodArt(c,i){
   var k=FCOL[c]||FCOL.rest, s='<svg viewBox="0 0 300 80" preserveAspectRatio="none" aria-hidden="true"><rect width="300" height="80" fill="'+k[0]+'"/>';
   for(var j=0;j<6;j++){var x=(j*61+i*37)%330-15,y=(j*29+i*23)%96-8,r=12+(j*7+i*5)%20;s+='<circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="'+k[1]+'" opacity="'+(0.25+0.08*(j%3))+'"/>'}
@@ -1408,7 +1427,7 @@ function foodList(spots,ref,now){
 function foodCard(x,i,city){
   var s=x.s, oh=x.oh, pr=x.pr, q=encodeURIComponent(s.n+', '+city);
   var hrs=!oh.known?'<span class="fd-unk">Zeiten unbekannt</span>':(oh.open?(oh.until==null?'rund um die Uhr':'offen bis '+hhmm(oh.until)):'<span class="fd-cl">geschlossen'+(oh.from!=null?', ab '+hhmm(oh.from):'')+'</span>');
-  return '<article class="fd-card'+(s.tip?' tip':'')+'"><div class="fd-pic">'+foodArt(s.c,i)+'<span class="fd-tag">'+esc(FCAT[s.c]||'Essen')+'</span>'+(s.tip?'<span class="fd-tag y">Unser Tipp</span>':'')+'</div>'+
+  return '<article class="fd-card'+(s.tip?' tip':'')+'"><div class="fd-pic"><img src="img/food/'+foodPhoto(s)+'.webp" alt="" loading="lazy" decoding="async" width="640" height="400">'+'<span class="fd-tag">'+esc(FCAT[s.c]||'Essen')+'</span>'+(s.tip?'<span class="fd-tag y">Unser Tipp</span>':'')+'</div>'+
     '<div class="fd-bd"><div class="fd-nm"><b>'+esc(s.n)+'</b><span class="fd-pr">'+(pr[1]<=10?'€':pr[1]<=20?'€€':'€€€')+' · ca. '+pr[0]+'–'+pr[1]+' €</span></div>'+
     '<div class="fd-meta"><span>'+x.walk+' Min zu Fuß</span><span>'+hrs+'</span>'+(s.st?'<span>'+esc(s.st)+'</span>':'')+'</div>'+
     (s.tip?'<p class="fd-note">'+esc(s.tip)+'</p>':'')+
@@ -1521,7 +1540,7 @@ document.getElementById('app').innerHTML=
   '<div class="warn">'+infoSq('i')+'<div><h3>Gepäck und Geld</h3><p>Sporttasche statt Hartschalenkoffer, höchstens 20 kg. Für die Nacht: Kissen, Wasser, Snacks, Powerbank. Standseilbahn 7,50 €, Mittagessen auf den Ausflügen zahlt ihr selbst.</p></div></div>'+
  '</div></section>'+
  '<div class="edge"></div>'+
- '<footer>Die Position kommt live vom GPS eines Handys im Bus und wird etwa jede Minute aktualisiert. Fällt das Signal länger als 15 Minuten aus (Funkloch, Tunnel, Akku), schätzt die Seite die Position nach dem Fahrplan, bis wieder ein Signal kommt.<details class="privacy"><summary>Datenschutz</summary><p>Das ist eine private, nicht offizielle Seite ohne Werbung und ohne Cookies. Einstellungen wie die Kartenfilter speichert nur dein eigenes Gerät.</p><p>Während der Hin- und Rückfahrt wird der Standort des Busses öffentlich bei GitHub gespeichert, damit diese Seite ihn anzeigen kann. Wer Benachrichtigungen einschaltet, hinterlegt dafür eine anonyme Push-Adresse ohne Namen. Beides wird nach der Fahrt gelöscht.</p><p>„Mein Standort“ bei Essen in der Nähe fragt dein Handy nur, wenn du darauf tippst. Der Standort bleibt auf deinem Gerät. Nur wenn du außerhalb der Ausflugsorte bist, geht er auf etwa 100 m gerundet an OpenStreetMap, um Läden in der Nähe zu finden.</p><p>Beim Laden ruft die Seite Inhalte von diesen Diensten ab, die dabei deine IP-Adresse sehen: GitHub (Seite und Daten), OpenStreetMap (Karte), unpkg (Karten-Programm), Open-Meteo (Wetter), Autobahn GmbH (Verkehr), Overpass/OpenStreetMap (Raststätten, Essen in der Nähe) und ntfy.sh (nur bei der Anmeldung für Benachrichtigungen).</p></details></footer>'+
+ '<footer>Die Position kommt live vom GPS eines Handys im Bus und wird etwa jede Minute aktualisiert. Fällt das Signal länger als 15 Minuten aus (Funkloch, Tunnel, Akku), schätzt die Seite die Position nach dem Fahrplan, bis wieder ein Signal kommt.<details class="privacy"><summary>Datenschutz</summary><p>Das ist eine private, nicht offizielle Seite ohne Werbung und ohne Cookies. Einstellungen wie die Kartenfilter speichert nur dein eigenes Gerät.</p><p>Während der Hin- und Rückfahrt wird der Standort des Busses öffentlich bei GitHub gespeichert, damit diese Seite ihn anzeigen kann. Wer Benachrichtigungen einschaltet, hinterlegt dafür eine anonyme Push-Adresse ohne Namen. Beides wird nach der Fahrt gelöscht.</p><p>„Mein Standort“ bei Essen in der Nähe fragt dein Handy nur, wenn du darauf tippst. Der Standort bleibt auf deinem Gerät. Nur wenn du außerhalb der Ausflugsorte bist, geht er auf etwa 100 m gerundet an OpenStreetMap, um Läden in der Nähe zu finden.</p><p>Beim Laden ruft die Seite Inhalte von diesen Diensten ab, die dabei deine IP-Adresse sehen: GitHub (Seite und Daten), OpenStreetMap (Karte), unpkg (Karten-Programm), Open-Meteo (Wetter), Autobahn GmbH (Verkehr), Overpass/OpenStreetMap (Raststätten, Essen in der Nähe) und ntfy.sh (nur bei der Anmeldung für Benachrichtigungen).</p></details><details class="privacy"><summary>Bildnachweise</summary><p>Die Essensfotos sind Beispielbilder von Wikimedia Commons, nicht aus den jeweiligen Läden (außer All’Antico Vinaio). Sie liegen direkt auf dieser Seite.</p><ul class="credits">'+foodCredits()+'</ul></details></footer>'+
 '</div>';
 
 wireFood();
