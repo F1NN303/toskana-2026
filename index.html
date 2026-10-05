@@ -414,6 +414,43 @@ svg .mk-works text{fill:#111}
 
 .tsign .num s{display:block;font-size:.72em;opacity:.6;font-weight:600}
 .shiftnote{margin-top:8px;font-size:.85em;font-weight:700;color:var(--yellow)}
+
+#s-food{gap:14px}
+.fd-places,.fd-filters{display:flex;flex-wrap:wrap;gap:7px}
+.fd-chip{font:inherit;font-weight:800;font-size:.82rem;padding:6px 12px;border-radius:999px;border:2px solid #4a4e52;background:transparent;color:var(--paint);cursor:pointer}
+.fd-chip.f{font-weight:700;color:var(--paint-dim);border-width:1.5px}
+.fd-chip[aria-pressed="true"]{background:var(--yellow);border-color:var(--yellow);color:#111}
+.fd-chip.me{border-style:dashed}
+.fd-head .in{display:flex;flex-direction:column;gap:3px;padding:10px 14px}
+.fd-head .small{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.07em;text-transform:uppercase;opacity:.85}
+.fd-head strong{font-size:1.35rem;font-weight:900;line-height:1.15}
+.fd-sub{font-size:.85rem;opacity:.9}
+.fd-bus{margin-top:6px;align-self:flex-start;background:var(--yellow);color:#111;border-radius:5px;padding:5px 9px;font-size:.85rem;font-weight:800}
+.fd-bus.warn{background:var(--red);color:#fff}
+.fd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.fd-card{background:var(--asphalt-hi);border-radius:10px;overflow:hidden;border:2px solid transparent;display:flex;flex-direction:column}
+.fd-card.tip{border-color:var(--yellow)}
+.fd-pic{height:62px;position:relative;display:flex;align-items:flex-end;justify-content:space-between;padding:7px}
+.fd-pic svg{position:absolute;inset:0;width:100%;height:100%}
+.fd-tag{position:relative;background:rgba(0,0,0,.6);color:#fff;font-size:.75rem;font-weight:800;padding:3px 8px;border-radius:5px}
+.fd-tag.y{background:var(--yellow);color:#111}
+.fd-bd{padding:9px 12px 12px;display:flex;flex-direction:column;gap:5px;flex:1}
+.fd-nm{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.fd-nm b{font-weight:800;min-width:0}
+.fd-pr{font-family:var(--f-mono);font-weight:700;color:var(--yellow);font-size:.8rem;white-space:nowrap}
+.fd-meta{display:flex;flex-wrap:wrap;gap:3px 12px;font-family:var(--f-mono);font-size:.78rem;color:var(--paint-dim)}
+.fd-cl{color:#ff8a7a}.fd-unk{color:var(--muted)}
+.fd-note{margin:0;font-size:.86rem;color:#bfe8d2}
+.fd-acts{display:flex;gap:7px;margin-top:auto;padding-top:5px}
+.fd-acts a{flex:1;text-align:center;text-decoration:none;font-size:.8rem;font-weight:800;padding:7px 6px;border-radius:6px;border:1.5px solid #4a4e52;color:var(--paint)}
+.fd-acts a.go{background:var(--yellow);border-color:var(--yellow);color:#111}
+.fd-acts a:focus-visible,.fd-chip:focus-visible,.fd-more:focus-visible{outline:3px solid var(--yellow);outline-offset:2px}
+.fd-more{font:inherit;font-weight:800;align-self:flex-start;background:transparent;color:var(--paint);border:2px solid #4a4e52;border-radius:6px;padding:7px 14px;cursor:pointer}
+.fd-empty{background:var(--asphalt-hi);border-radius:10px;padding:16px;color:var(--paint-dim)}
+.fd-rast{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px}
+.fd-rast li{display:grid;grid-template-columns:18px minmax(0,1fr) auto;gap:9px;align-items:center}
+.fd-rast .num{font-family:var(--f-mono);font-size:.82rem;font-weight:700}
+.fd-rast small{color:var(--paint-dim)}
 </style>
 <script type="application/json" id="state">{"checkins":[],"message":"","messageAt":null,"gpsLink":"","variant":{"hin":"cisa","rueck":"cisa"}}</script>
 <div id="app"></div>
@@ -966,7 +1003,7 @@ var lastEta={};
 function at(date,hm){return Date.parse(date+'T'+hm+':00+02:00')}
 function ceil5(ms){return Math.ceil(ms/300000)*300000}
 function arrivalOf(rp,now){
-  var s=tripState[rp];
+  var s=typeof tripState==='object'&&tripState?tripState[rp]:null;
   if(s&&s.arrived)return {t:s.arrived,real:true};
   var ph=phaseNow(now);
   if(ph===rp){var e=estimate(rp,now);if(!e.done){lastEta[rp]=e.eta;return {t:e.eta,real:false}}}
@@ -1275,6 +1312,7 @@ function render(){
   try{updateMap(ph,e)}catch(err){console.error('Karte',err)}
   put('s-events',function(){return eventsBox(ph)});
   put('s-next',function(){return pauseBox(ph,e,now)+nextStops(ph,e)});
+  put('s-food',function(){return foodBox(ph,now,e)});
   put('s-key2',function(){return '<span>'+mkIcon('jam')+'Stau, Unfall, Sperrung</span><span>'+mkIcon('slow')+'zähfließend</span><span>'+mkIcon('works')+'Baustelle mit Einschränkung</span><span>'+mkIcon('pause')+'Pause</span><span>'+mkIcon('detour')+'Umleitung</span>'});
   put('s-dist',function(){return distSign(ph,now,e)});
   put('s-tl',function(){return timeline(ph,now,e)});
@@ -1282,6 +1320,178 @@ function render(){
   put('s-week',function(){return week(now)});
   put('s-upd',function(){return dy(now)+' '+tm(now)},true);
   try{updateTacho(ph,e,now)}catch(err){console.error('Tacho',err)}
+}
+
+/* Essen in der Nähe: kuratierte Tipps + OpenStreetMap (food.json), sortiert nach Preis-Leistung und Fußweg */
+var food=null, foodSel=null, foodF={open:true,cheap:false,cat:null}, foodMore=false, myPos=null, myPosErr='', myLive={key:'',spots:null,busy:false};
+var FCAT={pizza:'Pizza',panini:'Panini & Imbiss',snack:'Imbiss',gelato:'Gelato',burger:'Burger',pasta:'Trattoria',rest:'Restaurant',asia:'Asiatisch'};
+var FCOL={pizza:['#a4502a','#d9823f'],panini:['#5f6b2b','#a3a957'],snack:['#5f6b2b','#a3a957'],gelato:['#7a3b52','#d58aa8'],burger:['#8c1d18','#e0b21b'],rest:['#6b4a1c','#c9963f'],asia:['#2e4a63','#6f9cc2']};
+var FCHIPS=[['pizza','Pizza'],['panini','Panini'],['gelato','Gelato'],['rest','Trattoria'],['burger','Burger']];
+var FPLACES=[['mt','Montecatini'],['si','Siena'],['fi','Florenz'],['pi','Pisa'],['vi','Viareggio']];
+function pullFood(){if(!window.fetch)return;fetch('food.json').then(function(r){return r.ok?r.json():null}).then(function(j){if(j&&j.places){food=j;render()}}).catch(function(){})}
+
+/* Öffnungszeiten im OSM-Format (die üblichen Fälle): liefert {known, open, until} */
+var OHD=['Mo','Tu','We','Th','Fr','Sa','Su'];
+function ohDays(s){
+  var set={};s.split(',').forEach(function(p){
+    var m=/^(Mo|Tu|We|Th|Fr|Sa|Su)(?:-(Mo|Tu|We|Th|Fr|Sa|Su))?$/.exec(p.trim());if(!m)return;
+    var a=OHD.indexOf(m[1]),b=m[2]?OHD.indexOf(m[2]):a;for(var i=a;;i=(i+1)%7){set[i]=1;if(i===b)break}
+  });return set;
+}
+function ohParse(oh){
+  if(!oh)return null;oh=oh.trim();if(oh==='24/7')return 'all';
+  var days=[null,null,null,null,null,null,null], ok=false;
+  oh.split(/\s*;\s*/).forEach(function(rule){
+    rule=rule.replace(/\bPH\b,?\s*|,\s*PH\b/g,'').trim();if(!rule)return;
+    var m=/^((?:(?:Mo|Tu|We|Th|Fr|Sa|Su)(?:-(?:Mo|Tu|We|Th|Fr|Sa|Su))?)(?:\s*,\s*(?:Mo|Tu|We|Th|Fr|Sa|Su)(?:-(?:Mo|Tu|We|Th|Fr|Sa|Su))?)*)?\s*(.*)$/.exec(rule);
+    if(!m)return;
+    var ds=m[1]?ohDays(m[1].replace(/\s/g,'')):{0:1,1:1,2:1,3:1,4:1,5:1,6:1}, rest=m[2].trim(), rs=[];
+    if(/^(off|closed)$/i.test(rest))rs=[];
+    else{
+      var bad=false;rest.split(/\s*,\s*/).forEach(function(t){var q=/^(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})\+?$/.exec(t);if(!q){bad=true;return}
+        var a=+q[1]*60+ +q[2], b=+q[3]*60+ +q[4];if(b<=a)b+=1440;rs.push([a,b])});
+      if(bad||!rs.length)return;
+    }
+    ok=true;Object.keys(ds).forEach(function(d){days[d]=rs});
+  });
+  return ok?days:null;
+}
+function berlinWdMin(ms){
+  var p=new Intl.DateTimeFormat('en-GB',{timeZone:TZ,weekday:'short',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(new Date(ms)),o={};
+  p.forEach(function(x){o[x.type]=x.value});
+  return {wd:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].indexOf(o.weekday),min:(+o.hour%24)*60+ +o.minute};
+}
+function ohNow(s,now){
+  if(s._oh===undefined)s._oh=ohParse(s.oh);
+  var P=s._oh;if(!P)return {known:false};
+  if(P==='all')return {known:true,open:true,until:null};
+  var t=berlinWdMin(now), today=P[t.wd]||[], prev=P[(t.wd+6)%7]||[];
+  if(!P.some(function(x){return x}))return {known:false};
+  if(P[t.wd]===null&&P[(t.wd+6)%7]===null)return {known:false};
+  for(var i=0;i<prev.length;i++)if(prev[i][1]>1440&&t.min<prev[i][1]-1440)return {known:true,open:true,until:prev[i][1]-1440};
+  for(var j=0;j<today.length;j++)if(t.min>=today[j][0]&&t.min<today[j][1])return {known:true,open:true,until:today[j][1]%1440};
+  var nx=today.filter(function(r){return r[0]>t.min})[0];
+  return {known:true,open:false,from:nx?nx[0]:null};
+}
+function hhmm(m){return pad2(Math.floor(m/60)%24)+':'+pad2(m%60)}
+function fPrice(s){
+  if(s.p)return s.p;
+  return {gelato:[3,5],panini:[5,9],snack:[5,9],burger:[6,10],pizza:s.ff?[3,7]:[7,13],asia:[10,18],rest:[14,25]}[s.c]||[10,20];
+}
+function foodAuto(ph,now){
+  if(ph==='hin'||ph==='rueck')return 'bus';
+  var d=berlinDate(now), t=berlinWdMin(now).min;
+  if(d==='2026-10-06')return t<17*60?'si':'mt';
+  if(d==='2026-10-07')return t<18*60?'fi':'mt';
+  if(d==='2026-10-08')return t<13*60+30?'pi':(t<17*60?'vi':'mt');
+  return 'mt';
+}
+function foodArt(c,i){
+  var k=FCOL[c]||FCOL.rest, s='<svg viewBox="0 0 300 80" preserveAspectRatio="none" aria-hidden="true"><rect width="300" height="80" fill="'+k[0]+'"/>';
+  for(var j=0;j<6;j++){var x=(j*61+i*37)%330-15,y=(j*29+i*23)%96-8,r=12+(j*7+i*5)%20;s+='<circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="'+k[1]+'" opacity="'+(0.25+0.08*(j%3))+'"/>'}
+  return s+'</svg>';
+}
+function foodList(spots,ref,now){
+  return spots.map(function(s){
+    var d=kmDist(ref.lat,ref.lon,s.lat,s.lon), walk=Math.max(1,Math.round(d*1.3/4.6*60)), pr=fPrice(s), oh=ohNow(s,now);
+    var sc=(s.tip?18:0)-walk*0.7-(pr[0]+pr[1])/2*0.6+(oh.known?2:-3)+(s.c==='rest'?-2:0);
+    if(oh.known&&oh.open&&oh.until!=null){var left=(oh.until-berlinWdMin(now).min+1440)%1440;if(left<30)sc-=10}
+    return {s:s,d:d,walk:walk,pr:pr,oh:oh,sc:sc};
+  }).filter(function(x){
+    if(x.d>2.2)return false;
+    if(foodF.open&&x.oh.known&&!x.oh.open)return false;
+    if(foodF.cheap&&x.pr[1]>12)return false;
+    if(foodF.cat&&!(x.s.c===foodF.cat||(foodF.cat==='panini'&&x.s.c==='snack')||(foodF.cat==='rest'&&x.s.c==='pasta')))return false;
+    return true;
+  }).sort(function(a,b){return b.sc-a.sc});
+}
+function foodCard(x,i,city){
+  var s=x.s, oh=x.oh, pr=x.pr, q=encodeURIComponent(s.n+', '+city);
+  var hrs=!oh.known?'<span class="fd-unk">Zeiten unbekannt</span>':(oh.open?(oh.until==null?'rund um die Uhr':'offen bis '+hhmm(oh.until)):'<span class="fd-cl">geschlossen'+(oh.from!=null?', ab '+hhmm(oh.from):'')+'</span>');
+  return '<article class="fd-card'+(s.tip?' tip':'')+'"><div class="fd-pic">'+foodArt(s.c,i)+'<span class="fd-tag">'+esc(FCAT[s.c]||'Essen')+'</span>'+(s.tip?'<span class="fd-tag y">Unser Tipp</span>':'')+'</div>'+
+    '<div class="fd-bd"><div class="fd-nm"><b>'+esc(s.n)+'</b><span class="fd-pr">'+(pr[1]<=10?'€':pr[1]<=20?'€€':'€€€')+' · ca. '+pr[0]+'–'+pr[1]+' €</span></div>'+
+    '<div class="fd-meta"><span>'+x.walk+' Min zu Fuß</span><span>'+hrs+'</span>'+(s.st?'<span>'+esc(s.st)+'</span>':'')+'</div>'+
+    (s.tip?'<p class="fd-note">'+esc(s.tip)+'</p>':'')+
+    '<div class="fd-acts"><a class="go" href="https://www.google.com/maps/dir/?api=1&destination='+s.lat+','+s.lon+'&travelmode=walking" target="_blank" rel="noopener">Route hin</a><a href="https://www.google.com/maps/search/?api=1&query='+q+'" target="_blank" rel="noopener">Fotos und Bewertungen</a></div></div></article>';
+}
+function foodBox(ph,now,e){
+  var auto=foodAuto(ph,now), sel=foodSel||auto, h='<div class="sec-title"><h2>Essen in der Nähe</h2><span class="small">gut und günstig, sortiert nach Preis-Leistung und Fußweg</span></div>';
+  h+='<div class="fd-places" role="group" aria-label="Ort wählen">'+(ph==='hin'||ph==='rueck'?'<button type="button" class="fd-chip" data-fp="bus" aria-pressed="'+(sel==='bus')+'">Unterwegs</button>':'')+
+    FPLACES.map(function(p){return '<button type="button" class="fd-chip" data-fp="'+p[0]+'" aria-pressed="'+(sel===p[0])+'">'+p[1]+'</button>'}).join('')+
+    '<button type="button" class="fd-chip me" data-fp="me" aria-pressed="'+(sel==='me')+'">Mein Standort</button></div>';
+  // Unterwegs: Raststätten voraus
+  if(sel==='bus'){
+    var rp=ph==='rueck'?'rueck':'hin', r=e?e.r:route(rp), cur=(e&&e.eff>0)?e.km:0, list=[];
+    pois.forEach(function(o){if(o.k!=='s'||!poiSideOk(o,rp,r.key))return;var a=poiAlong(o,r);if(a!=null&&a>cur+1)list.push({o:o,ahead:a-cur})});
+    list.sort(function(a,b){return a.ahead-b.ahead});
+    h+='<div class="sign brown fd-head"><div class="in"><span class="small">Im Bus</span><strong>Raststätten mit Essen voraus</strong><span class="fd-sub">Wo der Bus wirklich hält, entscheidet der Fahrer. Die Pausen-Prognose steht bei der Karte.</span></div></div>';
+    h+=list.length?'<ul class="fd-rast">'+list.slice(0,6).map(function(x){var sp=curSpeed&&curSpeed()||75;return '<li>'+poiBadge(x.o.mc?'mc':'rs')+'<span>'+esc(poiName(x.o))+(x.o.mc?' <small>mit McDonald’s</small>':'')+'</span><span class="num">'+n1(x.ahead)+' km · ca. '+tm(now+x.ahead/Math.max(40,Math.min(95,sp))*3600000)+'</span></li>'}).join('')+'</ul>':'<p class="fine">Die Raststätten-Liste lädt noch.</p>';
+    return h;
+  }
+  var P=null, ref=null, spots=null, city='';
+  if(sel==='me'){
+    if(!myPos){h+='<div class="fd-empty">'+(myPosErr?esc(myPosErr):'Tippe auf „Mein Standort“, dann fragt dein Handy, ob die Seite deinen Standort benutzen darf. Er wird nur auf deinem Gerät benutzt und nirgends gespeichert.')+'</div>';return h}
+    ref=myPos;var best=null;
+    if(food)Object.keys(food.places).forEach(function(k){var p=food.places[k],dd=kmDist(p.lat,p.lon,ref.lat,ref.lon);if(p.spots.length&&dd<2.5&&(!best||dd<best.d))best={k:k,d:dd}});
+    if(best){P=food.places[best.k];spots=P.spots;city=P.n}
+    else{
+      var key=ref.lat.toFixed(3)+','+ref.lon.toFixed(3);
+      if(myLive.key!==key&&!myLive.busy)pullFoodLive(ref,key);
+      if(!myLive.spots||myLive.key!==key){h+='<div class="fd-empty">'+(myLive.busy?'Suche Essen in deiner Nähe …':'Gerade nichts gefunden. OpenStreetMap ist manchmal überlastet, versuch es gleich nochmal.')+'</div>';return h}
+      spots=myLive.spots;city='';
+    }
+  } else {
+    if(!food){h+='<div class="fd-empty">Lädt …</div>';return h}
+    P=food.places[sel];if(!P){h+='<div class="fd-empty">Für diesen Ort gibt es noch keine Daten.</div>';return h}
+    ref={lat:P.lat,lon:P.lon};spots=P.spots;city=P.n;
+  }
+  var np=nextPlan(now), mins=np?Math.round((np.t-now)/60000):null;
+  h+='<div class="sign brown fd-head"><div class="in"><span class="small">'+(sel==='me'?'Nach deinem Standort':'Ab '+esc(P.sub))+'</span><strong>'+esc(sel==='me'?(P?'In deiner Nähe, '+P.n:'In deiner Nähe'):P.n)+'</strong>'+
+    (np&&(sel===auto||sel==='me')&&mins<=10*60&&np.d.date===berlinDate(now)?'<span class="fd-bus'+(mins<45?' warn':'')+'">Als Nächstes laut Plan: '+esc(np.txt)+' um '+tm(np.t)+' ('+inMin(mins)+')</span>':'')+'</div></div>';
+  h+='<div class="fd-filters" role="group" aria-label="Filter"><button type="button" class="fd-chip f" data-ff="open" aria-pressed="'+foodF.open+'">Jetzt offen</button><button type="button" class="fd-chip f" data-ff="cheap" aria-pressed="'+foodF.cheap+'">bis ca. 12 €</button>'+
+    FCHIPS.map(function(c){return '<button type="button" class="fd-chip f" data-fc="'+c[0]+'" aria-pressed="'+(foodF.cat===c[0])+'">'+c[1]+'</button>'}).join('')+'</div>';
+  var L=foodList(spots,ref,now), n=foodMore?20:6;
+  if(!L.length)return h+'<div class="fd-empty">Gerade passt hier nichts zu den Filtern. Nimm einen Filter raus.</div>';
+  h+='<div class="fd-grid">'+L.slice(0,n).map(function(x,i){return foodCard(x,i,city)}).join('')+'</div>';
+  if(L.length>n)h+='<button type="button" class="fd-more" data-fm="1">'+(L.length-n)+' weitere anzeigen</button>';
+  return h+'<p class="fine">Daten: OpenStreetMap und eigene Tipps. Preise sind grobe Schätzungen pro Person. Öffnungszeiten können abweichen, besonders in Italien zur Mittagspause. Echte Fotos und Bewertungen über den Knopf bei Google Maps.</p>';
+}
+function pullFoodLive(ref,key){
+  myLive.busy=true;myLive.key=key;myLive.spots=null;
+  var lat=+ref.lat.toFixed(3), lon=+ref.lon.toFixed(3);
+  var q='[out:json][timeout:25];nwr(around:900,'+lat+','+lon+')["name"]["amenity"~"^(restaurant|fast_food|ice_cream)$"];out center tags;';
+  var eps=['https://overpass-api.de/api/interpreter','https://maps.mail.ru/osm/tools/overpass/api/interpreter'];
+  var tryEp=function(i){
+    if(i>=eps.length){myLive.busy=false;render();return}
+    fetch(eps[i],{method:'POST',body:'data='+encodeURIComponent(q)}).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(j){
+      myLive.spots=(j.elements||[]).map(function(x){var t=x.tags||{},c=(t.cuisine||'').toLowerCase(),n=(t.name||'').toLowerCase();
+        var cat=t.amenity==='ice_cream'||/gelat|ice_cream/.test(c+n)?'gelato':/mcdonald|burger/.test(c+n)?'burger':/pizz/.test(c+n)?'pizza':/sandwich|kebab|panin/.test(c+n)?'panini':t.amenity==='fast_food'?'snack':'rest';
+        return {n:t.name,c:cat,ff:t.amenity==='fast_food'?1:0,oh:t.opening_hours,st:t['addr:street'],lat:x.lat!=null?x.lat:x.center.lat,lon:x.lon!=null?x.lon:x.center.lon}});
+      myLive.busy=false;render();
+    }).catch(function(){tryEp(i+1)});
+  };
+  tryEp(0);
+}
+function wireFood(){
+  var el=document.getElementById('s-food');if(!el)return;
+  el.addEventListener('click',function(ev){
+    var b=ev.target.closest('button');if(!b)return;
+    if(b.dataset.fp){
+      foodSel=b.dataset.fp;foodMore=false;
+      if(foodSel==='me'&&!myPos){
+        if(!navigator.geolocation){myPosErr='Dein Browser kann den Standort nicht abfragen.';render();return}
+        myPosErr='';navigator.geolocation.getCurrentPosition(function(p){myPos={lat:p.coords.latitude,lon:p.coords.longitude,t:Date.now()};render()},
+          function(){myPosErr='Standort nicht erlaubt oder nicht gefunden. Du kannst oben auch einen Ort auswählen.';render()},{enableHighAccuracy:false,timeout:15000,maximumAge:120000});
+      } else if(foodSel==='me'&&myPos&&Date.now()-myPos.t>5*60000){
+        navigator.geolocation.getCurrentPosition(function(p){myPos={lat:p.coords.latitude,lon:p.coords.longitude,t:Date.now()};render()},function(){},{timeout:15000,maximumAge:120000});
+      }
+    }
+    else if(b.dataset.ff)foodF[b.dataset.ff]=!foodF[b.dataset.ff];
+    else if(b.dataset.fc)foodF.cat=foodF.cat===b.dataset.fc?null:b.dataset.fc;
+    else if(b.dataset.fm)foodMore=true;
+    else return;
+    render();
+  });
 }
 
 /* Grundgerüst */
@@ -1300,6 +1510,8 @@ document.getElementById('app').innerHTML=
  '<div class="key"><span><i></i>geschafft</span><span><i class="r"></i>noch vor uns</span><span><i class="a"></i>anderer möglicher Weg</span></div><div class="key" id="s-key2"></div><div id="s-events"></div></div>'+
  '<div class="stack" style="gap:24px"><div id="s-dist"></div><section class="stack" id="s-tl"></section></div></div>'+
  '<div class="lane"></div>'+
+ '<section class="stack" id="s-food"></section>'+
+ '<div class="lane"></div>'+
  '<section class="stack"><div class="sec-title"><h2>Unsere Woche</h2><span class="small">Hotel Concordia, Via della Salute 16, 51016 Montecatini Terme</span></div>'+
  '<div class="week"><div class="nav"><div class="nav-head"><span>Ausflüge ab dem Hotel</span><span>gestrichelt = Zug</span></div><div id="s-tus"></div></div><div id="s-week" style="display:contents"></div></div></section>'+
  '<div class="lane"></div>'+
@@ -1309,9 +1521,10 @@ document.getElementById('app').innerHTML=
   '<div class="warn">'+infoSq('i')+'<div><h3>Gepäck und Geld</h3><p>Sporttasche statt Hartschalenkoffer, höchstens 20 kg. Für die Nacht: Kissen, Wasser, Snacks, Powerbank. Standseilbahn 7,50 €, Mittagessen auf den Ausflügen zahlt ihr selbst.</p></div></div>'+
  '</div></section>'+
  '<div class="edge"></div>'+
- '<footer>Die Position kommt live vom GPS eines Handys im Bus und wird etwa jede Minute aktualisiert. Fällt das Signal länger als 15 Minuten aus (Funkloch, Tunnel, Akku), schätzt die Seite die Position nach dem Fahrplan, bis wieder ein Signal kommt.<details class="privacy"><summary>Datenschutz</summary><p>Das ist eine private, nicht offizielle Seite ohne Werbung und ohne Cookies. Einstellungen wie die Kartenfilter speichert nur dein eigenes Gerät.</p><p>Während der Hin- und Rückfahrt wird der Standort des Busses öffentlich bei GitHub gespeichert, damit diese Seite ihn anzeigen kann. Wer Benachrichtigungen einschaltet, hinterlegt dafür eine anonyme Push-Adresse ohne Namen. Beides wird nach der Fahrt gelöscht.</p><p>Beim Laden ruft die Seite Inhalte von diesen Diensten ab, die dabei deine IP-Adresse sehen: GitHub (Seite und Daten), OpenStreetMap (Karte), unpkg (Karten-Programm), Open-Meteo (Wetter), Autobahn GmbH (Verkehr), Overpass/OpenStreetMap (Raststätten) und ntfy.sh (nur bei der Anmeldung für Benachrichtigungen).</p></details></footer>'+
+ '<footer>Die Position kommt live vom GPS eines Handys im Bus und wird etwa jede Minute aktualisiert. Fällt das Signal länger als 15 Minuten aus (Funkloch, Tunnel, Akku), schätzt die Seite die Position nach dem Fahrplan, bis wieder ein Signal kommt.<details class="privacy"><summary>Datenschutz</summary><p>Das ist eine private, nicht offizielle Seite ohne Werbung und ohne Cookies. Einstellungen wie die Kartenfilter speichert nur dein eigenes Gerät.</p><p>Während der Hin- und Rückfahrt wird der Standort des Busses öffentlich bei GitHub gespeichert, damit diese Seite ihn anzeigen kann. Wer Benachrichtigungen einschaltet, hinterlegt dafür eine anonyme Push-Adresse ohne Namen. Beides wird nach der Fahrt gelöscht.</p><p>„Mein Standort“ bei Essen in der Nähe fragt dein Handy nur, wenn du darauf tippst. Der Standort bleibt auf deinem Gerät. Nur wenn du außerhalb der Ausflugsorte bist, geht er auf etwa 100 m gerundet an OpenStreetMap, um Läden in der Nähe zu finden.</p><p>Beim Laden ruft die Seite Inhalte von diesen Diensten ab, die dabei deine IP-Adresse sehen: GitHub (Seite und Daten), OpenStreetMap (Karte), unpkg (Karten-Programm), Open-Meteo (Wetter), Autobahn GmbH (Verkehr), Overpass/OpenStreetMap (Raststätten, Essen in der Nähe) und ntfy.sh (nur bei der Anmeldung für Benachrichtigungen).</p></details></footer>'+
 '</div>';
 
+wireFood();
 render();
 setInterval(render,30000);
 
@@ -1524,7 +1737,7 @@ function pullGps(){
     return fetch(GPS_RAW+'?t='+Date.now(),{cache:'no-store'}).then(function(r2){return r2.ok?r2.json():null});
   }).then(useGps).catch(function(){});
 }
-pullStatus();setInterval(pullStatus,60000);pullGps();setInterval(pullGps,75000);pullWx();setInterval(pullWx,3600000);pullTrack();setInterval(pullTrack,300000);pullPois();pullGeo();pullEvents();setInterval(pullEvents,180000);pullTraffic();setInterval(pullTraffic,300000);
+pullStatus();setInterval(pullStatus,60000);pullGps();setInterval(pullGps,75000);pullWx();setInterval(pullWx,3600000);pullTrack();setInterval(pullTrack,300000);pullPois();pullFood();pullGeo();pullEvents();setInterval(pullEvents,180000);pullTraffic();setInterval(pullTraffic,300000);
 
 })();
 </script>
