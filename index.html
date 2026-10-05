@@ -411,6 +411,9 @@ svg .mk-works text{fill:#111}
 .privacy{margin-top:10px}
 .privacy summary{cursor:pointer;font-weight:700;color:var(--paint-dim)}
 .privacy p{margin-top:6px}
+
+.tsign .num s{display:block;font-size:.72em;opacity:.6;font-weight:600}
+.shiftnote{margin-top:8px;font-size:.85em;font-weight:700;color:var(--yellow)}
 </style>
 <script type="application/json" id="state">{"checkins":[],"message":"","messageAt":null,"gpsLink":"","variant":{"hin":"cisa","rueck":"cisa"}}</script>
 <div id="app"></div>
@@ -958,12 +961,48 @@ function swissState(e){
 function nextBox(label,title,when){return '<div class="next"><span class="next-l">'+label+'</span><b>'+esc(title)+'</b><span class="next-t">'+esc(when)+'</span></div>'}
 function inMin(m){m=Math.max(1,Math.round(m));return m<60?'in '+m+' Min':'in '+dur(m)}
 function pad2(n){return (n<10?'0':'')+n}
-function planItems(){
+/* Tagesplan an die echte bzw. prognostizierte Ankunft anpassen */
+var lastEta={};
+function at(date,hm){return Date.parse(date+'T'+hm+':00+02:00')}
+function ceil5(ms){return Math.ceil(ms/300000)*300000}
+function arrivalOf(rp,now){
+  var s=tripState[rp];
+  if(s&&s.arrived)return {t:s.arrived,real:true};
+  var ph=phaseNow(now);
+  if(ph===rp){var e=estimate(rp,now);if(!e.done){lastEta[rp]=e.eta;return {t:e.eta,real:false}}}
+  if(lastEta[rp]&&(rp==='hin'?ph==='vorort':ph==='zuhause'))return {t:lastEta[rp],real:false};
+  return null;
+}
+/* liefert die Punkte eines Tages: [Zeit, Text, ursprüngliche Zeit oder ''] und optional einen Hinweis */
+function dayItems(d,now){
+  var out={items:d.items.map(function(it){return [it[0],it[1],'']}),note:''};
+  try{
+    if(d.date==='2026-10-05'){
+      var A=arrivalOf('hin',now);if(!A)return out;
+      var plan=at(d.date,'14:00'),late=Math.round((A.t-plan)/60000);
+      if(Math.abs(late)<10)return out;
+      var walk=Math.max(at(d.date,'14:30'),ceil5(A.t+30*60000)), back=walk+210*60000;
+      out.items=[[(A.real?'':'ca. ')+tm(A.t),A.real?'Angekommen am Hotel Concordia, Zimmer beziehen':'Ankunft am Hotel Concordia, Zimmer beziehen','ca. 14:00'],
+                 ['ca. '+tm(walk),'Wanderung hoch nach Montecatini Alto','14:30'],
+                 ['ca. '+tm(back),'Zurück im Hotel','ca. 18:00']];
+      out.note=(A.real?'Angekommen ':'Ankunft voraussichtlich ')+(late>0?late+' Min später':(-late)+' Min früher')+' als geplant, die Zeiten sind daran angepasst.'+
+        (walk>=at(d.date,'17:00')?' Bei so später Ankunft wird die Wanderung wahrscheinlich gekürzt oder verschoben.':'');
+    } else if(d.date==='2026-10-09'){
+      var R=arrivalOf('rueck',now);if(!R)return out;
+      var lt=Math.round((R.t-at('2026-10-09','23:30'))/60000);
+      if(Math.abs(lt)<10)return out;
+      out.items[out.items.length-1]=[(R.real?'':'ca. ')+tm(R.t),R.real?'Angekommen an der Schule':'Ankunft an der Schule','ca. 23:30'];
+      out.note=(R.real?'Angekommen ':'Ankunft voraussichtlich ')+(lt>0?lt+' Min später':(-lt)+' Min früher')+' als geplant.';
+    }
+  }catch(err){console.error('Tagesplan',err)}
+  return out;
+}
+function planItems(now){
   var all=[];
-  DAYS.forEach(function(d){d.items.forEach(function(it){var m=/(\d{1,2}):(\d{2})/.exec(it[0]);if(m)all.push({t:Date.parse(d.date+'T'+pad2(+m[1])+':'+m[2]+':00+02:00'),txt:it[1],d:d})})});
+  DAYS.forEach(function(d){dayItems(d,now).items.forEach(function(it){var m=/(\d{1,2}):(\d{2})/.exec(it[0]);if(m)all.push({t:Date.parse(d.date+'T'+pad2(+m[1])+':'+m[2]+':00+02:00'),txt:it[1],d:d})})});
   return all.sort(function(a,b){return a.t-b.t});
 }
-function nextPlan(now){var a=planItems();for(var i=0;i<a.length;i++)if(a[i].t>now)return a[i];return null}
+function nextPlan(now){var a=planItems(now);for(var i=0;i<a.length;i++)if(a[i].t>now)return a[i];return null}
 
 var WX_PLACES=[['mg',51.19,6.44],['mt',43.88,10.77],['si',43.318,11.331],['fi',43.77,11.25],['pi',43.716,10.401]];
 var wx={};
@@ -1134,9 +1173,10 @@ function timeline(ph,now,e){
 function week(now){
   var today=berlinDate(now);
   return DAYS.map(function(d){
-    var cls=d.date===today?' today':(d.date<today?' past':'');
+    var cls=d.date===today?' today':(d.date<today?' past':''), di=dayItems(d,now);
     return '<article class="tsign'+cls+'"><div class="sign '+d.sign+'"><div class="in"><div class="when"><span>'+d.wd+' '+d.dm+'</span>'+(d.date===today?'<span class="todayplate">Heute</span>':'')+'</div>'+
-      '<h3>'+esc(d.title)+'<small>'+esc(d.sub)+'</small></h3><ul>'+d.items.map(function(it){return '<li><span class="num">'+esc(it[0])+'</span><span>'+esc(it[1])+'</span></li>'}).join('')+'</ul>'+
+      '<h3>'+esc(d.title)+'<small>'+esc(d.sub)+'</small></h3><ul>'+di.items.map(function(it){return '<li><span class="num">'+esc(it[0])+(it[2]?'<s>'+esc(it[2].replace('ca. ',''))+'</s>':'')+'</span><span>'+esc(it[1])+'</span></li>'}).join('')+'</ul>'+
+      (di.note?'<p class="shiftnote">'+esc(di.note)+'</p>':'')+
       (function(){var w=wxDay(d.place,d.date);return w?'<p class="wxline">'+wxIcon(w.code)+'<span><b>'+esc(WXNAME[d.place])+'</b> '+rnd(w.max)+'° / '+rnd(w.min)+'°, '+wxKind(w.code)[0]+', Regenrisiko '+rnd(w.rain||0)+' %</span></p>':''})()+
       (d.note?'<p class="hint">'+esc(d.note)+'</p>':'')+'</div></div><div class="post"></div></article>';
   }).join('');
