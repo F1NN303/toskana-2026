@@ -364,7 +364,7 @@ if (phase) {
   // 6) Stockender Verkehr: in den letzten 12 Minuten im Schnitt unter 35 km/h, ohne anzuhalten
   const recent = ptrack.filter((q) => t - q[2] <= 12 * 60000);
   // kein Halt im Fenster: jeder Abschnitt hat sich bewegt, und die letzte Pause liegt mindestens 15 Minuten zurück
-  const allMoving = recent.every((q, i) => i === 0 || km(recent[i - 1], q) > 0.25);
+  const allMoving = recent.every((q, i) => i === 0 || km(recent[i - 1], q) > 0.05); // Kriechen im Stau zählt, Stehen an der Raststätte nicht
   const sinceStop = Math.min(ps.resumedAt ? t - ps.resumedAt : Infinity, pos.stoppedSince ? t - toMs(pos.stoppedSince) : Infinity);
   if (underway && moving && recent.length >= 3 && allMoving && sinceStop > 15 * 60000) {
     const a = recent[0], b = recent[recent.length - 1], dt = (b[2] - a[2]) / 3600000;

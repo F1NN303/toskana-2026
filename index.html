@@ -1045,7 +1045,7 @@ function movingRecently(){
   if(!gps||!gps.t)return false;
   var tr=track.filter(function(q){return gps.t-q[2]<=12*60000&&q[2]<=gps.t});
   if(tr.length<2)return false;
-  for(var i=1;i<tr.length;i++)if(kmDist(tr[i-1][0],tr[i-1][1],tr[i][0],tr[i][1])<0.25)return false;
+  for(var i=1;i<tr.length;i++)if(kmDist(tr[i-1][0],tr[i-1][1],tr[i][0],tr[i][1])<0.05)return false;
   return true;
 }
 function hero(ph,now,e){
