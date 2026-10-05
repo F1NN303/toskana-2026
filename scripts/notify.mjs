@@ -252,6 +252,11 @@ const pos = readJSON('pos.json', {});
 const st = readJSON('state.json', {});
 let track = readJSON('track.json', []);
 const subs = readJSON('subs.json', {});
+// Einmalig: die falschen "Stockender Verkehr"-Einträge direkt nach den Pausen (vor der Korrektur um 07:45) entfernen
+if (!st.cleanedSlow1 && Array.isArray(st.log)) {
+  st.log = st.log.filter((e) => !(e.kind === 'slow' && e.t < Date.parse('2026-10-05T07:45:00+02:00')));
+  st.cleanedSlow1 = true;
+}
 const before = JSON.stringify([st, track, subs]);
 const out = [];
 
