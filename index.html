@@ -664,13 +664,13 @@ function estimate(phase,now){
       res.i=bg.pj.i;res.a=A;res.b=B;res.f=F;res.eff=E;res.live=true;res.off=bg.pj.dist;
       res.lat=gps.lat;res.lon=gps.lon;res.km=A.km+(B.km-A.km)*F;
       res.delay=(now-start)/60000-E;res.remain=Math.max(0,total-E);res.eta=now+res.remain*60000;
-      res.done=kmDist(gps.lat,gps.lon,fin.lat,fin.lon)<5||E>=total-10;
+      var dFin=kmDist(gps.lat,gps.lon,HOTEL_OR(phase,fin).lat,HOTEL_OR(phase,fin).lon);res.done=dFin<0.4||(gps.stopped&&dFin<0.8);
     } else {
       // Umleitung: echte Position zeigen, Rest grob über die Luftlinie
       var rest=kmDist(gps.lat,gps.lon,fin.lat,fin.lon)*1.3;
       res.live=true;res.offRoute=true;res.lat=gps.lat;res.lon=gps.lon;
       res.km=Math.max(0,res.kmTotal-rest);res.remain=Math.max(0,rest/70*60);res.eta=now+res.remain*60000;
-      res.done=rest<6;
+      res.done=rest<0.6;
     }
     var O=res.done?null:osrmFor(phase,now);
     if(O){
@@ -701,6 +701,8 @@ function osrmFor(phase,now){
   return osrm.km!=null&&osrm.phase===phase&&gps&&now-osrm.t<15*60000&&kmDist(osrm.lat,osrm.lon,gps.lat,gps.lon)<4?osrm:null;
 }
 
+/* Genaue Zielpunkte für die Ankunft (Hotel Concordia laut OpenStreetMap) */
+function HOTEL_OR(phase,fin){return phase==='hin'?{lat:43.88563,lon:10.77852}:fin}
 /* Live-GPS */
 var gps=null;
 function gpsFresh(now){return !!gps&&now-gps.t<15*60000&&gps.t<=now+5*60000}

@@ -24,7 +24,7 @@ if (VAPID_PUBLIC && VAPID_PRIVATE) {
 }
 
 const TRIPS = {
-  hin: { from: Date.parse('2026-10-04T21:00:00+02:00'), to: Date.parse('2026-10-05T20:00:00+02:00'), dest: [43.882, 10.772], near: 2.5 },
+  hin: { from: Date.parse('2026-10-04T21:00:00+02:00'), to: Date.parse('2026-10-05T20:00:00+02:00'), dest: [43.88563, 10.77852], near: 0.4 },
   rueck: { from: Date.parse('2026-10-09T06:00:00+02:00'), to: Date.parse('2026-10-10T06:00:00+02:00'), dest: [51.2, 6.45], near: 8 },
 };
 
@@ -256,6 +256,11 @@ const subs = readJSON('subs.json', {});
 if (!st.cleanedSlow1 && Array.isArray(st.log)) {
   st.log = st.log.filter((e) => !(e.kind === 'slow' && e.t < Date.parse('2026-10-05T07:45:00+02:00')));
   st.cleanedSlow1 = true;
+}
+// Einmalig: zu frühe Ankunft (Radius war 2,5 km um einen ungenauen Punkt) zurücksetzen, damit die echte Ankunft erkannt wird
+if (!st.arrFix1) {
+  if (st.hin && st.hin.arrived) delete st.hin.arrived;
+  st.arrFix1 = true;
 }
 const before = JSON.stringify([st, track, subs]);
 const out = [];
