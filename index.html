@@ -833,7 +833,7 @@ function pauseForecast(ph,e,now){
   if(!(ph==='hin'||ph==='rueck')||!e||e.offRoute||!pois.length)return null;
   if(gps&&gpsFresh(now)&&gps.stopped)return {stopped:true};
   var since0=lastBreakEnd(ph)||e.start, since=Math.max(0,(now-since0)/3600000), v=avgSpeed(ph,now), r=e.r, cur=e.km;
-  var horizon=Math.max(0.5,4.8-since);
+  var horizon=Math.max(0.5,Math.min(4.8,since+3.6)-since);
   var b=r.filter(function(w){return w.id===(ph==='hin'?'ba':'ch')})[0];
   var cands=[];
   pois.forEach(function(o){
@@ -842,8 +842,9 @@ function pauseForecast(ph,e,now){
     var ahead=a-cur, eta=ahead/v;if(eta>horizon)return;
     var hrs=since+eta;
     // Zeitpunkt: meist nach 3 bis 4 Stunden, spätestens nach 4,5 Stunden
-    var tw=Math.exp(-0.5*Math.pow((hrs-3.4)/0.65,2));
-    if(hrs>4.6)tw=0.02;if(hrs<1.5)tw*=0.3;
+    // an das Verhalten unseres Fahrers angepasst: bisher Halt nach 2:54, 2:13 und 2:20 Std, also etwa alle 2,5 Std
+    var tw=Math.exp(-0.5*Math.pow((hrs-2.5)/0.45,2));
+    if(hrs>4.6)tw=0.02;if(hrs<1.2)tw*=0.3;
     // Ort: Autohöfe und große Raststätten sind bustauglich; vor der Schweiz wird gern noch günstig getankt
     var aw=1;
     if(/autohof|truck|tank/i.test(o.n||''))aw*=1.25;
