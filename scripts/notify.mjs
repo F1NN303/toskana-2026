@@ -139,7 +139,20 @@ async function placeName(lat, lon) {
   return a ? (a.city || a.town || a.village || a.municipality || a.county || '') : '';
 }
 // Raststätte, Rastplatz oder Tankstelle in der Nähe? null = nichts gefunden, undefined = Abfrage fehlgeschlagen
+// Eigene Raststätten-Liste (pois.json neben dem Skript-Ordner): schnell und auch dann da, wenn OpenStreetMap überlastet ist
+let LOCAL_POIS = [];
+try { LOCAL_POIS = JSON.parse(fs.readFileSync(new URL('../pois.json', import.meta.url), 'utf8')); } catch { LOCAL_POIS = []; }
+function localStop(lat, lon) {
+  let best = null;
+  for (const o of LOCAL_POIS) {
+    const d = km([lat, lon], [o.lat, o.lon]);
+    if (d < 0.8 && (!best || d < best.d)) best = { kind: o.k === 's' ? 'Raststätte' : 'Rastplatz', name: o.n || '', d, rank: o.k === 's' ? 0 : 2 };
+  }
+  return best;
+}
 async function restStop(lat, lon) {
+  const local = localStop(lat, lon);
+  if (local) return local;
   const q = `[out:json][timeout:20];(nwr(around:700,${lat},${lon})["highway"~"^(services|rest_area)$"];nwr(around:300,${lat},${lon})["amenity"="fuel"];);out center tags;`;
   const j = await getJSON('https://overpass-api.de/api/interpreter', {
     method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'data=' + encodeURIComponent(q),
@@ -337,6 +350,7 @@ if (phase) {
     }
   } else if (underway && moving && ps.stopFor && ps.resumedFor !== ps.stopFor) {
     ps.resumedFor = ps.stopFor;
+    ps.resumedAt = t;
     out.push(ps.stopKind === 'jam'
       ? { title: 'Es geht weiter', message: 'Der Bus fährt wieder.', tags: ['bus'] }
       : { title: 'Weiter geht’s', message: 'Die Pause ist vorbei, der Bus fährt weiter.', tags: ['bus'] });
@@ -344,7 +358,10 @@ if (phase) {
 
   // 6) Stockender Verkehr: in den letzten 12 Minuten im Schnitt unter 35 km/h, ohne anzuhalten
   const recent = ptrack.filter((q) => t - q[2] <= 12 * 60000);
-  if (underway && moving && recent.length >= 3) {
+  // kein Halt im Fenster: jeder Abschnitt hat sich bewegt, und die letzte Pause liegt mindestens 15 Minuten zurück
+  const allMoving = recent.every((q, i) => i === 0 || km(recent[i - 1], q) > 0.25);
+  const sinceStop = Math.min(ps.resumedAt ? t - ps.resumedAt : Infinity, pos.stoppedSince ? t - toMs(pos.stoppedSince) : Infinity);
+  if (underway && moving && recent.length >= 3 && allMoving && sinceStop > 15 * 60000) {
     const a = recent[0], b = recent[recent.length - 1], dt = (b[2] - a[2]) / 3600000;
     const avg = dt >= 0.15 ? km(a, b) / dt : null;
     if (avg !== null && avg < 35 && (!ps.slowAt || t - ps.slowAt > 45 * 60000)) {

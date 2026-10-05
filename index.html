@@ -1039,6 +1039,14 @@ function updateTacho(ph,e,now){
   if(e.live&&gps){if(gps.stopped){mode='stop'}else{v=curSpeed();mode=v==null?'none':'live';if(v!=null&&v<3)mode='stop'}}
   el.innerHTML=tachoHtml(v,mode);
 }
+/* Ist der Bus in den letzten 12 Minuten durchgehend gefahren (kein Halt dazwischen)? */
+function movingRecently(){
+  if(!gps||!gps.t)return false;
+  var tr=track.filter(function(q){return gps.t-q[2]<=12*60000&&q[2]<=gps.t});
+  if(tr.length<2)return false;
+  for(var i=1;i<tr.length;i++)if(kmDist(tr[i-1][0],tr[i-1][1],tr[i][0],tr[i][1])<0.25)return false;
+  return true;
+}
 function hero(ph,now,e){
   var h='';
   var msg=state.message, msgAt=state.messageAt;
@@ -1062,7 +1070,7 @@ function hero(ph,now,e){
     if(sw==='in')h+='<div class="plates"><span class="plate late">Ihr seid in der Schweiz: mobile Daten aus, wenn dein Tarif die Schweiz nicht enthält</span></div>';
     else if(sw==='soon')h+='<div class="plates"><span class="plate late">Gleich Schweiz: jetzt prüfen, ob dein Handytarif dort gilt</span></div>';
     if(ph==='rueck'&&!e.done)h+='<div class="plates"><span class="plate">Abholung an der Schule ca. '+tm(e.eta)+' Uhr, Nespelerstraße 75</span></div>';
-    var sv=e.live&&gps&&!gps.stopped?curSpeed():null;
+    var sv=e.live&&gps&&!gps.stopped&&movingRecently()?curSpeed():null;
     if(sv!=null&&sv>=3&&sv<40){
       var rs=(traffic.items||[]).filter(function(o){return !o.works&&o.ahead>-3&&o.ahead<8})[0];
       h+='<div class="plates"><span class="plate late">Verkehr stockt gerade, ca. '+rnd(sv)+' km/h'+(rs?'. Laut Autobahn GmbH: '+esc(rs.label)+' ('+esc(rs.title)+')':'')+'</span></div>';
