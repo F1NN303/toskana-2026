@@ -509,6 +509,30 @@ svg .mk-works text{fill:#111}
 .ai-form button:focus-visible,.ai-clear:focus-visible{outline:3px solid #fff;outline-offset:2px}
 .ai-fine{margin:0;font-size:.75rem;color:var(--muted)}
 @media (max-width:720px){.ai-sug{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:2px 16px}.ai-sug::-webkit-scrollbar{display:none}.ai-sug .fd-chip{flex:none}}
+
+.fd-head .in{padding:8px 12px}
+.fd-head strong{font-size:1.15rem}
+.fd-lbl{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-top:4px}
+.fd-lbl span{font-weight:900;font-size:1rem;text-transform:uppercase;letter-spacing:.05em}
+.fd-lbl small{font-family:var(--f-mono);font-size:.72rem;color:var(--paint-dim)}
+.fd-carousel{display:grid;grid-auto-flow:column;grid-auto-columns:min(300px,80%);gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;margin:0 -16px;padding:2px 16px 8px;scroll-padding:16px}
+.fd-carousel::-webkit-scrollbar{display:none}
+.fd-carousel .fd-card{scroll-snap-align:start}
+.fd-card .fd-pic{aspect-ratio:16/10}
+.fd-note{font-size:.84rem;line-height:1.4}
+.fd-acts a{padding:8px 6px}
+.fd-rows{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;background:var(--asphalt-hi);border-radius:12px;overflow:hidden}
+.fd-rows li+li{border-top:1px solid #3a3e42}
+.fd-row{display:grid;grid-template-columns:56px minmax(0,1fr) 14px;gap:12px;align-items:center;padding:9px 12px;color:var(--paint);text-decoration:none}
+.fd-row:hover{background:rgba(255,255,255,.04)}
+.fd-row:focus-visible{outline:3px solid var(--yellow);outline-offset:-3px}
+.fd-row img{width:56px;height:56px;border-radius:9px;object-fit:cover;display:block;background:#2a2d30}
+.fd-rt{display:flex;flex-direction:column;gap:2px;min-width:0}
+.fd-rt b{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fd-rm{font-family:var(--f-mono);font-size:.75rem;color:var(--paint-dim)}
+.fd-rm .ok{color:#8fd9b6}.fd-rm .cl{color:#ff8a7a}
+.fd-go{font-size:1.5rem;color:var(--paint-dim);line-height:1}
+@media (min-width:721px){.fd-carousel{margin:0;padding:2px 0 8px;grid-auto-columns:300px}}
 </style>
 <script type="application/json" id="state">{"checkins":[],"message":"","messageAt":null,"gpsLink":"","variant":{"hin":"cisa","rueck":"cisa"}}</script>
 <div id="app"></div>
@@ -1513,6 +1537,12 @@ function foodCard(x,i,city){
     (s.tip?'<p class="fd-note">'+esc(s.tip)+'</p>':'')+
     '<div class="fd-acts"><a class="go" href="https://www.google.com/maps/dir/?api=1&destination='+s.lat+','+s.lon+'&travelmode=walking" target="_blank" rel="noopener">Route hin</a><a href="https://www.google.com/maps/search/?api=1&query='+q+'" target="_blank" rel="noopener">Fotos und Bewertungen</a></div></div></article>';
 }
+function foodRow(x,city){
+  var s=x.s, oh=x.oh, pr=x.pr, q=encodeURIComponent(s.n+(city?', '+city:''));
+  var st=!oh.known?'':(oh.open?'<span class="ok">'+(oh.until==null?'offen':'bis '+hhmm(oh.until))+'</span>':'<span class="cl">zu'+(oh.from!=null?' · ab '+hhmm(oh.from):'')+'</span>');
+  return '<li><a class="fd-row" href="https://www.google.com/maps/search/?api=1&query='+q+'" target="_blank" rel="noopener"><img src="img/food/'+foodPhoto(s)+'.webp" alt="" loading="lazy" decoding="async" width="64" height="64">'+
+    '<span class="fd-rt"><b>'+esc(s.n)+'</b><span class="fd-rm">'+esc(FCAT[s.c]||'Essen')+' · '+(pr[1]<=10?'€':pr[1]<=20?'€€':'€€€')+' · '+x.walk+' Min'+(st?' · '+st:'')+'</span></span><span class="fd-go" aria-hidden="true">›</span></a></li>';
+}
 function foodBox(ph,now,e){
   var auto=foodAuto(ph,now), sel=foodSel||auto, h='<div class="sec-title"><h2>Essen in der Nähe</h2><span class="small">gut und günstig, sortiert nach Preis-Leistung und Fußweg</span></div>';
   h+='<div class="fd-places" role="group" aria-label="Ort wählen">'+(ph==='hin'||ph==='rueck'?'<button type="button" class="fd-chip" data-fp="bus" aria-pressed="'+(sel==='bus')+'">Unterwegs</button>':'')+
@@ -1551,8 +1581,12 @@ function foodBox(ph,now,e){
     FCHIPS.map(function(c){return '<button type="button" class="fd-chip f" data-fc="'+c[0]+'" aria-pressed="'+(foodF.cat===c[0])+'">'+c[1]+'</button>'}).join('')+'</div>';
   var L=foodList(spots,ref,now), n=foodMore?20:6;
   if(!L.length)return h+'<div class="fd-empty">Gerade passt hier nichts zu den Filtern. Nimm einen Filter raus.</div>';
-  h+='<div class="fd-grid">'+L.slice(0,n).map(function(x,i){return foodCard(x,i,city)}).join('')+'</div>';
-  if(L.length>n)h+='<button type="button" class="fd-more" data-fm="1">'+(L.length-n)+' weitere anzeigen</button>';
+  var tips=L.filter(function(x){return x.s.tip}), others=L.filter(function(x){return !x.s.tip}), m=foodMore?25:8;
+  if(tips.length)h+='<div class="fd-lbl"><span>Unsere Tipps</span><small>geprüft · zum Wischen</small></div><div class="fd-carousel">'+tips.map(function(x,i){return foodCard(x,i,city)}).join('')+'</div>';
+  if(others.length){
+    h+='<div class="fd-lbl"><span>Weitere in der Nähe</span><small>'+others.length+' Lokale</small></div><ul class="fd-rows">'+others.slice(0,m).map(function(x){return foodRow(x,city)}).join('')+'</ul>';
+    if(others.length>m)h+='<button type="button" class="fd-more" data-fm="1">'+(others.length-m)+' weitere anzeigen</button>';
+  }
   return h+'<p class="fine">Daten: OpenStreetMap und eigene Tipps. Preise sind grobe Schätzungen pro Person. Öffnungszeiten können abweichen, besonders in Italien zur Mittagspause. Echte Fotos und Bewertungen über den Knopf bei Google Maps.</p>';
 }
 function pullFoodLive(ref,key){
