@@ -460,6 +460,25 @@ svg .mk-works text{fill:#111}
 .fd-nm b{font-size:1.05rem}
 .credits{margin:6px 0 0;padding-left:18px;font-size:.78rem;color:var(--paint-dim)}
 .credits a{color:var(--paint-dim)}
+
+.mapwrap{isolation:isolate}
+.fp.fold li.old{display:none}
+.tl-more{font:inherit;font-weight:800;font-size:.85rem;align-self:flex-start;margin:4px 0 2px;background:transparent;color:var(--paint);border:2px dashed #4a4e52;border-radius:6px;padding:7px 12px;cursor:pointer}
+.mnav{display:none}
+@media (max-width:720px){
+  body{padding-bottom:calc(66px + env(safe-area-inset-bottom,0px))}
+  .mnav{display:grid;grid-template-columns:repeat(4,1fr);position:fixed;left:0;right:0;bottom:0;z-index:45;background:rgba(26,27,29,.96);border-top:3px solid var(--yellow);padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+  .mnav a{display:flex;flex-direction:column;align-items:center;gap:2px;text-decoration:none;color:var(--paint-dim);font-weight:800;font-size:.72rem;padding:4px 0;border-radius:8px}
+  .mnav svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .mnav a.on{color:#111;background:var(--yellow)}
+  .mnav a:focus-visible{outline:3px solid var(--yellow);outline-offset:2px}
+  .fd-places,.fd-filters{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:2px 16px;scroll-padding:16px}
+  .fd-places::-webkit-scrollbar,.fd-filters::-webkit-scrollbar{display:none}
+  .fd-chip{flex:none}
+  .fd-grid{grid-template-columns:minmax(0,1fr)}
+  #s-food .sec-title .small{display:none}
+  .fd-head strong{font-size:1.2rem}
+}
 </style>
 <script type="application/json" id="state">{"checkins":[],"message":"","messageAt":null,"gpsLink":"","variant":{"hin":"cisa","rueck":"cisa"}}</script>
 <div id="app"></div>
@@ -599,8 +618,33 @@ function estimate(phase,now){
       res.km=Math.max(0,res.kmTotal-rest);res.remain=Math.max(0,rest/70*60);res.eta=now+res.remain*60000;
       res.done=rest<6;
     }
+    var O=res.done?null:osrmFor(phase,now);
+    if(O){
+      res.remainKm=O.km;
+      // Auf den letzten 250 km ist die Live-Route genauer als der Fahrplan (der Pausen enthält)
+      if(O.km<250){var eta=Math.max(now+60000,O.gt+O.min*OSRM_BUS*60000);res.eta=eta;res.remain=(eta-now)/60000;res.delay=(eta-start)/60000-total;res.osrm=true;res.scale=res.remain/Math.max(1,total-res.eff)}
+    }
   }
   return res;
+}
+
+/* Reststrecke live: echte Straße von der Busposition bis zum Ziel (OSRM), Fahrzeit auf Bus-Tempo umgerechnet */
+var osrm={t:0,gt:0,lat:0,lon:0,km:null,min:null,phase:''}, OSRM_BUS=1.15;
+function pullOsrm(){
+  if(!window.fetch||!gps)return;
+  var now=Date.now();if(!gpsFresh(now))return;
+  var ph=phaseNow(now);if(ph!=='hin'&&ph!=='rueck')return;
+  if(osrm.t&&osrm.phase===ph&&now-osrm.t<4*60000&&kmDist(osrm.lat,osrm.lon,gps.lat,gps.lon)<3)return;
+  var r=route(ph),fin=r[r.length-1],la=gps.lat,lo=gps.lon,gt=gps.t;
+  osrm.t=now;osrm.lat=la;osrm.lon=lo;
+  fetch('https://router.project-osrm.org/route/v1/driving/'+lo.toFixed(5)+','+la.toFixed(5)+';'+fin.lon+','+fin.lat+'?overview=false')
+    .then(function(x){return x.ok?x.json():null}).then(function(j){
+      if(!j||!j.routes||!j.routes[0])return;
+      osrm={t:Date.now(),gt:gt,lat:la,lon:lo,km:j.routes[0].distance/1000,min:j.routes[0].duration/60,phase:ph};render();
+    }).catch(function(){});
+}
+function osrmFor(phase,now){
+  return osrm.km!=null&&osrm.phase===phase&&gps&&now-osrm.t<15*60000&&kmDist(osrm.lat,osrm.lon,gps.lat,gps.lon)<4?osrm:null;
 }
 
 /* Live-GPS */
@@ -990,7 +1034,7 @@ function nextEvent(e){
   var k=e.r.key||'g-cisa', g=k.indexOf('sb')===0?'sb':'g';
   var list=EVENTS[e.phase][g].map(function(x){var o=wpOff(e,x[0]);return o==null?null:{n:x[1],off:o}}).filter(Boolean);
   list.push({n:fin,off:e.total});
-  for(var i=0;i<list.length;i++)if(list[i].off>e.eff+1)return {n:list[i].n,min:list[i].off-e.eff};
+  for(var i=0;i<list.length;i++)if(list[i].off>e.eff+1)return {n:list[i].n,min:i===list.length-1&&e.osrm?e.remain:(list[i].off-e.eff)*(e.scale||1)};
   return null;
 }
 var CH_POLY=BORDERS[1].concat(BORDERS[2],BORDERS[3]);
@@ -1149,7 +1193,7 @@ function hero(ph,now,e){
   } else if(ph==='hin'||ph==='rueck'){
     var cc=countryOf(e), last=e.r[e.r.length-1];
     h+='<div class="gantry"><div class="sign '+cc+'"><div class="in hero-in"><div class="where"><span class="small">'+(ph==='hin'?'Hinfahrt – wir sind gerade':'Heimfahrt – wir sind gerade')+'</span><strong>'+esc(whereText(e))+'</strong></div>'+
-       '<div class="dest">'+ARROW+'<span class="to">'+esc(last.n)+'</span><span class="km">'+n1((e.live&&!e.offRoute&&geoRemainKm(e.phase,e.r.key,e.lat,e.lon))||(e.kmTotal-e.km))+' km</span><span class="eta">Ankunft ca. '+tm(e.eta)+', noch '+dur(e.remain)+'</span></div></div></div></div>';
+       '<div class="dest">'+ARROW+'<span class="to">'+esc(last.n)+'</span><span class="km">'+n1(e.remainKm!=null?e.remainKm:((e.live&&!e.offRoute&&geoRemainKm(e.phase,e.r.key,e.lat,e.lon))||(e.kmTotal-e.km)))+' km</span><span class="eta">Ankunft ca. '+tm(e.eta)+', noch '+dur(e.remain)+'</span></div></div></div></div>';
     var nx=nextEvent(e);
     if(nx&&!e.done)h+=nextBox('Als Nächstes',nx.n,inMin(nx.min));
     var sw=swissState(e);
@@ -1201,20 +1245,25 @@ function distSign(ph,now,e){
   h+='<div class="drow final"><span>'+esc(last.n)+'</span><b>'+n1(last.km-cur)+' km</b></div>';
   return h+'</div></div>';
 }
+var tlOpen=false;
 function timeline(ph,now,e){
   var rp=(ph==='vorher'||ph==='hin')?'hin':'rueck';
   var ee=e||estimate(rp,now), r=ee.r, start=ee.start, all=ph==='zuhause';
   var ckBy={};ee.cks.forEach(function(c){ckBy[c.wp]=c});
   var h='<div class="sec-title"><h2>'+(rp==='hin'?'Fahrplan Hinfahrt':'Fahrplan Rückfahrt')+'</h2><span class="small">'+(rp==='hin'?'So 22:30 → Mo ca. 14:00':'Fr 08:00 → ca. 23:30')+'</span></div><ol class="fp">';
+  var nOld=0;
   r.forEach(function(w,k){
     var passed=all||(ph!=='vorher'&&ph!=='vorort'&&(k<=ee.i&&ee.eff>w.off||ee.done));
     var next=!all&&(ph==='hin'||ph==='rueck')&&!ee.done&&k===ee.i+1;
-    var ck=ckBy[w.id], t=ck?ck.t:start+(w.off+(ph==='vorher'||ph==='vorort'?0:Math.max(0,ee.delay)))*60000;
-    h+='<li class="'+(passed?'passed':'')+(next?' next':'')+'"><span class="t">'+tm(t)+'<small>'+(ck?'gemeldet':(k===0?'Abfahrt':'ca.'))+'</small></span><span class="mk"></span>';
-    h+='<span class="nm">'+esc(w.n)+(ck?'<span class="ok">✓ gemeldet</span>':'')+(w.sub?'<small>'+esc(w.sub)+'</small>':'')+(next?'<span class="here">Als Nächstes, noch ca. '+dur(w.off-ee.eff)+'</span>':'')+'</span>';
+    var ck=ckBy[w.id], t=ck?ck.t:(ee.osrm&&!passed&&w.off>ee.eff?now+(w.off-ee.eff)*ee.scale*60000:start+(w.off+(ph==='vorher'||ph==='vorort'?0:Math.max(0,ee.delay)))*60000);
+    var old=passed&&!all&&k<ee.i-1;if(old)nOld++;
+    h+='<li class="'+(passed?'passed':'')+(next?' next':'')+(old?' old':'')+'"><span class="t">'+tm(t)+'<small>'+(ck?'gemeldet':(k===0?'Abfahrt':'ca.'))+'</small></span><span class="mk"></span>';
+    h+='<span class="nm">'+esc(w.n)+(ck?'<span class="ok">✓ gemeldet</span>':'')+(w.sub?'<small>'+esc(w.sub)+'</small>':'')+(next?'<span class="here">Als Nächstes, noch ca. '+dur((w.off-ee.eff)*(ee.scale||1))+'</span>':'')+'</span>';
     h+='<span class="sd">'+shield(w.road)+'<span class="num">'+n1(w.km)+' km</span></span></li>';
   });
-  return h+'</ol><p class="fine">Erkannter Weg: <b>'+esc(ROUTE_NAME[r.key]||'')+'</b>. Die Seite erkennt am GPS, ob der Bus über den Gotthard oder den San Bernardino fährt, und ab Parma über La Spezia oder Bologna. Die anderen möglichen Wege sind auf der Karte gestrichelt.</p>';
+  h+='</ol>';
+  if(nOld>1){h=h.replace('<ol class="fp">','<ol class="fp'+(tlOpen?'':' fold')+'">');h+='<button type="button" class="tl-more" id="tl-more" aria-expanded="'+tlOpen+'">'+(tlOpen?'Geschaffte Orte ausblenden':nOld+' geschaffte Orte anzeigen')+'</button>'}
+  return h+'<p class="fine">Erkannter Weg: <b>'+esc(ROUTE_NAME[r.key]||'')+'</b>. Die Seite erkennt am GPS, ob der Bus über den Gotthard oder den San Bernardino fährt, und ab Parma über La Spezia oder Bologna. Die anderen möglichen Wege sind auf der Karte gestrichelt.</p>';
 }
 function week(now){
   var today=berlinDate(now);
@@ -1300,6 +1349,7 @@ function worksInfo(it){
 function trafficBox(ph,e){
   if(ph!=='vorher'&&ph!=='hin'&&ph!=='rueck')return '';
   var inDE=ph==='vorher'||(e&&countryAt(e.lat,e.lon)==='DE');
+  if(!inDE&&!(traffic.items&&traffic.items.length))return '';
   var h='<section class="traffic" aria-label="Verkehr"><div class="traffic-h"><h2>Verkehr vor uns</h2><span class="small">'+(traffic.t?'Stand '+tm(traffic.t)+', Autobahn GmbH':'wird geladen …')+'</span></div>';
   if(traffic.items===null){h+='<p class="fine">Verkehrsmeldungen werden geladen …</p>'}
   else if(!traffic.items.length){h+='<p class="fine">'+(inDE?'Keine Staus oder Sperrungen in unserer Fahrtrichtung auf der deutschen Strecke gemeldet.':'Für die Schweiz und Italien gibt es keine frei verfügbaren Verkehrsdaten. Steht der Bus im Stau, zeigt die Seite das über das GPS an.')+'</p>'}
@@ -1444,7 +1494,7 @@ function foodBox(ph,now,e){
     pois.forEach(function(o){if(o.k!=='s'||!poiSideOk(o,rp,r.key))return;var a=poiAlong(o,r);if(a!=null&&a>cur+1)list.push({o:o,ahead:a-cur})});
     list.sort(function(a,b){return a.ahead-b.ahead});
     h+='<div class="sign brown fd-head"><div class="in"><span class="small">Im Bus</span><strong>Raststätten mit Essen voraus</strong><span class="fd-sub">Wo der Bus wirklich hält, entscheidet der Fahrer. Die Pausen-Prognose steht bei der Karte.</span></div></div>';
-    h+=list.length?'<ul class="fd-rast">'+list.slice(0,6).map(function(x){var sp=curSpeed&&curSpeed()||75;return '<li>'+poiBadge(x.o.mc?'mc':'rs')+'<span>'+esc(poiName(x.o))+(x.o.mc?' <small>mit McDonald’s</small>':'')+'</span><span class="num">'+n1(x.ahead)+' km · ca. '+tm(now+x.ahead/Math.max(40,Math.min(95,sp))*3600000)+'</span></li>'}).join('')+'</ul>':'<p class="fine">Die Raststätten-Liste lädt noch.</p>';
+    h+=list.length?'<ul class="fd-rast">'+list.slice(0,6).map(function(x){var sp=curSpeed&&curSpeed()||75;return '<li>'+poiBadge(x.o.mc?'mc':'rs')+'<span>'+esc(poiName(x.o))+(x.o.mc?' <small>mit McDonald’s</small>':'')+'</span><span class="num">'+n1(x.ahead)+' km · ca. '+tm(now+x.ahead/Math.max(40,Math.min(95,sp))*3600000)+'</span></li>'}).join('')+'</ul>':'<p class="fine">'+(pois.length?'Bis zum Ziel kommt keine Raststätte mehr. Gleich gibt es Essen vor Ort.':'Die Raststätten-Liste lädt noch.')+'</p>';
     return h;
   }
   var P=null, ref=null, spots=null, city='';
@@ -1520,6 +1570,7 @@ document.getElementById('app').innerHTML=
  '<div class="top-r"><div class="tacho" id="tacho" hidden aria-live="polite"></div><div class="ovals" aria-label="Länder: Deutschland, Schweiz, Italien"><span class="oval">D</span><span class="oval">CH</span><span class="oval">I</span></div></div></header>'+
  '<section class="stack" id="s-hero" aria-live="polite"></section>'+
  '<div id="s-traffic"></div>'+
+ '<section class="stack" id="s-food"></section>'+
  '<div class="lane"></div>'+
  '<div class="grid"><div class="nav"><div class="nav-head"><span>Strecke · schematisch</span><span id="s-upd"></span></div>'+
  '<div class="mapwrap" id="mapwrap"><div id="s-map" class="lmap"></div>'+
@@ -1529,9 +1580,7 @@ document.getElementById('app').innerHTML=
  '<div class="key"><span><i></i>geschafft</span><span><i class="r"></i>noch vor uns</span><span><i class="a"></i>anderer möglicher Weg</span></div><div class="key" id="s-key2"></div><div id="s-events"></div></div>'+
  '<div class="stack" style="gap:24px"><div id="s-dist"></div><section class="stack" id="s-tl"></section></div></div>'+
  '<div class="lane"></div>'+
- '<section class="stack" id="s-food"></section>'+
- '<div class="lane"></div>'+
- '<section class="stack"><div class="sec-title"><h2>Unsere Woche</h2><span class="small">Hotel Concordia, Via della Salute 16, 51016 Montecatini Terme</span></div>'+
+ '<section class="stack" id="s-weeksec"><div class="sec-title"><h2>Unsere Woche</h2><span class="small">Hotel Concordia, Via della Salute 16, 51016 Montecatini Terme</span></div>'+
  '<div class="week"><div class="nav"><div class="nav-head"><span>Ausflüge ab dem Hotel</span><span>gestrichelt = Zug</span></div><div id="s-tus"></div></div><div id="s-week" style="display:contents"></div></div></section>'+
  '<div class="lane"></div>'+
  '<section class="stack"><div class="sec-title"><h2>Gut zu wissen</h2></div><div class="warns">'+
@@ -1544,6 +1593,17 @@ document.getElementById('app').innerHTML=
 '</div>';
 
 wireFood();
+document.addEventListener('click',function(ev){var b=ev.target.closest&&ev.target.closest('#tl-more');if(b){tlOpen=!tlOpen;render()}});
+(function(){
+  var nav=document.createElement('nav');nav.className='mnav';nav.setAttribute('aria-label','Springen zu');
+  var T=[['s-hero','Bus','<path d="M5 16V6a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v10M5 11h14M7 19v2M17 19v2M4 16h16v3H4z"/>'],['mapwrap','Karte','<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14"/>'],['s-food','Essen','<path d="M7 3v8a2 2 0 0 0 2 2v8M11 3v8M7 7h4M16 3c-2 1-3 4-3 7h3v11"/>'],['s-weeksec','Woche','<path d="M4 6h16v14H4zM4 10h16M8 3v4M16 3v4"/>']];
+  nav.innerHTML=T.map(function(t){return '<a href="#'+t[0]+'" data-to="'+t[0]+'"><svg viewBox="0 0 24 24" aria-hidden="true">'+t[2]+'</svg><span>'+t[1]+'</span></a>'}).join('');
+  document.body.appendChild(nav);
+  nav.addEventListener('click',function(ev){var a=ev.target.closest('a');if(!a)return;ev.preventDefault();var el=document.getElementById(a.dataset.to);if(el){var y=el.getBoundingClientRect().top+window.scrollY-12;window.scrollTo({top:y,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'})}});
+  var mark=function(){var cur=T[0][0];T.forEach(function(t){var el=document.getElementById(t[0]);if(el&&el.getBoundingClientRect().top<window.innerHeight*0.4)cur=t[0]});
+    [].forEach.call(nav.querySelectorAll('a'),function(a){a.classList.toggle('on',a.dataset.to===cur)})};
+  window.addEventListener('scroll',mark,{passive:true});mark();
+})();
 render();
 setInterval(render,30000);
 
@@ -1727,6 +1787,7 @@ function useGps(p){
   gps={speed:sp,lat:lat,lon:lon,t:t,acc:+p.acc||null,stopped:!!p.stopped,stoppedSince:p.stoppedSince?toMs(p.stoppedSince):null,msg:typeof p.msg==='string'?p.msg.slice(0,200):'',msgAt:p.msgAt?toMs(p.msgAt):null};
   lookupStop();
   render();
+  pullOsrm();
 }
 var TRACK_RAW='https://raw.githubusercontent.com/F1NN303/toskana-2026/live/track.json';
 var events=[], tripState={};
@@ -1756,7 +1817,7 @@ function pullGps(){
     return fetch(GPS_RAW+'?t='+Date.now(),{cache:'no-store'}).then(function(r2){return r2.ok?r2.json():null});
   }).then(useGps).catch(function(){});
 }
-pullStatus();setInterval(pullStatus,60000);pullGps();setInterval(pullGps,75000);pullWx();setInterval(pullWx,3600000);pullTrack();setInterval(pullTrack,300000);pullPois();pullFood();pullGeo();pullEvents();setInterval(pullEvents,180000);pullTraffic();setInterval(pullTraffic,300000);
+pullStatus();setInterval(pullStatus,60000);pullGps();setInterval(pullGps,75000);setInterval(pullOsrm,60000);pullWx();setInterval(pullWx,3600000);pullTrack();setInterval(pullTrack,300000);pullPois();pullFood();pullGeo();pullEvents();setInterval(pullEvents,180000);pullTraffic();setInterval(pullTraffic,300000);
 
 })();
 </script>
