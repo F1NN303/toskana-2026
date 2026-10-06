@@ -538,6 +538,13 @@ svg .mk-works text{fill:#111}
 .fd-ic{width:46px;height:46px;border-radius:12px;display:grid;place-items:center;background:var(--c,#3a3e42);color:#fff}
 .fd-ic svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .fd-ic-pizza{--c:#a4502a}.fd-ic-panini,.fd-ic-snack{--c:#6b7430}.fd-ic-gelato{--c:#8a3f5d}.fd-ic-burger{--c:#8c2a1f}.fd-ic-rest{--c:#6b4a1c}.fd-ic-asia{--c:#2e4a63}
+
+.fd-th{width:46px;height:46px;border-radius:12px;object-fit:cover;display:block;background:#2a2d30}
+.fd-star{font-family:var(--f-mono);font-size:.75rem;font-weight:700;color:var(--yellow)}
+.fd-star small{color:var(--paint-dim);font-weight:400}
+.fd-gr{display:flex;gap:8px;align-items:baseline}.fd-gr span:last-child{font-size:.72rem;color:var(--paint-dim)}
+.fd-by{position:absolute;right:6px;bottom:6px;z-index:1;font-size:.62rem;color:#fff;background:rgba(0,0,0,.55);padding:1px 5px;border-radius:4px;max-width:60%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fd-pic .fd-tag.y{margin-bottom:14px}
 </style>
 <script type="application/json" id="state">{"checkins":[],"message":"","messageAt":null,"gpsLink":"","variant":{"hin":"cisa","rueck":"cisa"}}</script>
 <div id="app"></div>
@@ -1582,13 +1589,13 @@ function foodList(spots,ref,now){
   }).sort(function(a,b){return b.sc-a.sc});
 }
 function foodCard(x,i,city){
-  var s=x.s, oh=x.oh, pr=x.pr, q=encodeURIComponent(s.n+', '+city);
+  var s=x.s, oh=x.oh, pr=x.pr, q=encodeURIComponent(s.n+', '+city);gWant(s,city);var g=gGet(s);
   var hrs=!oh.known?'<span class="fd-unk">Zeiten unbekannt</span>':(oh.open?(oh.until==null?'rund um die Uhr':'offen bis '+hhmm(oh.until)):'<span class="fd-cl">geschlossen'+(oh.from!=null?', ab '+hhmm(oh.from):'')+'</span>');
-  return '<article class="fd-card'+(s.tip?' tip':'')+'"><div class="fd-pic"><img src="img/food/'+foodPhoto(s)+'.webp" alt="" loading="lazy" decoding="async" width="640" height="400">'+'<span class="fd-tag">'+esc(FCAT[s.c]||'Essen')+'</span>'+(s.tip?'<span class="fd-tag y">Unser Tipp</span>':'')+'</div>'+
+  return '<article class="fd-card'+(s.tip?' tip':'')+'"><div class="fd-pic"><img src="'+(g&&g.photo?esc(g.photo):'img/food/'+foodPhoto(s)+'.webp')+'" alt="" loading="lazy" decoding="async" width="640" height="400" referrerpolicy="no-referrer">'+(g&&g.photo&&g.by?'<span class="fd-by">Foto: '+esc(g.by)+'</span>':'')+'<span class="fd-tag">'+esc(FCAT[s.c]||'Essen')+'</span>'+(s.tip?'<span class="fd-tag y">Unser Tipp</span>':'')+'</div>'+
     '<div class="fd-bd"><div class="fd-nm"><b>'+esc(s.n)+'</b><span class="fd-pr">'+(pr[1]<=10?'€':pr[1]<=20?'€€':'€€€')+' · ca. '+pr[0]+'–'+pr[1]+' €</span></div>'+
-    '<div class="fd-meta"><span>'+x.walk+' Min zu Fuß</span><span>'+hrs+'</span>'+(s.st?'<span>'+esc(s.st)+'</span>':'')+'</div>'+
+    (g&&g.rating?'<div class="fd-gr">'+gStars(g)+'<span>bei Google</span></div>':'')+'<div class="fd-meta"><span>'+x.walk+' Min zu Fuß</span><span>'+hrs+'</span>'+(s.st?'<span>'+esc(s.st)+'</span>':'')+'</div>'+
     (s.tip?'<p class="fd-note">'+esc(s.tip)+'</p>':'')+
-    '<div class="fd-acts"><a class="go" href="https://www.google.com/maps/dir/?api=1&destination='+s.lat+','+s.lon+'&travelmode=walking" target="_blank" rel="noopener">Route hin</a><a href="https://www.google.com/maps/search/?api=1&query='+q+'" target="_blank" rel="noopener">Fotos und Bewertungen</a></div></div></article>';
+    '<div class="fd-acts"><a class="go" href="https://www.google.com/maps/dir/?api=1&destination='+s.lat+','+s.lon+'&travelmode=walking" target="_blank" rel="noopener">Route hin</a><a href="'+(g&&g.maps?esc(g.maps):'https://www.google.com/maps/search/?api=1&query='+q)+'" target="_blank" rel="noopener">Fotos und Bewertungen</a></div></div></article>';
 }
 var FICON={
   pizza:'<path d="M12 21 3.5 6.5a15 15 0 0 1 17 0Z"/><path d="M5.2 9.4a11 11 0 0 1 13.6 0"/><circle cx="10" cy="11.5" r="1.1"/><circle cx="13.6" cy="14" r="1.1"/><circle cx="11.6" cy="17" r="1"/>',
@@ -1599,11 +1606,33 @@ var FICON={
   asia:'<path d="M4 12h16a8 8 0 0 1-16 0Z"/><path d="M14 3l-5 8M19 4l-7 7"/>'
 };
 FICON.snack=FICON.panini;FICON.kebab=FICON.panini;
+/* Google-Fotos und -Bewertungen über den eigenen Worker (Schlüssel liegt nur dort) */
+var WORKER='https://toskana-ki.f1nn-rhldr.workers.dev', gOff=false, gInfo={}, gQ=[], gRun=0;
+try{var gc=JSON.parse(sessionStorage.getItem('tl-g')||'null');if(gc)gInfo=gc}catch(e){}
+function gKey(s){return s.n+'|'+s.lat.toFixed(4)+','+s.lon.toFixed(4)}
+function gWant(s,city){var k=gKey(s);if(gOff||gInfo[k]||gQ.some(function(q){return q.k===k}))return;gQ.push({k:k,s:s,city:city})}
+function gPump(){
+  while(!gOff&&gRun<4&&gQ.length){
+    var it=gQ.shift();if(gInfo[it.k])continue;gRun++;gInfo[it.k]={loading:true};
+    (function(it){
+      fetch(WORKER+'/place?q='+encodeURIComponent(it.s.n+(it.city?', '+it.city:''))+'&lat='+it.s.lat+'&lon='+it.s.lon)
+        .then(function(r){if(r.status===503||r.status===403){gOff=true;return null}return r.ok?r.json():null})
+        .then(function(j){gInfo[it.k]=j||{found:false};try{sessionStorage.setItem('tl-g',JSON.stringify(gInfo))}catch(e){}})
+        .catch(function(){gInfo[it.k]={found:false};gOff=true})
+        .then(function(){gRun--;gTick();gPump()});
+    })(it);
+  }
+}
+var gT=null;function gTick(){if(gT)return;gT=setTimeout(function(){gT=null;render()},250)}
+function gGet(s){var g=gInfo[gKey(s)];return g&&g.found?g:null}
+function gStars(g){if(!g||!g.rating)return '';var c=g.count>=1000?(Math.round(g.count/100)/10).toString().replace('.',',')+'k':g.count;return '<span class="fd-star">★ '+g.rating.toFixed(1).replace('.',',')+' <small>('+c+')</small></span>'}
 function foodRow(x,city){
   var s=x.s, oh=x.oh, pr=x.pr, q=encodeURIComponent(s.n+(city?', '+city:''));
   var st=!oh.known?'':(oh.open?'<span class="ok">'+(oh.until==null?'offen':'bis '+hhmm(oh.until))+'</span>':'<span class="cl">zu'+(oh.from!=null?' · ab '+hhmm(oh.from):'')+'</span>');
-  return '<li><a class="fd-row" href="https://www.google.com/maps/search/?api=1&query='+q+'" target="_blank" rel="noopener"><span class="fd-ic fd-ic-'+(FICON[s.c]?s.c:'rest')+'" aria-hidden="true"><svg viewBox="0 0 24 24">'+(FICON[s.c]||FICON.rest)+'</svg></span>'+
-    '<span class="fd-rt"><b>'+esc(s.n)+'</b><span class="fd-rm">'+esc(FCAT[s.c]||'Essen')+' · '+(pr[1]<=10?'€':pr[1]<=20?'€€':'€€€')+' · '+x.walk+' Min'+(st?' · '+st:'')+'</span></span><span class="fd-go" aria-hidden="true">›</span></a></li>';
+  gWant(s,city);var g=gGet(s), href=g&&g.maps?g.maps:'https://www.google.com/maps/search/?api=1&query='+q;
+  var pic=g&&g.photo?'<img class="fd-th" src="'+esc(g.photo)+'" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">':'<span class="fd-ic fd-ic-'+(FICON[s.c]?s.c:'rest')+'" aria-hidden="true"><svg viewBox="0 0 24 24">'+(FICON[s.c]||FICON.rest)+'</svg></span>';
+  return '<li><a class="fd-row" href="'+esc(href)+'" target="_blank" rel="noopener">'+pic+
+    '<span class="fd-rt"><b>'+esc(s.n)+'</b>'+gStars(g)+'<span class="fd-rm">'+esc(FCAT[s.c]||'Essen')+' · '+(pr[1]<=10?'€':pr[1]<=20?'€€':'€€€')+' · '+x.walk+' Min'+(st?' · '+st:'')+'</span></span><span class="fd-go" aria-hidden="true">›</span></a></li>';
 }
 function foodBox(ph,now,e){
   var auto=foodAuto(ph,now), sel=foodSel||auto, h='<div class="sec-title"><h2>Essen in der Nähe</h2><span class="small">gut und günstig, sortiert nach Preis-Leistung und Fußweg</span></div>';
@@ -1649,7 +1678,8 @@ function foodBox(ph,now,e){
     h+='<div class="fd-lbl"><span>Weitere in der Nähe</span><small>'+others.length+' Lokale</small></div><ul class="fd-rows">'+others.slice(0,m).map(function(x){return foodRow(x,city)}).join('')+'</ul>';
     if(others.length>m)h+='<button type="button" class="fd-more" data-fm="1">'+(others.length-m)+' weitere anzeigen</button>';
   }
-  return h+'<p class="fine">Daten: OpenStreetMap und eigene Tipps. Preise sind grobe Schätzungen pro Person. Öffnungszeiten können abweichen, besonders in Italien zur Mittagspause. Echte Fotos und Bewertungen über den Knopf bei Google Maps.</p>';
+  setTimeout(gPump,0);
+  return h+'<p class="fine">'+(gOff?'':'Fotos und Sterne: Google Maps. ')+'Daten: OpenStreetMap und eigene Tipps. Preise sind grobe Schätzungen pro Person. Öffnungszeiten können abweichen, besonders in Italien zur Mittagspause. Echte Fotos und Bewertungen über den Knopf bei Google Maps.</p>';
 }
 function pullFoodLive(ref,key){
   myLive.busy=true;myLive.key=key;myLive.spots=null;
@@ -1710,7 +1740,7 @@ function aiFoodLines(sel,now){
     var s=x.s,oh=x.oh;
     out.push('- '+s.n+' | '+(FCAT[s.c]||'Essen')+' | ca. '+x.pr[0]+'–'+x.pr[1]+' € | '+x.walk+' Min zu Fuß | '+
       (!oh.known?'Öffnungszeiten unbekannt':oh.open?(oh.until==null?'offen':'offen bis '+hhmm(oh.until)):'geschlossen'+(oh.from!=null?', öffnet '+hhmm(oh.from):''))+
-      (s.st?' | '+s.st:'')+(s.tip?' | UNSER TIPP: '+s.tip:''));
+      (s.st?' | '+s.st:'')+(gGet(s)&&gGet(s).rating?' | Google '+gGet(s).rating+' Sterne ('+gGet(s).count+')':'')+(s.tip?' | UNSER TIPP: '+s.tip:''));
   });
   return out;
 }
@@ -1803,7 +1833,7 @@ document.getElementById('app').innerHTML=
   '<div class="warn">'+infoSq('i')+'<div><h3>Gepäck und Geld</h3><p>Sporttasche statt Hartschalenkoffer, höchstens 20 kg. Für die Nacht: Kissen, Wasser, Snacks, Powerbank. Standseilbahn 7,50 €, Mittagessen auf den Ausflügen zahlt ihr selbst.</p></div></div>'+
  '</div></section>'+
  '<div class="edge"></div>'+
- '<footer>Die Position kommt live vom GPS eines Handys im Bus und wird etwa jede Minute aktualisiert. Fällt das Signal länger als 15 Minuten aus (Funkloch, Tunnel, Akku), schätzt die Seite die Position nach dem Fahrplan, bis wieder ein Signal kommt.<details class="privacy"><summary>Datenschutz</summary><p>Das ist eine private, nicht offizielle Seite ohne Werbung und ohne Cookies. Einstellungen wie die Kartenfilter speichert nur dein eigenes Gerät.</p><p>Während der Hin- und Rückfahrt wird der Standort des Busses öffentlich bei GitHub gespeichert, damit diese Seite ihn anzeigen kann. Wer Benachrichtigungen einschaltet, hinterlegt dafür eine anonyme Push-Adresse ohne Namen. Beides wird nach der Fahrt gelöscht.</p><p>Wer die Reise-KI fragt, schickt die Frage zusammen mit den Daten dieser Seite (Busposition, Plan, Lokale) über einen kleinen Server bei Cloudflare an Anthropic (Claude). Namen oder Konten werden nicht übertragen, der Verlauf bleibt nur bis zum Schließen im Browser.</p><p>„Mein Standort“ bei Essen in der Nähe fragt dein Handy nur, wenn du darauf tippst. Der Standort bleibt auf deinem Gerät. Nur wenn du außerhalb der Ausflugsorte bist, geht er auf etwa 100 m gerundet an OpenStreetMap, um Läden in der Nähe zu finden.</p><p>Beim Laden ruft die Seite Inhalte von diesen Diensten ab, die dabei deine IP-Adresse sehen: GitHub (Seite und Daten), OpenStreetMap (Karte), unpkg (Karten-Programm), Open-Meteo (Wetter), Autobahn GmbH (Verkehr), Overpass/OpenStreetMap (Raststätten, Essen in der Nähe) und ntfy.sh (nur bei der Anmeldung für Benachrichtigungen).</p></details><details class="privacy"><summary>Bildnachweise</summary><p>Die Essensfotos sind Beispielbilder von Wikimedia Commons, nicht aus den jeweiligen Läden (außer All’Antico Vinaio). Sie liegen direkt auf dieser Seite.</p><ul class="credits">'+foodCredits()+'</ul></details></footer>'+
+ '<footer>Die Position kommt live vom GPS eines Handys im Bus und wird etwa jede Minute aktualisiert. Fällt das Signal länger als 15 Minuten aus (Funkloch, Tunnel, Akku), schätzt die Seite die Position nach dem Fahrplan, bis wieder ein Signal kommt.<details class="privacy"><summary>Datenschutz</summary><p>Das ist eine private, nicht offizielle Seite ohne Werbung und ohne Cookies. Einstellungen wie die Kartenfilter speichert nur dein eigenes Gerät.</p><p>Während der Hin- und Rückfahrt wird der Standort des Busses öffentlich bei GitHub gespeichert, damit diese Seite ihn anzeigen kann. Wer Benachrichtigungen einschaltet, hinterlegt dafür eine anonyme Push-Adresse ohne Namen. Beides wird nach der Fahrt gelöscht.</p><p>Wer die Reise-KI fragt, schickt die Frage zusammen mit den Daten dieser Seite (Busposition, Plan, Lokale) über einen kleinen Server bei Cloudflare an Anthropic (Claude). Namen oder Konten werden nicht übertragen, der Verlauf bleibt nur bis zum Schließen im Browser.</p><p>„Mein Standort“ bei Essen in der Nähe fragt dein Handy nur, wenn du darauf tippst. Der Standort bleibt auf deinem Gerät. Nur wenn du außerhalb der Ausflugsorte bist, geht er auf etwa 100 m gerundet an OpenStreetMap, um Läden in der Nähe zu finden.</p><p>Beim Laden ruft die Seite Inhalte von diesen Diensten ab, die dabei deine IP-Adresse sehen: GitHub (Seite und Daten), OpenStreetMap (Karte), unpkg (Karten-Programm), Open-Meteo (Wetter), Autobahn GmbH (Verkehr), Overpass/OpenStreetMap (Raststätten, Essen in der Nähe), Google Maps über einen eigenen Cloudflare-Server (Fotos und Bewertungen der Lokale, ohne deinen Standort) und ntfy.sh (nur bei der Anmeldung für Benachrichtigungen).</p></details><details class="privacy"><summary>Bildnachweise</summary><p>Die Essensfotos sind Beispielbilder von Wikimedia Commons, nicht aus den jeweiligen Läden (außer All’Antico Vinaio). Sie liegen direkt auf dieser Seite.</p><ul class="credits">'+foodCredits()+'</ul></details></footer>'+
 '</div>';
 
 wireFood();
