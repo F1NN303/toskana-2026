@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Wo essen wir? · Florenz</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<style>
+@font-face{font-family: 'Doto';font-style: normal;font-weight: 700;font-display: swap;src: url(fonts/Doto-700-latin-ext.woff2) format('woff2');unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;}
+@font-face{font-family: 'Doto';font-style: normal;font-weight: 700;font-display: swap;src: url(fonts/Doto-700-latin.woff2) format('woff2');unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+@font-face{font-family: 'Doto';font-style: normal;font-weight: 900;font-display: swap;src: url(fonts/Doto-900-latin-ext.woff2) format('woff2');unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;}
+@font-face{font-family: 'Doto';font-style: normal;font-weight: 900;font-display: swap;src: url(fonts/Doto-900-latin.woff2) format('woff2');unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+@font-face{font-family: 'Overpass';font-style: normal;font-weight: 400;font-display: swap;src: url(fonts/Overpass-400-latin-ext.woff2) format('woff2');unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;}
+@font-face{font-family: 'Overpass';font-style: normal;font-weight: 400;font-display: swap;src: url(fonts/Overpass-400-latin.woff2) format('woff2');unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+@font-face{font-family: 'Overpass';font-style: normal;font-weight: 600;font-display: swap;src: url(fonts/Overpass-600-latin-ext.woff2) format('woff2');unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;}
+@font-face{font-family: 'Overpass';font-style: normal;font-weight: 600;font-display: swap;src: url(fonts/Overpass-600-latin.woff2) format('woff2');unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+@font-face{font-family: 'Overpass';font-style: normal;font-weight: 700;font-display: swap;src: url(fonts/Overpass-700-latin-ext.woff2) format('woff2');unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;}
+@font-face{font-family: 'Overpass';font-style: normal;font-weight: 700;font-display: swap;src: url(fonts/Overpass-700-latin.woff2) format('woff2');unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+@font-face{font-family: 'Overpass';font-style: normal;font-weight: 800;font-display: swap;src: url(fonts/Overpass-800-latin-ext.woff2) format('woff2');unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;}
+@font-face{font-family: 'Overpass';font-style: normal;font-weight: 800;font-display: swap;src: url(fonts/Overpass-800-latin.woff2) format('woff2');unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+@font-face{font-family: 'Overpass';font-style: normal;font-weight: 900;font-display: swap;src: url(fonts/Overpass-900-latin-ext.woff2) format('woff2');unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;}
+@font-face{font-family: 'Overpass';font-style: normal;font-weight: 900;font-display: swap;src: url(fonts/Overpass-900-latin.woff2) format('woff2');unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+@font-face{font-family: 'Overpass Mono';font-style: normal;font-weight: 500;font-display: swap;src: url(fonts/OverpassMono-500-latin-ext.woff2) format('woff2');unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;}
+@font-face{font-family: 'Overpass Mono';font-style: normal;font-weight: 500;font-display: swap;src: url(fonts/OverpassMono-500-latin.woff2) format('woff2');unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+@font-face{font-family: 'Overpass Mono';font-style: normal;font-weight: 700;font-display: swap;src: url(fonts/OverpassMono-700-latin-ext.woff2) format('woff2');unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;}
+@font-face{font-family: 'Overpass Mono';font-style: normal;font-weight: 700;font-display: swap;src: url(fonts/OverpassMono-700-latin.woff2) format('woff2');unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+:root{--asphalt:#232527;--hi:#2d3033;--lo:#1a1b1d;--paint:#ecebe4;--dim:#a9aaa7;--muted:#8c8f91;--yellow:#f3c316;--brown:#73441f;--it:#0b8549;--red:#c41e2a;
+  --f:"Overpass","Arial Narrow",Arial,sans-serif;--m:"Overpass Mono",ui-monospace,Consolas,monospace;color-scheme:dark}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--asphalt);color:var(--paint);font-family:var(--f);font-size:16px;line-height:1.45;padding:max(14px,env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom))}
+.wrap{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.sign{background:var(--brown);border:3px solid #fff;border-radius:10px;padding:12px 14px;box-shadow:0 3px 0 rgba(0,0,0,.45)}
+.sign small{font-family:var(--m);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;opacity:.85}
+.sign h1{margin:2px 0 4px;font-size:1.7rem;font-weight:900;line-height:1.1}
+.sign p{margin:0;font-size:.92rem;opacity:.92}
+.me{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.me input{flex:1;min-width:140px;font:inherit;font-size:16px;background:var(--lo);color:var(--paint);border:2px solid #4a4e52;border-radius:8px;padding:9px 11px}
+.me input:focus{outline:none;border-color:var(--yellow)}
+.btn{font:inherit;font-weight:800;font-size:.9rem;border-radius:8px;padding:9px 13px;cursor:pointer;border:2px solid #4a4e52;background:transparent;color:var(--paint)}
+.btn.y{background:var(--yellow);border-color:var(--yellow);color:#111}
+.btn:focus-visible,.vote:focus-visible,a:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.hint{font-size:.82rem;color:var(--dim);margin:0}
+#map{height:260px;border-radius:12px;border:2px solid #3a3e42;background:#1d1f21;isolation:isolate}
+.leaflet-tile-pane{filter:brightness(.62) contrast(1.1) saturate(.7)}
+.pin{width:30px;height:30px;border-radius:50%;background:var(--yellow);color:#111;font-weight:900;display:grid;place-items:center;border:2px solid #111;box-shadow:0 2px 0 rgba(0,0,0,.5);font-family:var(--f)}
+.pin.lead{background:#fff}
+.pin.acc{background:var(--brown);color:#fff;border-color:#fff;width:26px;height:26px;font-size:.75rem}
+.pin.you{background:#2f7cf6;border-color:#fff;width:18px;height:18px}
+.cards{display:flex;flex-direction:column;gap:14px}
+.card{background:var(--hi);border-radius:12px;overflow:hidden;border:2px solid transparent;box-shadow:0 3px 0 rgba(0,0,0,.35)}
+.card.mine{border-color:var(--yellow)}
+.pic{position:relative;aspect-ratio:4/3;background:#2a2d30}
+.gal{position:absolute;inset:0;display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none}.gal::-webkit-scrollbar{display:none}.gal img{flex:0 0 100%;width:100%;height:100%;object-fit:cover;scroll-snap-align:start}
+.pic .cnt{position:absolute;right:10px;bottom:10px;z-index:1;font-size:.72rem;font-weight:800;color:#fff;background:rgba(0,0,0,.55);padding:2px 7px;border-radius:5px}
+.pic .src{position:absolute;right:10px;top:44px;z-index:1;font-size:.65rem;color:#fff;background:rgba(0,0,0,.5);padding:1px 6px;border-radius:4px;text-decoration:none}
+.pic::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(to top,rgba(0,0,0,.65),rgba(0,0,0,0) 55%)}
+.pic .num{position:absolute;left:10px;top:10px;z-index:1;width:30px;height:30px;border-radius:50%;background:var(--yellow);color:#111;font-weight:900;display:grid;place-items:center;border:2px solid #111}
+.pic .kind{position:absolute;left:12px;bottom:10px;z-index:1;font-weight:800;font-size:.82rem;color:#fff}
+.pic .lead{position:absolute;right:10px;top:10px;z-index:1;background:#fff;color:#111;font-weight:900;font-size:.75rem;padding:3px 8px;border-radius:5px}
+.bd{padding:11px 13px 13px;display:flex;flex-direction:column;gap:7px}
+.nm{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.nm b{font-size:1.2rem;font-weight:900}
+.pr{font-family:var(--m);font-weight:700;color:var(--yellow);font-size:.82rem;white-space:nowrap}
+.meta{display:flex;flex-wrap:wrap;gap:3px 14px;font-family:var(--m);font-size:.78rem;color:var(--dim)}
+.meta .ok{color:#8fd9b6}.meta .cl{color:#ff8a7a}
+.desc{margin:0;font-size:.92rem;color:#dcd9cf}
+.note{margin:0;font-size:.82rem;color:#ffd36b}
+.bar{height:8px;background:#3a3e42;border-radius:4px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--yellow);transition:width .3s}
+.votes{font-size:.82rem;color:var(--dim)}
+.acts{display:flex;gap:8px}
+.vote{flex:1.4;font:inherit;font-weight:900;font-size:.95rem;border-radius:8px;padding:10px;cursor:pointer;border:2px solid var(--yellow);background:transparent;color:var(--yellow)}
+.vote.on{background:var(--yellow);color:#111}
+.acts a{flex:1;text-align:center;text-decoration:none;font-weight:800;font-size:.85rem;padding:10px 6px;border-radius:8px;border:2px solid #4a4e52;color:var(--paint)}
+.status{font-family:var(--m);font-size:.75rem;color:var(--muted)}
+footer{font-size:.75rem;color:var(--muted)}
+footer a{color:var(--muted)}
+@media (prefers-reduced-motion:reduce){.bar i{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="sign"><small>Mi 07.10. · nur für unsere Gruppe</small><h1>Wo essen wir in Florenz?</h1><p>Stimm für dein Lieblingslokal. Alle mit diesem Link sehen die Stimmen live. Du kannst deine Stimme jederzeit ändern.</p></header>
+
+  <div class="me"><label class="hint" for="nick" style="width:100%">Dein Name oder Spitzname (sehen nur die mit dem Link)</label>
+    <input id="nick" maxlength="20" placeholder="z. B. Finn" autocomplete="off"><button type="button" class="btn" id="loc">Mein Standort</button></div>
+
+  <div id="map" aria-label="Karte mit den Lokalen"></div>
+  <p class="hint" id="from">Fußwege ab der Galleria dell’Accademia (David). Tippe „Mein Standort“ für Wege ab dir.</p>
+
+  <div class="cards" id="cards"></div>
+  <p class="status" id="st">Stimmen werden geladen …</p>
+
+  <footer>Angaben zu Preisen und Öffnungszeiten aus eurer Recherche von heute früh, ohne Gewähr. Die Fotos sind echte Fotos aus den Lokalen. Sie werden direkt von der Seite des Restaurants (Giaogiao) bzw. von Tripadvisor angezeigt und liegen nicht auf dieser Seite. Rechte bei den Fotografen. Die Stimmen (Spitzname und Lokal) werden für ein paar Stunden bei ntfy.sh gespeichert. Diese Seite ist nirgends verlinkt und für Suchmaschinen gesperrt.</footer>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script>
+(function(){
+var TOPIC='toskana26-wahl-1ab32a1a06', NTFY='https://ntfy.sh/'+TOPIC;
+var ACC={n:'Accademia',lat:43.77692,lon:11.25876};
+var R=[
+ {id:'giao',n:'Giaogiao',addr:'Via dei Servi 35R',lat:43.77444,lon:11.25818,kind:'Chinesisch · Dumplings & Bao',img:'dumplings',pr:'ca. 10–20 €',oh:[690,1290],ohTxt:'heute ca. 11:30–21:30',
+  desc:'Handgemachte Dumplings, Bao, Beef-Noodle-Soup, Reisgerichte, gebratene Nudeln, Fried Chicken, Wontons, Mapo Tofu und Bubble Tea.',note:'Durchgehend offen, keine italienische Mittagspause. Ca. 150 m von der Accademia.'},
+ {id:'dosi',n:'Do.si.rak',addr:'Via San Zanobi 30',lat:43.77849,lon:11.25491,kind:'Koreanisches Streetfood',img:'gimbap',pr:'ca. 10–15 €',oh:[720,900],ohTxt:'Mittwoch 12:00–15:00',
+  desc:'Korean Fried Chicken, Corn Dogs, Gimbap, Mandu und weitere Snacks. Noch ziemlich neu, wenige, aber sehr gute Bewertungen.',note:'Nur mittags offen (12–15 Uhr).'},
+ {id:'cup',n:'Cupcup’s Chicken',addr:'Via Nazionale 73R',lat:43.77712,lon:11.25187,kind:'Fried Chicken & Reis',img:'kfc1',pr:'ca. 10–20 €',oh:[720,1380],ohTxt:'heute 12:00–23:00',
+  desc:'Viel Fried Chicken, Curry-Reis mit Chicken Cutlet, Spicy Noodles, Reiskuchen. Bei Tripadvisor rund 4,9 von 5.',note:'Liegt Richtung Bahnhof, praktisch vor dem Zug um 17:47.'},
+ {id:'coco',n:'Il CoCo',addr:'Via Guelfa 24A',lat:43.77749,lon:11.25528,kind:'Korean Fried Chicken',img:'kfc2',pr:'ab ca. 23,50 € (halbes Hähnchen)',oh:[780,1380],ohTxt:'ab ca. 12 oder 13 Uhr (Angaben widersprechen sich)',
+  desc:'Richtiges Korean Fried Chicken, dazu Tteokbokki. Deutlich teurer als die anderen.',note:'Nur sicher offen, wenn ihr nach 13 Uhr geht.'}
+];
+var GAL={"giao": {"imgs": ["https://giaogiao.it/dishes/ravioli-maiale-griglia.jpg", "https://giaogiao.it/images/servi/3.jpg", "https://giaogiao.it/images/servi/5.jpg"], "src": "giaogiao.it", "url": "https://giaogiao.it/locali/duomo"}, "dosi": {"imgs": ["https://dynamic-media-cdn.tripadvisor.com/media/photo-o/34/2a/d1/6f/caption.jpg?w=700&h=-1&s=1", "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/34/06/2f/0a/caption.jpg?w=700&h=-1&s=1", "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/34/06/2f/07/caption.jpg?w=700&h=-1&s=1"], "src": "Tripadvisor", "url": "https://www.tripadvisor.com/Restaurant_Review-g187895-d34564519-Reviews-Do_si_rak-Florence_Tuscany.html"}, "cup": {"imgs": ["https://dynamic-media-cdn.tripadvisor.com/media/photo-o/2b/55/b9/60/caption.jpg?w=700&h=-1&s=1", "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/2c/81/70/f1/caption.jpg?w=700&h=-1&s=1"], "src": "Tripadvisor", "url": "https://www.tripadvisor.com/Restaurant_Review-g187895-d26835177-Reviews-Cupcup_s_Chicken_Firenze-Florence_Tuscany.html"}, "coco": {"imgs": ["https://dynamic-media-cdn.tripadvisor.com/media/photo-o/24/cf/5a/54/caption.jpg?w=700&h=-1&s=1", "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/21/ab/4b/c9/il-coco.jpg?w=700&h=-1&s=1", "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/24/cf/5a/51/caption.jpg?w=700&h=-1&s=1"], "src": "Tripadvisor", "url": "https://www.tripadvisor.com/Restaurant_Review-g187895-d15014014-Reviews-Il_CoCo-Florence_Tuscany.html"}};
+var me={id:'',nick:''}, votes={}, myPos=null, map=null, pins={};
+try{me.id=localStorage.getItem('wahl-id')||'';me.nick=localStorage.getItem('wahl-nick')||''}catch(e){}
+if(!me.id){me.id=Math.random().toString(36).slice(2,10);try{localStorage.setItem('wahl-id',me.id)}catch(e){}}
+document.getElementById('nick').value=me.nick;
+document.getElementById('nick').addEventListener('change',function(e){me.nick=e.target.value.trim().slice(0,20);try{localStorage.setItem('wahl-nick',me.nick)}catch(x){}if(votes[me.id])send(votes[me.id].pick)});
+
+
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function km(a,b,c,d){var k=Math.cos((a+c)/2*Math.PI/180);return Math.hypot((d-b)*111.32*k,(c-a)*110.57)}
+function walk(from,r){return Math.max(1,Math.round(km(from.lat,from.lon,r.lat,r.lon)*1.3/4.6*60))}
+function nowMin(){var p=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Rome',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(new Date()),o={};p.forEach(function(x){o[x.type]=x.value});return (+o.hour%24)*60+ +o.minute}
+function hm(m){return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0')}
+
+function counts(){var c={};R.forEach(function(r){c[r.id]=[]});Object.keys(votes).forEach(function(k){var v=votes[k];if(c[v.pick])c[v.pick].push(v.nick||'Jemand')});return c}
+function render(){
+  var c=counts(), total=Object.keys(votes).length, max=0, from=myPos||ACC, t=nowMin();
+  R.forEach(function(r){max=Math.max(max,c[r.id].length)});
+  var mine=votes[me.id]&&votes[me.id].pick;
+  document.getElementById('cards').innerHTML=R.map(function(r,i){
+    var n=c[r.id].length, lead=max>0&&n===max, open=t>=r.oh[0]&&t<r.oh[1];
+    var st=open?'<span class="ok">offen bis '+hm(r.oh[1])+'</span>':(t<r.oh[0]?'<span class="cl">öffnet '+hm(r.oh[0])+'</span>':'<span class="cl">geschlossen</span>');
+    return '<article class="card'+(mine===r.id?' mine':'')+'"><div class="pic"><div class="gal">'+GAL[r.id].imgs.map(function(u,k){return '<img src="'+u+'" alt="'+esc(r.n)+', Foto '+(k+1)+'" loading="'+(k?'lazy':'eager')+'" referrerpolicy="no-referrer" onerror="this.remove()">'}).join('')+'</div>'+(GAL[r.id].imgs.length>1?'<span class="cnt">'+GAL[r.id].imgs.length+' Fotos · wischen</span>':'')+'<a class="src" href="'+GAL[r.id].url+'" target="_blank" rel="noopener">Foto: '+esc(GAL[r.id].src)+'</a><span class="num">'+(i+1)+'</span>'+(lead?'<span class="lead">Vorne</span>':'')+'<span class="kind">'+esc(r.kind)+'</span></div>'+
+      '<div class="bd"><div class="nm"><b>'+esc(r.n)+'</b><span class="pr">'+esc(r.pr)+'</span></div>'+
+      '<div class="meta"><span>'+walk(from,r)+' Min zu Fuß '+(myPos?'ab dir':'ab Accademia')+'</span><span>'+st+'</span><span>'+esc(r.addr)+'</span></div>'+
+      '<p class="desc">'+esc(r.desc)+'</p><p class="note">'+esc(r.note)+' <span style="color:var(--dim)">('+esc(r.ohTxt)+')</span></p>'+
+      '<div class="bar" aria-hidden="true"><i style="width:'+(total?Math.round(n/total*100):0)+'%"></i></div>'+
+      '<div class="votes">'+(n?n+(n===1?' Stimme: ':' Stimmen: ')+c[r.id].map(esc).join(', '):'Noch keine Stimme')+'</div>'+
+      '<div class="acts"><button type="button" class="vote'+(mine===r.id?' on':'')+'" data-v="'+r.id+'" aria-pressed="'+(mine===r.id)+'">'+(mine===r.id?'Meine Wahl ✓':'Dafür stimmen')+'</button>'+
+      '<a href="https://www.google.com/maps/dir/?api=1&destination='+r.lat+','+r.lon+'&travelmode=walking" target="_blank" rel="noopener">Route</a>'+
+      '<a href="https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(r.n+', '+r.addr+', Firenze')+'" target="_blank" rel="noopener">Fotos</a></div></div></article>';
+  }).join('');
+  document.getElementById('st').textContent=total?total+(total===1?' Stimme':' Stimmen')+' insgesamt · aktualisiert '+new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}):'Noch keine Stimmen. Fang an!';
+  R.forEach(function(r,i){if(pins[r.id])pins[r.id].setIcon(L.divIcon({className:'',html:'<div class="pin'+(max>0&&c[r.id].length===max?' lead':'')+'">'+(i+1)+'</div>',iconSize:[30,30],iconAnchor:[15,15]}))});
+}
+document.getElementById('cards').addEventListener('click',function(e){
+  var b=e.target.closest('[data-v]');if(!b)return;
+  if(!me.nick){var i=document.getElementById('nick');i.focus();i.placeholder='Bitte erst Namen eintragen';return}
+  send(b.dataset.v);
+});
+function send(pick){
+  votes[me.id]={pick:pick,nick:me.nick,t:Date.now()};render();
+  fetch(NTFY,{method:'POST',body:JSON.stringify({id:me.id,pick:pick,nick:me.nick,t:Date.now()})}).catch(function(){document.getElementById('st').textContent='Stimme konnte nicht gesendet werden. Netz?'});
+}
+function poll(){
+  fetch(NTFY+'/json?poll=1&since=all').then(function(r){return r.ok?r.text():''}).then(function(txt){
+    var fresh={};
+    txt.split('\n').forEach(function(line){if(!line)return;try{var m=JSON.parse(line);if(m.event!=='message')return;var v=JSON.parse(m.message);
+      if(!v||!v.id||!R.some(function(r){return r.id===v.pick}))return;var tt=(m.time||0)*1000;if(!fresh[v.id]||fresh[v.id].tt<=tt)fresh[v.id]={pick:v.pick,nick:String(v.nick||'').slice(0,20),tt:tt}}catch(e){}});
+    if(votes[me.id]&&(!fresh[me.id]||fresh[me.id].pick!==votes[me.id].pick)&&Date.now()-votes[me.id].t<15000)fresh[me.id]=votes[me.id];
+    votes=fresh;render();
+  }).catch(function(){});
+}
+document.getElementById('loc').addEventListener('click',function(){
+  if(!navigator.geolocation)return;
+  navigator.geolocation.getCurrentPosition(function(p){myPos={lat:p.coords.latitude,lon:p.coords.longitude};
+    document.getElementById('from').textContent='Fußwege ab deinem Standort (bleibt auf deinem Handy).';
+    if(map){if(pins.you)pins.you.setLatLng([myPos.lat,myPos.lon]);else pins.you=L.marker([myPos.lat,myPos.lon],{icon:L.divIcon({className:'',html:'<div class="pin you"></div>',iconSize:[18,18],iconAnchor:[9,9]})}).addTo(map)}
+    render()},function(){document.getElementById('from').textContent='Standort nicht verfügbar, Wege ab der Accademia.'},{timeout:15000,maximumAge:60000});
+});
+if(window.L){
+  map=L.map('map',{scrollWheelZoom:false,attributionControl:true}).setView([43.7765,11.2555],16);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
+  pins.acc=L.marker([ACC.lat,ACC.lon],{icon:L.divIcon({className:'',html:'<div class="pin acc">D</div>',iconSize:[26,26],iconAnchor:[13,13]})}).addTo(map).bindPopup('Galleria dell’Accademia (David)');
+  R.forEach(function(r,i){pins[r.id]=L.marker([r.lat,r.lon],{icon:L.divIcon({className:'',html:'<div class="pin">'+(i+1)+'</div>',iconSize:[30,30],iconAnchor:[15,15]})}).addTo(map).bindPopup('<b>'+esc(r.n)+'</b><br>'+esc(r.addr))});
+  map.fitBounds(L.latLngBounds(R.map(function(r){return [r.lat,r.lon]}).concat([[ACC.lat,ACC.lon]])).pad(0.15));
+}
+render();poll();setInterval(poll,8000);setInterval(render,60000);
+})();
+</script>
+</body>
+</html>
