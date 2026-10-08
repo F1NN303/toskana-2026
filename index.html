@@ -625,7 +625,7 @@ function route(phase,key){
   if(phase==='hin')res=hin;
   else{
     var tot=hin[hin.length-1].off, kt=hin[hin.length-1].km;res=[];
-    for(var k=hin.length-1;k>=0;k--){var w=Object.assign({},hin[k]);w.off=tot-hin[k].off;w.km=kt-hin[k].km;w.road=k+1<hin.length?hin[k+1].road:'';if(w.id==='ai')w.sub='Südportal Gotthard-Tunnel';if(w.id==='go')w.sub='Nordportal, Tunnel geschafft';if(w.id==='ku')w.sub='Grenze zu Deutschland';if(w.id==='br')w.sub='Grenze zu Österreich';res.push(w)}
+    for(var k=hin.length-1;k>=0;k--){var w=Object.assign({},hin[k]);w.off=tot-hin[k].off;w.km=kt-hin[k].km;w.road=k+1<hin.length?hin[k+1].road:'';if(w.id==='ai')w.sub='Südportal Gotthard-Tunnel';if(w.id==='go')w.sub='Nordportal, Tunnel geschafft';if(w.id==='ch')w.sub='Grenze zur Schweiz';if(w.id==='ba')w.sub='Grenze zu Deutschland';if(w.id==='ku')w.sub='Grenze zu Deutschland';if(w.id==='br')w.sub='Grenze zu Österreich';res.push(w)}
   }
   res.key=key;routeCache[ck]=res;return res;
 }
