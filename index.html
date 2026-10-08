@@ -714,13 +714,13 @@ function osrmFor(phase,now){
 }
 
 /* Tagesausflüge live (Bus-GPS während der Woche) */
-var EXC={si:{n:'Siena',lat:43.3186,lon:11.3317},fi:{n:'Prato',sub:'Bahnhof, dann Zug nach Florenz',lat:43.8795,lon:11.0985},pi:{n:'Pisa',lat:43.7230,lon:10.3966},vi:{n:'Viareggio',lat:43.8670,lon:10.2440}};
+var EXC={si:{n:'Siena',lat:43.3186,lon:11.3317},fi:{n:'Prato',sub:'Bahnhof, dann Zug nach Florenz',lat:43.8795,lon:11.0985},pi:{n:'Pisa',lat:43.7230,lon:10.3966},vi:{n:'Viareggio',lat:43.8670,lon:10.2440},lu:{n:'Lucca',lat:43.8428,lon:10.4969}};
 var HOTEL={n:'Hotel Concordia',lat:43.88563,lon:10.77852};
 var excO={key:'',t:0,km:null,min:null,gt:0};
 function excState(now){
   if(!gps||!gpsFresh(now))return null;
   var d=berlinDate(now), D=DAYS.filter(function(x){return x.date===d})[0];if(!D)return null;
-  var place=D.place;if(d==='2026-10-08'&&berlinWdMin(now).min>=13*60)place='vi';
+  var place=D.place;if(d==='2026-10-08'&&berlinWdMin(now).min>=13*60)place='lu';
   var T=EXC[place];if(!T)return null;
   var dH=kmDist(gps.lat,gps.lon,HOTEL.lat,HOTEL.lon), dT=kmDist(gps.lat,gps.lon,T.lat,T.lon);
   if(dH<0.6)return {mode:'hotel',T:T,place:place};
@@ -801,7 +801,7 @@ var DAYS=[
  {date:'2026-10-05',wd:'Montag',dm:'05.10.',title:'Montecatini Alto',sub:'Ankunft und Wanderung',sign:'brown',place:'mt',items:[['ca. 14:00','Ankunft am Hotel Concordia, Zimmer beziehen'],['14:30','Wanderung hoch nach Montecatini Alto'],['ca. 18:00','Zurück im Hotel']],note:'Wer nicht laufen will: Standseilbahn (Funicolare) auf eigene Kosten, 7,50 €.'},
  {date:'2026-10-06',wd:'Dienstag',dm:'06.10.',title:'Siena',sub:'Tagesausflug',sign:'brown',place:'si',items:[['08:00','Abfahrt nach Siena'],['17:00','Zurück im Hotel'],['abends','Einkaufen für die Rückfahrt, Zimmer aufräumen']],note:'Wann der Bus in die Stadt darf, hängt vom genehmigten Zeitfenster ab.'},
  {date:'2026-10-07',wd:'Mittwoch',dm:'07.10.',title:'Firenze',sub:'Florenz, mit dem Zug ab Prato',sign:'brown',place:'fi',items:[['07:50','Mit dem Bus zum Bahnhof Prato'],['10:01','Zug nach Florenz, an 10:23 Santa Maria Novella'],['tagsüber','Galleria dell’Accademia (David), Ponte Vecchio, Uffizien, Dom'],['17:47','Zug zurück, an Prato 18:17, dann Bus zum Hotel']],note:'Die Zugtickets sind gebucht. Der Zug wartet nicht.'},
- {date:'2026-10-08',wd:'Donnerstag',dm:'08.10.',title:'Pisa & Viareggio',sub:'Schiefer Turm und Meer',sign:'brown',place:'pi',items:[['08:30','Abfahrt nach Pisa'],['ca. 13:30','Weiter nach Viareggio, Nachmittag am Meer'],['ca. 17:00','Zurück im Hotel']],note:'Nichts bei fliegenden Händlern kaufen. Für gefälschte Ware drohen in Italien Strafen bis ca. 5.000 €.'},
+ {date:'2026-10-08',wd:'Donnerstag',dm:'08.10.',title:'Pisa & Lucca',sub:'Schiefer Turm und Lucca (statt Strand, wegen Gewitter)',sign:'brown',place:'pi',items:[['08:30','Abfahrt nach Pisa'],['ca. 13:30','Weiter nach Lucca statt Viareggio (Gewitter)'],['ca. 17:00','Zurück im Hotel']],note:'Nichts bei fliegenden Händlern kaufen. Für gefälschte Ware drohen in Italien Strafen bis ca. 5.000 €.'},
  {date:'2026-10-09',wd:'Freitag',dm:'09.10.',title:'Mönchengladbach',sub:'Heimfahrt',sign:'de',place:'mg',items:[['06:45','Frühstück'],['07:45','Bus beladen'],['08:00','Abfahrt (evtl. früher)'],['ca. 23:30','Ankunft an der Schule']],note:'Eltern: Abholung gegen 23:30 an der Nespelerstraße einplanen.'}
 ];
 
@@ -1206,7 +1206,7 @@ function planItems(now){
 }
 function nextPlan(now){var a=planItems(now);for(var i=0;i<a.length;i++)if(a[i].t>now)return a[i];return null}
 
-var WX_PLACES=[['mg',51.19,6.44],['mt',43.88,10.77],['si',43.318,11.331],['fi',43.77,11.25],['pi',43.716,10.401]];
+var WX_PLACES=[['mg',51.19,6.44],['mt',43.88,10.77],['si',43.318,11.331],['fi',43.77,11.25],['pi',43.716,10.401],['lu',43.843,10.504]];
 var wx={};
 function pullWx(){
   if(!window.fetch)return;
@@ -1240,7 +1240,7 @@ var WXI={
 };
 function wxIcon(c){return '<svg class="wxi" viewBox="0 0 24 24" aria-hidden="true">'+WXI[wxKind(c)[1]]+'</svg>'}
 function rnd(x){return Math.round(x)}
-var WXNAME={mg:'Mönchengladbach',mt:'Montecatini',si:'Siena',fi:'Florenz',pi:'Pisa'};
+var WXNAME={mg:'Mönchengladbach',mt:'Montecatini',si:'Siena',fi:'Florenz',pi:'Pisa',lu:'Lucca'};
 function wxPlateNow(place,label){var w=wxNow(place);if(!w)return '';return '<span class="plate wx">'+wxIcon(w.code)+esc(label)+': '+rnd(w.temp)+' °C, '+wxKind(w.code)[0]+'</span>'}
 
 /* Tempo: vom Handy, sonst aus der aktuellen Position und einem Spurpunkt 2 bis 12 Minuten davor */
@@ -1500,7 +1500,7 @@ var food=null, foodSel=null, foodF={open:true,cheap:false,cat:null}, foodMore=fa
 var FCAT={pizza:'Pizza',panini:'Panini & Imbiss',snack:'Imbiss',gelato:'Gelato',burger:'Burger',pasta:'Trattoria',rest:'Restaurant',asia:'Asiatisch'};
 var FCOL={pizza:['#a4502a','#d9823f'],panini:['#5f6b2b','#a3a957'],snack:['#5f6b2b','#a3a957'],gelato:['#7a3b52','#d58aa8'],burger:['#8c1d18','#e0b21b'],rest:['#6b4a1c','#c9963f'],asia:['#2e4a63','#6f9cc2']};
 var FCHIPS=[['pizza','Pizza'],['panini','Panini'],['gelato','Gelato'],['rest','Trattoria'],['burger','Burger']];
-var FPLACES=[['mt','Montecatini'],['si','Siena'],['fi','Florenz'],['pi','Pisa'],['vi','Viareggio']];
+var FPLACES=[['mt','Montecatini'],['si','Siena'],['fi','Florenz'],['pi','Pisa'],['lu','Lucca']];
 function pullFood(){if(!window.fetch)return;fetch('food.json').then(function(r){return r.ok?r.json():null}).then(function(j){if(j&&j.places){food=j;render()}}).catch(function(){})}
 
 /* Öffnungszeiten im OSM-Format (die üblichen Fälle): liefert {known, open, until} */
@@ -1556,7 +1556,7 @@ function foodAuto(ph,now){
   var d=berlinDate(now), t=berlinWdMin(now).min;
   if(d==='2026-10-06')return t<17*60?'si':'mt';
   if(d==='2026-10-07')return t<18*60?'fi':'mt';
-  if(d==='2026-10-08')return t<13*60+30?'pi':(t<17*60?'vi':'mt');
+  if(d==='2026-10-08')return t<13*60+30?'pi':(t<17*60?'lu':'mt');
   return 'mt';
 }
 var FPH={pizza:['pizza1','pizza2','pizza3','pizza4'],taglio:['taglio1','taglio2'],panini:['panino1','panino2','panino3'],snack:['panino1','panino3','panino2'],kebab:['kebab1'],gelato:['gelato1','gelato2'],burger:['burger1','burger2'],rest:['pasta1','pasta2','pasta3'],asia:['asia1']};
