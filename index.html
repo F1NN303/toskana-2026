@@ -1,4 +1,4 @@
-<!doctype html><html lang="de"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><meta name="robots" content="noindex,nofollow"><meta name="app-build" id="app-build" content="v32"><title>Toskana-Fahrt Live</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect x=%221%22 y=%221%22 width=%2230%22 height=%2230%22 rx=%225%22 fill=%22%230a5aa8%22 stroke=%22white%22 stroke-width=%222%22/%3E%3Cpath d=%22M16 6l8 9h-5v11h-6V15H8z%22 fill=%22white%22/%3E%3C/svg%3E"><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#232527"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bus Live"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script></head><body>
+<!doctype html><html lang="de"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><meta name="robots" content="noindex,nofollow"><meta name="app-build" id="app-build" content="v33"><title>Toskana-Fahrt Live</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect x=%221%22 y=%221%22 width=%2230%22 height=%2230%22 rx=%225%22 fill=%22%230a5aa8%22 stroke=%22white%22 stroke-width=%222%22/%3E%3Cpath d=%22M16 6l8 9h-5v11h-6V15H8z%22 fill=%22white%22/%3E%3C/svg%3E"><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#232527"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bus Live"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script></head><body>
 
 
 <style id="css">
@@ -97,6 +97,13 @@ p{margin:0}
 .fcbar .d,.fcleg .d b::before{background:var(--amber)}
 .fcbar .p,.fcleg .p b::before{background:#4f8fd6}
 .fcbar .j,.fcleg .j b::before{background:#e5484d}
+.stbar{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;padding:10px 14px;border-radius:6px;border:3px solid #111;font-weight:700;line-height:1.3;box-shadow:0 3px 0 rgba(0,0,0,.45)}
+.stbar b{font-weight:900;text-transform:uppercase;letter-spacing:.04em;font-size:1.05rem}
+.stbar span{font-size:.95rem}
+.st-jam{background:#e5484d;color:#fff}
+.st-pause{background:#2f6fbd;color:#fff}
+.st-check{background:var(--yellow);color:#111}
+.st-ok{background:#1f7a46;color:#fff}
 .tlist .jdot{width:12px;height:12px;border-radius:3px;flex:none;margin-top:5px;border:2px solid #111}
 .fcleg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px}
 .fcleg div{display:flex;flex-direction:column;min-width:0}
@@ -1355,7 +1362,7 @@ function curSpeed(){
   if(!gps||!gps.t)return null;
   if(gps.speed!=null&&isFinite(gps.speed))return gps.speed;
   var tr=track, best=null;
-  for(var i=tr.length-1;i>=0;i--){var dt=gps.t-tr[i][2];if(dt>=2*60000&&dt<=12*60000){best=tr[i];break}}
+  for(var i=tr.length-1;i>=0;i--){var dt=gps.t-tr[i][2];if(dt>=50000&&dt<=10*60000){best=tr[i];break}}
   if(!best)return null;
   return kmDist(best[0],best[1],gps.lat,gps.lon)/((gps.t-best[2])/3600000);
 }
@@ -1411,6 +1418,7 @@ function hero(ph,now,e){
     h+=roadStrip(ee,0);
   } else if(ph==='hin'||ph==='rueck'){
     var cc=countryOf(e), last=e.r[e.r.length-1];
+    h+=statusBar(e,Date.now());
     if(!e.done)h+='<div class="vms eta-big" role="status"><div class="l1">Ankunft '+(ph==='hin'?'im Hotel':'an der Schule')+'</div><div class="l2">ca. '+tm(e.eta)+' Uhr</div><div class="l3">geschätzt · noch '+dur(e.remain)+(e.fc?'':(e.osrm?'':', alle Pausen eingerechnet'))+'</div>'+(e.fc?fcLine(e.fc):'')+'</div>';
     h+='<div class="gantry"><div class="sign '+cc+'"><div class="in hero-in"><div class="where"><span class="small">'+(ph==='hin'?'Hinfahrt – wir sind gerade':'Heimfahrt – wir sind gerade')+'</span><strong>'+esc(whereText(e))+'</strong></div>'+
        '<div class="dest">'+ARROW+'<span class="to">'+esc(last.n)+'</span><span class="km">'+n1(e.remainKm!=null?e.remainKm:((e.live&&!e.offRoute&&geoRemainKm(e.phase,e.r.key,e.lat,e.lon))||(e.kmTotal-e.km)))+' km</span><span class="eta">'+(e.fc||ph==='rueck'?'Ankunftszeit siehe oben':'Ankunft ca. '+tm(e.eta)+', noch '+dur(e.remain))+'</span></div></div></div></div>';
@@ -1421,7 +1429,7 @@ function hero(ph,now,e){
     else if(sw==='soon')h+='<div class="plates"><span class="plate late">Gleich Schweiz: jetzt prüfen, ob dein Handytarif dort gilt</span></div>';
     if(ph==='rueck'&&!e.done)h+='<div class="plates"><span class="plate">Abholung: Schule, Nespelerstraße 75</span></div>';
     var sv=e.live&&gps&&!gps.stopped&&movingRecently()?curSpeed():null;
-    if(sv!=null&&sv>=3&&sv<40){
+    if(false&&sv!=null&&sv>=3&&sv<40){
       var rs=(traffic.items||[]).filter(function(o){return !o.works&&o.ahead>-3&&o.ahead<8})[0];
       h+='<div class="plates"><span class="plate late">Verkehr stockt gerade, ca. '+rnd(sv)+' km/h'+(rs?'. Laut Autobahn GmbH: '+esc(rs.label)+' ('+esc(rs.title)+')':'')+'</span></div>';
     }
@@ -1445,6 +1453,28 @@ function hero(ph,now,e){
   if(state.gpsLink&&ph!=='zuhause')h+='<a class="gps" href="'+esc(state.gpsLink)+'" target="_blank" rel="noopener">Genauen Standort öffnen (GPS) →</a>';
   return h;
 }
+/* Statuszeile ganz oben: was gerade los ist (Stau, Pause, Maut/Grenze, freie Fahrt) */
+function jamNear(km){var best=null;ttJamsAll().forEach(function(j){for(var i=0;i<j.line.length;i++){if(kmDist(gps.lat,gps.lon,j.line[i][0],j.line[i][1])<km){best=best||j;break}}});return best}
+function jamRestKm(j){var k=0,st=-1,bd=1e9;for(var i=0;i<j.line.length;i++){var d=kmDist(gps.lat,gps.lon,j.line[i][0],j.line[i][1]);if(d<bd){bd=d;st=i}}for(var i2=Math.max(st,0)+1;i2<j.line.length;i2++)k+=kmDist(j.line[i2-1][0],j.line[i2-1][1],j.line[i2][0],j.line[i2][1]);return Math.max(0.1,k)}
+function statusInfo(e,now){
+  if(!e||!e.live||!gps||e.done)return null;
+  var mins=gps.stoppedSince?Math.max(1,Math.round((now-gps.stoppedSince)/60000)):null, sv=gps.stopped?0:curSpeed();
+  var jh=jamNear(0.8), tt=ttFresh();
+  var jamTxt=function(j){var rk=jamRestKm(j), frac=Math.min(1,rk/Math.max(0.1,j.km)), dl=Math.round((j.delay||0)*frac/60);return 'laut TomTom noch ca. '+String(Math.round(rk*10)/10).replace('.',',')+' km Stau'+(dl>=1?', ca. +'+dl+' Min Verzögerung':'')};
+  if(gps.stopped&&mins!=null&&mins>=2){
+    var cp=checkpointAt(gps.lat,gps.lon,mins);
+    if(cp)return {k:'check',h:cp.kind==='toll'?'Mautstelle':'Grenze',t:'Wartet an der '+cp.n+' seit '+mins+' Min. Zählt nicht als Pause.'};
+    var st=stopText(now);
+    if(jh)return {k:'jam',h:'Stau',t:'Bus steht seit '+mins+' Min, '+jamTxt(jh)+'.'};
+    if(/^(Pause|Kurzer Halt)/.test(st))return {k:'pause',h:/^Kurzer/.test(st)?'Kurzer Halt':'Pause',t:st.replace(/^(Pause|Kurzer Halt): /,'')+'.'};
+    if(/vermutlich Stau/.test(st))return {k:'jam',h:'Stau',t:'Bus steht seit '+mins+' Min, keine Raststätte in der Nähe.'};
+    return {k:'check',h:'Bus steht',t:'Seit '+mins+' Min.'};
+  }
+  if(sv!=null&&sv<45&&(jh||sv<35)&&movingRecently())return {k:'jam',h:jh&&jamLevel(jh)<3?'Stockender Verkehr':'Stau',t:'Bus fährt ca. '+Math.round(sv)+' km/h'+(jh?', '+jamTxt(jh):'')+'.'};
+  var nx=null;if(tt)ttJams().forEach(function(j){var a=jamAhead(j);if(a!=null&&a>1&&(!nx||a<nx.a))nx={j:j,a:a}});
+  return {k:'ok',h:'Freie Fahrt',t:(sv!=null?'ca. '+Math.round(sv)+' km/h. ':'')+(nx?'Nächster Stau in ca. '+nx.a+' km ('+jamLabel(nx.j)+', '+String(nx.j.km).replace('.',',')+' km'+(nx.j.delay>=60?', +'+Math.round(nx.j.delay/60)+' Min':'')+').':(tt?'Kein Stau mehr bis Mönchengladbach gemeldet.':''))};
+}
+function statusBar(e,now){var s0=null;try{s0=statusInfo(e,now)}catch(err){}if(!s0)return '';return '<div class="stbar st-'+s0.k+'" role="status"><b>'+esc(s0.h)+'</b><span>'+esc(s0.t)+'</span></div>'}
 function fcLine(f){
   var np=f.pauses.filter(function(p){return p.n==='Pause'}).length, fw=f.pauses.some(function(p){return p.n==='Fahrerwechsel Freiburg'}), lp=f.pauses.some(function(p){return p.n==='laufende Pause'});
   function hm(m){m=Math.max(0,Math.round(m));return Math.floor(m/60)+':'+('0'+m%60).slice(-2)+' h'}
@@ -1583,7 +1613,7 @@ function worksInfo(it){
 /* Stauabschnitte auf der ganzen Reststrecke von TomTom (state.json) */
 function ttFresh(){var tt=tripState.rueck&&tripState.rueck.tt;return tt&&Date.now()-tt.at<15*60000?tt:null}
 // Bus fährt gerade zügig (über 45 km/h) in einem gemeldeten Stauabschnitt: Meldung gilt für uns nicht (z. B. nur Lkw-Spur dosiert)
-function busThrough(j){if(!gps||gps.stopped||!(gps.speed>45))return false;for(var i=0;i<j.line.length;i++)if(kmDist(gps.lat,gps.lon,j.line[i][0],j.line[i][1])<0.8)return true;return false}
+function busThrough(j){if(!gps||gps.stopped)return false;var v=curSpeed();if(!(v>45))return false;for(var i=0;i<j.line.length;i++)if(kmDist(gps.lat,gps.lon,j.line[i][0],j.line[i][1])<0.8)return true;return false}
 function ttJamsAll(){var tt=ttFresh();if(!tt||!tt.jams)return [];return tt.jams.filter(function(j){return j.line&&j.line.length>1&&(j.cat==='JAM'||j.cat==='ROAD_CLOSURE'||j.delay>=60)})}
 function ttJams(){return ttJamsAll().filter(function(j){return !busThrough(j)})}
 // TomTom magnitudeOfDelay: 1 gering, 2 mittel, 3 stark, 4/0 unbekannt (dann nach Tempo einstufen)
