@@ -51,7 +51,8 @@ Echte Push-Benachrichtigungen über die Webseite (PWA), ohne Zusatz-App. Auf dem
 - `track.json` wird nicht mehr auf 600 Punkte gekürzt (jetzt 4000).
 
 ## Toskana Wrapped (Rückblick, nicht verlinkt)
-- `wrapped-33477060a2.html`: Story-Folien (Titel, Kilometer, Karte, Zeit, Gotthard, Nachtfahrt, Woche, Rückfahrt, Stau, Rekorde, Ende).
+- `wrapped-33477060a2.html`: Story-Folien (Titel mit Fotowand, Kilometer, Karte, Zeit, Gotthard, Nachtfahrt, Woche, Foto-Folien Siena/Firenze/Pisa, Fotoalbum, Rückfahrt, Stau, Rekorde, Ende).
+- Fotos in `img/wrapped/` (WebP ohne Metadaten; `-s` = kleine Version für Titelwand, Karten und Album).
 - Hinfahrt und Rückfahrt bis 18:45 sind fest eingebaut (`PTS`, aus der Git-Historie wiederhergestellt). Den Rest der Rückfahrt und die Ankunft holt die Seite live aus `track.json` / `state.json` im Branch `live`.
 - **Vor dem Löschen des Branches `live`**: die endgültige Rückfahrt in `PTS` übernehmen und die Ankunftszeit fest eintragen (`RUE.arr`), sonst fehlt der Rest der Rückfahrt.
 - Ausflugs-Kilometer sind aus dem Wochenplan geschätzt (`EXC_BUS`, `EXC_TRAIN`); während der Woche lief kein GPS-Tracking.
