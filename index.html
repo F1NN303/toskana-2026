@@ -556,6 +556,8 @@ var state={checkins:raw.checkins||[],message:raw.message||'',messageAt:raw.messa
 
 var HIN_START=Date.parse('2026-10-04T22:30:00+02:00');
 var RUECK_START=Date.parse('2026-10-09T06:00:00+02:00');
+// Hinfahrt real 16 Std 33 Min statt 15 Std 30 nach Plan (6 Pausen, zusammen ca. 2 Std 50): Rückfahrt-Plan entsprechend strecken
+var RUECK_SCALE=1.07;
 
 var P={
  mg:{n:'Mönchengladbach',sub:'Hans-Jonas-Gesamtschule',lat:51.19,lon:6.44,c:'DE'},
@@ -625,7 +627,7 @@ function route(phase,key){
   if(phase==='hin')res=hin;
   else{
     var tot=hin[hin.length-1].off, kt=hin[hin.length-1].km;res=[];
-    for(var k=hin.length-1;k>=0;k--){var w=Object.assign({},hin[k]);w.off=tot-hin[k].off;w.km=kt-hin[k].km;w.road=k+1<hin.length?hin[k+1].road:'';if(w.id==='ai')w.sub='Südportal Gotthard-Tunnel';if(w.id==='go')w.sub='Nordportal, Tunnel geschafft';if(w.id==='ch')w.sub='Grenze zur Schweiz';if(w.id==='ba')w.sub='Grenze zu Deutschland';if(w.id==='ku')w.sub='Grenze zu Deutschland';if(w.id==='br')w.sub='Grenze zu Österreich';res.push(w)}
+    for(var k=hin.length-1;k>=0;k--){var w=Object.assign({},hin[k]);w.off=Math.round((tot-hin[k].off)*RUECK_SCALE);w.km=kt-hin[k].km;w.road=k+1<hin.length?hin[k+1].road:'';if(w.id==='ai')w.sub='Südportal Gotthard-Tunnel';if(w.id==='go')w.sub='Nordportal, Tunnel geschafft';if(w.id==='ch')w.sub='Grenze zur Schweiz';if(w.id==='ba')w.sub='Grenze zu Deutschland';if(w.id==='ku')w.sub='Grenze zu Deutschland';if(w.id==='br')w.sub='Grenze zu Österreich';res.push(w)}
   }
   res.key=key;routeCache[ck]=res;return res;
 }
@@ -802,7 +804,7 @@ var DAYS=[
  {date:'2026-10-06',wd:'Dienstag',dm:'06.10.',title:'Siena',sub:'Tagesausflug',sign:'brown',place:'si',items:[['08:00','Abfahrt nach Siena'],['17:00','Zurück im Hotel'],['abends','Einkaufen für die Rückfahrt, Zimmer aufräumen']],note:'Wann der Bus in die Stadt darf, hängt vom genehmigten Zeitfenster ab.'},
  {date:'2026-10-07',wd:'Mittwoch',dm:'07.10.',title:'Firenze',sub:'Florenz, mit dem Zug ab Prato',sign:'brown',place:'fi',items:[['07:50','Mit dem Bus zum Bahnhof Prato'],['10:01','Zug nach Florenz, an 10:23 Santa Maria Novella'],['tagsüber','Galleria dell’Accademia (David), Ponte Vecchio, Uffizien, Dom'],['17:47','Zug zurück, an Prato 18:17, dann Bus zum Hotel']],note:'Die Zugtickets sind gebucht. Der Zug wartet nicht.'},
  {date:'2026-10-08',wd:'Donnerstag',dm:'08.10.',title:'Pisa & Lucca',sub:'Schiefer Turm und Lucca (statt Strand, wegen Gewitter)',sign:'brown',place:'pi',items:[['08:30','Abfahrt nach Pisa'],['ca. 13:30','Weiter nach Lucca statt Viareggio (Gewitter)'],['ca. 17:00','Zurück im Hotel']],note:'Nichts bei fliegenden Händlern kaufen. Für gefälschte Ware drohen in Italien Strafen bis ca. 5.000 €.'},
- {date:'2026-10-09',wd:'Freitag',dm:'09.10.',title:'Mönchengladbach',sub:'Heimfahrt',sign:'de',place:'mg',items:[['ca. 06:00','Abfahrt, früher als geplant'],['ca. 21:30','Ankunft an der Schule']],note:'Eltern: Die aktuelle Ankunftszeit steht ganz oben auf der Seite.'}
+ {date:'2026-10-09',wd:'Freitag',dm:'09.10.',title:'Mönchengladbach',sub:'Heimfahrt',sign:'de',place:'mg',items:[['ca. 06:00','Abfahrt, früher als geplant'],['ca. 22:30','Ankunft an der Schule']],note:'Eltern: Die aktuelle Ankunftszeit steht ganz oben auf der Seite.'}
 ];
 
 /* Karten */
@@ -1304,7 +1306,7 @@ function hero(ph,now,e){
     h+=roadStrip(ee,0);
   } else if(ph==='hin'||ph==='rueck'){
     var cc=countryOf(e), last=e.r[e.r.length-1];
-    if(!e.done)h+='<div class="vms eta-big" role="status"><div class="l1">Geschätzte Ankunft '+(ph==='hin'?'im Hotel':'an der Schule')+'</div><div class="l2">ca. '+tm(e.eta)+' Uhr</div><div class="l3">noch '+dur(e.remain)+'</div></div>';
+    if(!e.done)h+='<div class="vms eta-big" role="status"><div class="l1">Geschätzte Ankunft '+(ph==='hin'?'im Hotel':'an der Schule')+'</div><div class="l2">ca. '+tm(e.eta)+' Uhr</div><div class="l3">noch '+dur(e.remain)+(e.osrm?'':', alle Pausen eingerechnet')+'</div></div>';
     h+='<div class="gantry"><div class="sign '+cc+'"><div class="in hero-in"><div class="where"><span class="small">'+(ph==='hin'?'Hinfahrt – wir sind gerade':'Heimfahrt – wir sind gerade')+'</span><strong>'+esc(whereText(e))+'</strong></div>'+
        '<div class="dest">'+ARROW+'<span class="to">'+esc(last.n)+'</span><span class="km">'+n1(e.remainKm!=null?e.remainKm:((e.live&&!e.offRoute&&geoRemainKm(e.phase,e.r.key,e.lat,e.lon))||(e.kmTotal-e.km)))+' km</span><span class="eta">Ankunft ca. '+tm(e.eta)+', noch '+dur(e.remain)+'</span></div></div></div></div>';
     var nx=nextEvent(e);
