@@ -53,11 +53,11 @@ Echte Push-Benachrichtigungen über die Webseite (PWA), ohne Zusatz-App. Auf dem
 ## Toskana Wrapped (Rückblick, nicht verlinkt)
 - `wrapped-33477060a2.html`: Story-Folien (Titel mit Fotowand, Kilometer, Karte, Zeit, Gotthard, Nachtfahrt, Woche, Foto-Folien Siena/Firenze/Pisa, Fotoalbum, Rückfahrt, Stau, Rekorde, Ende).
 - Fotos in `img/wrapped/` (WebP ohne Metadaten; `-s` = kleine Version für Titelwand, Karten und Album).
-- Hinfahrt und Rückfahrt bis 18:45 sind fest eingebaut (`PTS`, aus der Git-Historie wiederhergestellt). Den Rest der Rückfahrt und die Ankunft holt die Seite live aus `track.json` / `state.json` im Branch `live`.
-- **Vor dem Löschen des Branches `live`**: die endgültige Rückfahrt in `PTS` übernehmen und die Ankunftszeit fest eintragen (`RUE.arr`), sonst fehlt der Rest der Rückfahrt.
+- Hin- und Rückfahrt sind komplett fest eingebaut (`PTS`), die Seite lädt nichts mehr aus dem Branch `live`. Abfahrt Rückfahrt 06:00 am Hotel (Handy sendete erst ab 06:19), Ankunft an der Schule 00:22 laut GPS (`RUE.arr`; `state.json` meldete schon 00:04, weil 8 km um die Schule als Ankunft zählen).
+- Freigeschaltet für alle über `"wrapped": true` in `status.json` (Karte im Tracker).
 - Ausflugs-Kilometer sind aus dem Wochenplan geschätzt (`EXC_BUS`, `EXC_TRAIN`); während der Woche lief kein GPS-Tracking.
 
 ## Aufräumen nach der Fahrt
-1. Toskana Wrapped mit den endgültigen Daten einfrieren (siehe oben).
+1. ~~Toskana Wrapped mit den endgültigen Daten einfrieren~~ (erledigt 10.10.2026).
 2. Branch `live` löschen, GitHub-Token des Senders widerrufen.
 3. TomTom-Schlüssel auf developer.tomtom.com löschen und Secret `TOMTOM_KEY` entfernen.
