@@ -298,6 +298,18 @@ if (phase) {
   // Spur: nur während der Fahrt, etwa alle 4 Minuten oder nach 3 km
   const last = track[track.length - 1];
   if (!last || (t > last[2] && (t - last[2] >= (km(last, here) < 3 ? 2 : 4) * 60000 || km(last, here) > 3))) track.push([r5(lat), r5(lon), t]);
+  // Lücken füllen: Positionen, die das Handy ohne Netz gesammelt und jetzt mitgeschickt hat
+  if (Array.isArray(pos.trail)) {
+    const have = new Set(track.map((q) => q[2]));
+    for (const q of pos.trail) {
+      if (!Array.isArray(q) || q.length < 3 || !Number.isFinite(+q[0]) || !Number.isFinite(+q[1]) || !Number.isFinite(+q[2])) continue;
+      const qt = +q[2];
+      if (qt < trip.from || qt > trip.to || qt > t || have.has(qt)) continue;
+      const near = track.some((r) => Math.abs(r[2] - qt) < 100000);   // nicht dichter als ca. alle 2 Min
+      if (!near) { track.push([r5(+q[0]), r5(+q[1]), qt]); have.add(qt); }
+    }
+    track.sort((a, b) => a[2] - b[2]);
+  }
   if (track.length > 600) track = track.slice(-600);
   const ptrack = track.filter((q) => q[2] >= trip.from && q[2] <= trip.to);
   const first = ptrack[0];

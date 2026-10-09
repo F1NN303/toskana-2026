@@ -158,8 +158,11 @@ function updateStop(){
   for(var i=hist.length-1;i>=0;i--){if(km(hist[i],last)<0.3)t=hist[i].t;else break}
   stopSince=t;
 }
+// Positionen, die noch nicht angekommen sind (z. B. ohne Netz an der Grenze): werden beim nächsten Senden mitgeschickt
+var unsent=[];
 function payload(){
-  var p={t:last?last.t:Date.now(),msg:msg.text,msgAt:msg.at};
+  var p={t:last?last.t:Date.now(),sent:Date.now(),msg:msg.text,msgAt:msg.at};
+  if(unsent.length>1)p.trail=unsent.slice(-90).map(function(h){return [+h.lat.toFixed(5),+h.lon.toFixed(5),h.t]});
   if(last){updateStop();p.lat=+last.lat.toFixed(5);p.lon=+last.lon.toFixed(5);p.acc=Math.round(last.acc);p.stopped=!!stopSince;p.stoppedSince=stopSince;p.speed=last.speed!=null?Math.round(last.speed*3.6):null}
   return p;
 }
@@ -168,7 +171,9 @@ function send(force){
   var now=Date.now();
   if(!force&&now-lastSent<55000)return;
   busy=true;
-  put(payload()).then(function(){
+  var pl=payload(), upTo=last?last.t:0;
+  put(pl).then(function(){
+    unsent=unsent.filter(function(h){return h.t>upTo});
     lastSent=Date.now();count++;$('sent').textContent=tm(lastSent);$('sent').className='ok';$('cnt').textContent=count;$('st').textContent='Läuft';
   }).catch(function(code){
     $('sent').textContent='Fehler '+code+' · '+tm(Date.now());$('sent').className='bad';
@@ -178,6 +183,7 @@ function send(force){
 function onPos(p){
   last={lat:p.coords.latitude,lon:p.coords.longitude,acc:p.coords.accuracy||0,t:p.timestamp||Date.now(),speed:(p.coords.speed!=null&&p.coords.speed>=0)?p.coords.speed:null};
   hist.push(last);hist=hist.filter(function(h){return last.t-h.t<15*60000});
+  var lu=unsent[unsent.length-1];if(!lu||last.t-lu.t>=45000){unsent.push(last);if(unsent.length>240)unsent=unsent.slice(-240)}
   $('fix').textContent=tm(last.t)+' · ±'+Math.round(last.acc)+' m';$('fix').className='ok';
   send(false);
 }
