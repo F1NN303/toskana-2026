@@ -1,4 +1,4 @@
-<!doctype html><html lang="de"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><meta name="robots" content="noindex,nofollow"><meta name="app-build" id="app-build" content="v43"><title>Toskana-Fahrt Live</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect x=%221%22 y=%221%22 width=%2230%22 height=%2230%22 rx=%225%22 fill=%22%230a5aa8%22 stroke=%22white%22 stroke-width=%222%22/%3E%3Cpath d=%22M16 6l8 9h-5v11h-6V15H8z%22 fill=%22white%22/%3E%3C/svg%3E"><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#232527"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bus Live"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script></head><body>
+<!doctype html><html lang="de"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><meta name="robots" content="noindex,nofollow"><meta name="app-build" id="app-build" content="v44"><title>Toskana-Fahrt Live</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect x=%221%22 y=%221%22 width=%2230%22 height=%2230%22 rx=%225%22 fill=%22%230a5aa8%22 stroke=%22white%22 stroke-width=%222%22/%3E%3Cpath d=%22M16 6l8 9h-5v11h-6V15H8z%22 fill=%22white%22/%3E%3C/svg%3E"><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#232527"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bus Live"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script></head><body>
 
 
 <style id="css">
@@ -862,9 +862,10 @@ function forecastRueck(now){
     drive(nextP);
     // muss die Pause die Lenkzeit zurücksetzen (sonst reicht die nächste Etappe nicht)? Dann 45 Min bzw. 30 Min nach einem 15er-Teil
     var mustReset=leg.d+Math.min(FC.drive,x*pf)>FC.legal, L=mustReset?Math.max(FC.pause,leg.part?30:45):FC.pause;
-    t+=L*60000;euBreak(leg,L);s=0;pauses.push({n:mustReset?'Pflichtpause':'Pause',min:L});trace.push([x,t]);
+    pauses.push({n:mustReset?'Pflichtpause':'Pause',min:L,at:t});t+=L*60000;euBreak(leg,L);s=0;trace.push([x,t]);
   }
-  return {eta:t,remain:(t-now)/60000,drive:driveMin,pauses:pauses,pauseMin:pauses.reduce(function(a,p){return a+p.min},0),jam:Math.round(jamTot),jams:jams,rush:Math.round(rushMin),live:live,trace:trace,x0:x0,pace:pace,legal:{d:Math.round(lg.d),part:lg.part,changedAt:lg.changedAt}};
+  var legalLatest=now+Math.max(0,FC.legal-lg.d)*60000;
+  return {eta:t,remain:(t-now)/60000,drive:driveMin,legalLatest:legalLatest,pauses:pauses,pauseMin:pauses.reduce(function(a,p){return a+p.min},0),jam:Math.round(jamTot),jams:jams,rush:Math.round(rushMin),live:live,trace:trace,x0:x0,pace:pace,legal:{d:Math.round(lg.d),part:lg.part,changedAt:lg.changedAt}};
 }
 // Zeitpunkt, zu dem die Simulation die Fahrminute m (bis Mönchengladbach) erreicht
 function fcTimeAt(f,m){
@@ -1594,7 +1595,8 @@ function fcLine(f){
   h+='<div class="fcleg"><div class="d"><b>'+hm(f.drive)+'</b><span>Fahrt'+(f.pace&&Math.abs(f.pace.f-1)>=0.02?' (heute '+Math.round(Math.abs(f.pace.f-1)*100)+' % '+(f.pace.f>1?'langsamer':'schneller')+' als Hinfahrt)':'')+'</span></div>';
   h+='<div class="p"><b>'+hm(f.pauseMin)+'</b><span>Pausen: '+esc(pl.join(' + ')||'keine mehr')+'</span></div>';
   h+='<div class="j"><b>'+(traf?'+'+hm(traf):'0:00 h')+'</b><span>'+esc(tl)+'</span></div></div>';
-  var lgx=f.legal?'Fahrer seit letzter voller Pause '+hm(f.legal.d).replace(' h',' Std')+' gefahren (max. 4:30)':'';
+  var np0=f.pauses.filter(function(p){return p.at})[0];
+  var lgx=(np0?'Nächste Pause ca. '+tm(np0.at)+(f.legalLatest&&f.legalLatest>np0.at+10*60000?', spätestens ca. '+tm(f.legalLatest)+' (Lenkzeit)':''):'')+(f.legal?(np0?' · ':'')+'Fahrer seit letzter voller Pause '+hm(f.legal.d).replace(' h',' Std')+' gefahren (max. 4:30)':'');
   h+='<div class="fcsrc">'+(f.live?'Hinfahrt-Daten + TomTom live · Stand '+tm(f.live.at):'Hinfahrt-Daten + Autobahn-Meldungen')+(lgx?' · '+lgx:'')+'</div></div>';
   return h;
 }
