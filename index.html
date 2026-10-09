@@ -1,4 +1,4 @@
-<!doctype html><html lang="de"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><meta name="robots" content="noindex,nofollow"><meta name="app-build" id="app-build" content="v34"><title>Toskana-Fahrt Live</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect x=%221%22 y=%221%22 width=%2230%22 height=%2230%22 rx=%225%22 fill=%22%230a5aa8%22 stroke=%22white%22 stroke-width=%222%22/%3E%3Cpath d=%22M16 6l8 9h-5v11h-6V15H8z%22 fill=%22white%22/%3E%3C/svg%3E"><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#232527"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bus Live"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script></head><body>
+<!doctype html><html lang="de"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><meta name="robots" content="noindex,nofollow"><meta name="app-build" id="app-build" content="v35"><title>Toskana-Fahrt Live</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect x=%221%22 y=%221%22 width=%2230%22 height=%2230%22 rx=%225%22 fill=%22%230a5aa8%22 stroke=%22white%22 stroke-width=%222%22/%3E%3Cpath d=%22M16 6l8 9h-5v11h-6V15H8z%22 fill=%22white%22/%3E%3C/svg%3E"><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#232527"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bus Live"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script></head><body>
 
 
 <style id="css">
@@ -990,6 +990,24 @@ function rerouteGeo(e,now){
   }
   return null;
 }
+/* GPS-Spur auf den Straßenverlauf legen: zwischen zwei Punkten nahe der Route deren Verlauf nehmen, sonst gerade verbinden */
+function projOn(line,lat,lon){var q=distToLine(line,lat,lon),a=line[q.i],b=line[q.i+1]||a,k=Math.cos(lat*Math.PI/180);
+  var ax=a[1]*k,ay=a[0],bx=b[1]*k,by=b[0],px=lon*k,py=lat,vx=bx-ax,vy=by-ay,L2=vx*vx+vy*vy,t=L2?Math.max(0,Math.min(1,((px-ax)*vx+(py-ay)*vy)/L2)):0;
+  return {d:q.d,i:q.i,t:t,pt:[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t]}}
+var snapCache={k:'',v:null};
+function snapPath(pts,line){
+  var key=pts.length+'|'+(pts.length?pts[pts.length-1].join():'')+'|'+line.length;if(snapCache.k===key)return snapCache.v;
+  var out=[],prev=null;
+  pts.forEach(function(p){
+    var q=projOn(line,p[0],p[1]);
+    if(q.d<1.2){
+      if(prev&&prev.d<1.2&&(q.i>prev.i||(q.i===prev.i&&q.t>=prev.t))&&q.i-prev.i<600){for(var i=prev.i+1;i<=q.i;i++)out.push(line[i])}
+      out.push(q.pt);
+    } else out.push(p);
+    prev=q;
+  });
+  snapCache={k:key,v:out};return out;
+}
 function sliceTo(line,lat,lon){var q=distToLine(line,lat,lon);return line.slice(0,q.i+1).concat([[lat,lon]])}
 
 /* Raststätten und McDonald's (aus OpenStreetMap, als pois.json neben der Seite) */
@@ -1068,7 +1086,7 @@ function updateMap(ph,e){
   if(e&&e.eff>0){
     // Geschafft = echte GPS-Spur (der Bus fährt z. B. um Mailand herum, die Planroute mitten durch); nur ohne Spur die Planroute
     var tr=trackFor(e.phase).filter(function(q){return q[2]>=e.start-30*60000});
-    if(tr.length>=3&&e.live){done=tr.map(function(q){return [q[0],q[1]]});done.push([e.lat,e.lon])}
+    if(tr.length>=3&&e.live){var pts=tr.map(function(q){return [q[0],q[1]]});pts.push([e.lat,e.lon]);done=GEO?snapPath(pts,lineForPhase(e.phase,active)):pts}
     else if(GEO&&!e.offRoute)done=sliceTo(lineForPhase(e.phase,active),e.lat,e.lon);
     else{done=tr.map(function(q){return [q[0],q[1]]});done.push([e.lat,e.lon])}
   }
