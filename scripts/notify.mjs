@@ -415,7 +415,7 @@ if (phase === 'rueck' && TOMTOM_KEY && !OFFLINE) {
   const ps = st.rueck ||= { seen: {} };
   if (!ps.arrived && (!ps.tt || NOW - ps.tt.at >= 4 * 60000)) {
     const [dla, dlo] = TRIPS.rueck.dest;
-    const u = `https://api.tomtom.com/routing/1/calculateRoute/${lat.toFixed(5)},${lon.toFixed(5)}:${dla},${dlo}/json?traffic=true&travelMode=bus&vehicleMaxSpeed=100&computeTravelTimeFor=all&routeType=fastest&key=${encodeURIComponent(TOMTOM_KEY)}`;
+    const u = `https://api.tomtom.com/routing/1/calculateRoute/${lat.toFixed(5)},${lon.toFixed(5)}:${dla},${dlo}/json?traffic=true&travelMode=bus&vehicleMaxSpeed=100&computeTravelTimeFor=all&routeType=fastest&sectionType=traffic&key=${encodeURIComponent(TOMTOM_KEY)}`;
     try {
       const r = await fetch(u, { headers: { 'User-Agent': UA } });
       const j = r.ok ? await r.json() : null;
@@ -429,7 +429,20 @@ if (phase === 'rueck' && TOMTOM_KEY && !OFFLINE) {
         }
         const lp = (j.routes[0].legs || []).at(-1)?.points?.at(-1);
         if (lp) geo.push([Math.round(lp.latitude * 1e4) / 1e4, Math.round(lp.longitude * 1e4) / 1e4]);
-        ps.tt = { at: NOW, gt: t, lat: r5(lat), lon: r5(lon), km: Math.round(sm.lengthInMeters / 100) / 10, sec: sm.travelTimeInSeconds, free: sm.noTrafficTravelTimeInSeconds ?? null, delay: sm.trafficDelayInSeconds || 0, geo };
+        // Stau-Abschnitte auf der Route (für rote/orange Linien auf der Karte)
+        const allPts = (j.routes[0].legs || []).flatMap((leg) => leg.points || []);
+        const jams = [];
+        for (const sec of j.routes[0].sections || []) {
+          if (sec.sectionType !== 'TRAFFIC' || !(sec.endPointIndex > sec.startPointIndex)) continue;
+          const line = [];
+          for (let i = sec.startPointIndex; i <= sec.endPointIndex && i < allPts.length; i++) {
+            const pt = [Math.round(allPts[i].latitude * 1e4) / 1e4, Math.round(allPts[i].longitude * 1e4) / 1e4];
+            if (!line.length || i === sec.endPointIndex || km(line[line.length - 1], pt) >= 0.3) line.push(pt);
+          }
+          let len = 0; for (let i = 1; i < line.length; i++) len += km(line[i - 1], line[i]);
+          jams.push({ cat: sec.simpleCategory || '', mag: sec.magnitudeOfDelay ?? null, delay: sec.delayInSeconds || 0, v: sec.effectiveSpeedInKmh ?? null, km: Math.round(len * 10) / 10, line });
+        }
+        ps.tt = { at: NOW, gt: t, lat: r5(lat), lon: r5(lon), km: Math.round(sm.lengthInMeters / 100) / 10, sec: sm.travelTimeInSeconds, free: sm.noTrafficTravelTimeInSeconds ?? null, delay: sm.trafficDelayInSeconds || 0, geo, jams: jams.slice(0, 25) };
         console.log('TomTom:', ps.tt.km, 'km, Verzögerung', Math.round(ps.tt.delay / 60), 'Min');
       } else console.log('TomTom: keine Route', r.status);
     } catch (e) { console.log('TomTom-Fehler', String(e).replace(TOMTOM_KEY, '***')); }
