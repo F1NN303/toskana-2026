@@ -1,4 +1,4 @@
-<!doctype html><html lang="de"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><meta name="robots" content="noindex,nofollow"><meta name="app-build" id="app-build" content="v30"><title>Toskana-Fahrt Live</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect x=%221%22 y=%221%22 width=%2230%22 height=%2230%22 rx=%225%22 fill=%22%230a5aa8%22 stroke=%22white%22 stroke-width=%222%22/%3E%3Cpath d=%22M16 6l8 9h-5v11h-6V15H8z%22 fill=%22white%22/%3E%3C/svg%3E"><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#232527"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bus Live"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script></head><body>
+<!doctype html><html lang="de"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><meta name="robots" content="noindex,nofollow"><meta name="app-build" id="app-build" content="v31"><title>Toskana-Fahrt Live</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect x=%221%22 y=%221%22 width=%2230%22 height=%2230%22 rx=%225%22 fill=%22%230a5aa8%22 stroke=%22white%22 stroke-width=%222%22/%3E%3Cpath d=%22M16 6l8 9h-5v11h-6V15H8z%22 fill=%22white%22/%3E%3C/svg%3E"><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#232527"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bus Live"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script></head><body>
 
 
 <style id="css">
@@ -97,6 +97,7 @@ p{margin:0}
 .fcbar .d,.fcleg .d b::before{background:var(--amber)}
 .fcbar .p,.fcleg .p b::before{background:#4f8fd6}
 .fcbar .j,.fcleg .j b::before{background:#e5484d}
+.tlist .jdot{width:12px;height:12px;border-radius:3px;flex:none;margin-top:5px;border:2px solid #111}
 .fcleg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px}
 .fcleg div{display:flex;flex-direction:column;min-width:0}
 .fcleg b{display:flex;align-items:center;gap:6px;color:#fff;font-size:1.05rem;font-weight:900;font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -1075,6 +1076,9 @@ function updateMap(ph,e){
     mapSig.rr=0;LL.route.setStyle({color:'#9aa0a6',opacity:.85});LL.route.setLatLngs(lineFor(active));if(LL.plan)LL.plan.setLatLngs([]);
   }
   curMap.rr=rr;
+  var jl=e&&e.phase==='rueck'?ttJams():[], jsig=jl.map(function(j){return j.line[0].join()+j.delay+j.mag}).join('|');
+  if(mapSig.jams!==jsig){mapSig.jams=jsig;if(!LL.jams)LL.jams=L.layerGroup().addTo(LM);LL.jams.clearLayers();
+    jl.forEach(function(j){L.polyline(j.line,{color:'#111',weight:11,opacity:.55,interactive:false}).addTo(LL.jams);L.polyline(j.line,{color:jamColor(j),weight:7,opacity:1,lineCap:'round'}).bindPopup('<b>'+esc(jamLabel(j))+'</b><br>'+esc(jamText(j))).addTo(LL.jams)})}
   var bl,bo;
   if(e&&e.eff>0){bl=e.lat;bo=e.lon}else if(ph==='vorort'){bl=P.mt.lat;bo=P.mt.lon}else if(e){bl=e.r[0].lat;bo=e.r[0].lon}else{bl=P.mg.lat;bo=P.mg.lon}
   curMap.bus=[bl,bo];LL.bus.setLatLng([bl,bo]);
@@ -1576,11 +1580,25 @@ function worksInfo(it){
   if(len)parts.push(String(len[1]).replace('.',',')+' km lang');
   return parts.join(', ');
 }
+/* Stauabschnitte auf der ganzen Reststrecke von TomTom (state.json) */
+function ttFresh(){var tt=tripState.rueck&&tripState.rueck.tt;return tt&&Date.now()-tt.at<15*60000?tt:null}
+function ttJams(){var tt=ttFresh();if(!tt||!tt.jams)return [];return tt.jams.filter(function(j){return j.line&&j.line.length>1&&(j.cat==='JAM'||j.cat==='ROAD_CLOSURE'||j.delay>=60)})}
+// TomTom magnitudeOfDelay: 1 gering, 2 mittel, 3 stark, 4/0 unbekannt (dann nach Tempo einstufen)
+function jamLevel(j){if(j.cat==='ROAD_CLOSURE')return 3;if(j.mag>=1&&j.mag<=3)return j.mag;return j.v!=null&&j.v<25?3:(j.v!=null&&j.v<50?2:1)}
+function jamColor(j){var l=jamLevel(j);return l===3?'#e5484d':(l===2?'#ff7a1a':'#ffc233')}
+function jamLabel(j){var l=jamLevel(j);return j.cat==='ROAD_CLOSURE'?'Sperrung':(l===3?'Stau':(l===2?'Stockender Verkehr':'Zähfließend'))}
+function jamText(j){return jamLabel(j)+' auf '+String(j.km).replace('.',',')+' km'+(j.delay>=60?', +'+Math.round(j.delay/60)+' Min':'')+(j.v?', ca. '+Math.round(j.v)+' km/h':'')}
+function jamAhead(j){return gps?Math.round(kmDist(gps.lat,gps.lon,j.line[0][0],j.line[0][1])*1.15):null}
 function trafficBox(ph,e){
   if(ph!=='vorher'&&ph!=='hin'&&ph!=='rueck')return '';
   var inDE=ph==='vorher'||(e&&countryAt(e.lat,e.lon)==='DE');
-  if(!inDE&&!(traffic.items&&traffic.items.length))return '';
-  var h='<section class="traffic" aria-label="Verkehr"><div class="traffic-h"><h2>Verkehr vor uns</h2><span class="small">'+(traffic.t?'Stand '+tm(traffic.t)+', Autobahn GmbH':'wird geladen …')+'</span></div>';
+  var tt=ph==='rueck'?ttFresh():null, jl=tt?ttJams():[], th='';
+  if(tt){
+    th='<div class="traffic-h"><h2>Stau bis Mönchengladbach</h2><span class="small">Stand '+tm(tt.at)+', TomTom, ganze Strecke</span></div>';
+    th+=jl.length?'<ul class="tlist">'+jl.map(function(j){var a=jamAhead(j);return '<li class="hot"><span class="jdot" style="background:'+jamColor(j)+'"></span><span class="tx"><b>'+esc(jamLabel(j))+'</b> '+esc(jamText(j).replace(jamLabel(j)+' ',''))+(a!=null?'<small>in ca. '+a+' km</small>':'')+'</span></li>'}).join('')+'</ul><p class="fine">Auf der Karte rot = Stau, orange = stockend, gelb = zähfließend.</p>':'<p class="fine">Gerade kein Stau auf der restlichen Strecke.</p>';
+  }
+  if(!inDE&&!(traffic.items&&traffic.items.length))return th?'<section class="traffic" aria-label="Verkehr">'+th+'</section>':'';
+  var h='<section class="traffic" aria-label="Verkehr">'+th+(th?'<div style="height:10px"></div>':'')+'<div class="traffic-h"><h2>Verkehr vor uns</h2><span class="small">'+(traffic.t?'Stand '+tm(traffic.t)+', Autobahn GmbH':'wird geladen …')+'</span></div>';
   if(traffic.items===null){h+='<p class="fine">Verkehrsmeldungen werden geladen …</p>'}
   else if(!traffic.items.length){h+='<p class="fine">'+(inDE?'Keine Staus oder Sperrungen in unserer Fahrtrichtung auf der deutschen Strecke gemeldet.':'Für die Schweiz und Italien gibt es keine frei verfügbaren Verkehrsdaten. Steht der Bus im Stau, zeigt die Seite das über das GPS an.')+'</p>'}
   else{
