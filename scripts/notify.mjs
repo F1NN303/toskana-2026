@@ -11,6 +11,7 @@ const NOW = process.env.NOW ? Date.parse(process.env.NOW) : Date.now();
 const PAGE = 'https://f1nn303.github.io/toskana-2026/';
 const UA = 'toskana-2026-bus-tracker (https://github.com/F1NN303/toskana-2026)';
 const OFFLINE = process.env.OFFLINE === '1'; // Tests ohne Netz
+const TOMTOM_KEY = process.env.TOMTOM_KEY || ''; // Live-Verkehr für die Prognose (Secret, optional)
 // Web-Push: Handys melden sich über einen ntfy-Briefkasten an, wir schicken mit unserem VAPID-Schlüssel
 const SUBS_TOPIC = process.env.SUBS_TOPIC || '';
 const VAPID_PUBLIC = process.env.VAPID_PUBLIC || '';
@@ -395,6 +396,25 @@ if (phase) {
     out.push(phase === 'hin'
       ? { title: 'Angekommen!', message: 'Wir sind in Montecatini Terme angekommen.', tags: ['tada'] }
       : { title: 'Gleich da!', message: 'Wir sind in Mönchengladbach und gleich an der Schule.', tags: ['tada'], priority: 4 });
+  }
+}
+
+// Live-Verkehr auf der ganzen Reststrecke (IT, CH, DE) von TomTom: nur die Stau-Verzögerung wird gebraucht,
+// die Fahrzeit des Busses selbst schätzt die Seite aus der Hinfahrt. Höchstens alle 4 Minuten abfragen.
+if (phase === 'rueck' && TOMTOM_KEY && !OFFLINE) {
+  const ps = st.rueck ||= { seen: {} };
+  if (!ps.arrived && (!ps.tt || NOW - ps.tt.at >= 4 * 60000)) {
+    const [dla, dlo] = TRIPS.rueck.dest;
+    const u = `https://api.tomtom.com/routing/1/calculateRoute/${lat.toFixed(5)},${lon.toFixed(5)}:${dla},${dlo}/json?traffic=true&travelMode=bus&vehicleMaxSpeed=100&computeTravelTimeFor=all&routeType=fastest&key=${encodeURIComponent(TOMTOM_KEY)}`;
+    try {
+      const r = await fetch(u, { headers: { 'User-Agent': UA } });
+      const j = r.ok ? await r.json() : null;
+      const sm = j && j.routes && j.routes[0] && j.routes[0].summary;
+      if (sm) {
+        ps.tt = { at: NOW, gt: t, lat: r5(lat), lon: r5(lon), km: Math.round(sm.lengthInMeters / 100) / 10, sec: sm.travelTimeInSeconds, free: sm.noTrafficTravelTimeInSeconds ?? null, delay: sm.trafficDelayInSeconds || 0 };
+        console.log('TomTom:', ps.tt.km, 'km, Verzögerung', Math.round(ps.tt.delay / 60), 'Min');
+      } else console.log('TomTom: keine Route', r.status);
+    } catch (e) { console.log('TomTom-Fehler', String(e).replace(TOMTOM_KEY, '***')); }
   }
 }
 

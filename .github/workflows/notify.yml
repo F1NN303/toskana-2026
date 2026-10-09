@@ -43,6 +43,7 @@ jobs:
           SUBS_TOPIC: toskana26-subs-r8x2kp
           VAPID_PUBLIC: BEUcM2EYTTmgcaBX2OWDhRxC6rD02HrXhDZqLjjzZ_YZ0leAIYj__XqZJ6Xo6QJeRj0N3TEklowThK79ErVGQMc
           VAPID_PRIVATE: ${{ secrets.VAPID_PRIVATE }}
+          TOMTOM_KEY: ${{ secrets.TOMTOM_KEY }}
         run: node app/scripts/notify.mjs live
 
       - name: Zustand speichern
