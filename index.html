@@ -1,4 +1,4 @@
-<!doctype html><html lang="de"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><meta name="robots" content="noindex,nofollow"><title>Toskana-Fahrt Live</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect x=%221%22 y=%221%22 width=%2230%22 height=%2230%22 rx=%225%22 fill=%22%230a5aa8%22 stroke=%22white%22 stroke-width=%222%22/%3E%3Cpath d=%22M16 6l8 9h-5v11h-6V15H8z%22 fill=%22white%22/%3E%3C/svg%3E"><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#232527"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bus Live"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script></head><body>
+<!doctype html><html lang="de"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><meta name="robots" content="noindex,nofollow"><meta name="app-build" id="app-build" content="v28"><title>Toskana-Fahrt Live</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect x=%221%22 y=%221%22 width=%2230%22 height=%2230%22 rx=%225%22 fill=%22%230a5aa8%22 stroke=%22white%22 stroke-width=%222%22/%3E%3Cpath d=%22M16 6l8 9h-5v11h-6V15H8z%22 fill=%22white%22/%3E%3C/svg%3E"><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#232527"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bus Live"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script></head><body>
 
 
 <style id="css">
@@ -91,6 +91,18 @@ p{margin:0}
   box-shadow:inset 0 0 0 1px #000,0 3px 0 rgba(0,0,0,.45)}
 .vms .l1{font-size:clamp(1rem,2.8vw,1.35rem);font-weight:700}
 .vms .l2{font-size:clamp(1.9rem,7.4vw,3.7rem);font-weight:900;line-height:1.05}
+.eta-big .fcb{margin-top:12px;padding-top:12px;border-top:2px solid #2a2a2a;font-family:var(--f-sign);text-transform:none;letter-spacing:0;text-shadow:none}
+.fcbar{display:flex;gap:3px;height:12px;border-radius:3px;overflow:hidden}
+.fcbar i{display:block;min-width:4px}
+.fcbar .d,.fcleg .d b::before{background:var(--amber)}
+.fcbar .p,.fcleg .p b::before{background:#4f8fd6}
+.fcbar .j,.fcleg .j b::before{background:#e5484d}
+.fcleg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px}
+.fcleg div{display:flex;flex-direction:column;min-width:0}
+.fcleg b{display:flex;align-items:center;gap:6px;color:#fff;font-size:1.05rem;font-weight:900;font-variant-numeric:tabular-nums;white-space:nowrap}
+.fcleg b::before{content:"";width:10px;height:10px;border-radius:2px;flex:none}
+.fcleg span{color:#bdb6a8;font-size:.8rem;font-weight:600;line-height:1.25;margin-top:2px}
+.fcsrc{margin-top:10px;color:#8a826f;font-size:.72rem;font-weight:600}
 .vms .l4{font-family:var(--f-sign);font-size:.9rem;font-weight:700;text-transform:none;letter-spacing:0;margin-top:8px;color:#ffd27a;text-shadow:none}
 .vms .l5{font-family:var(--f-sign);font-size:.75rem;font-weight:600;text-transform:none;letter-spacing:0;margin-top:2px;color:#a88a4f;text-shadow:none}
 .vms .l3{font-size:clamp(.95rem,2.6vw,1.25rem);font-weight:700;text-transform:none;letter-spacing:.02em;margin-top:4px}
@@ -1361,15 +1373,15 @@ function hero(ph,now,e){
     h+=roadStrip(ee,0);
   } else if(ph==='hin'||ph==='rueck'){
     var cc=countryOf(e), last=e.r[e.r.length-1];
-    if(!e.done)h+='<div class="vms eta-big" role="status"><div class="l1">Geschätzte Ankunft '+(ph==='hin'?'im Hotel':'an der Schule')+'</div><div class="l2">ca. '+tm(e.eta)+' Uhr</div><div class="l3">noch '+dur(e.remain)+(e.fc?'':(e.osrm?'':', alle Pausen eingerechnet'))+'</div>'+(e.fc?fcLine(e.fc):'')+'</div>';
+    if(!e.done)h+='<div class="vms eta-big" role="status"><div class="l1">Ankunft '+(ph==='hin'?'im Hotel':'an der Schule')+'</div><div class="l2">ca. '+tm(e.eta)+' Uhr</div><div class="l3">geschätzt · noch '+dur(e.remain)+(e.fc?'':(e.osrm?'':', alle Pausen eingerechnet'))+'</div>'+(e.fc?fcLine(e.fc):'')+'</div>';
     h+='<div class="gantry"><div class="sign '+cc+'"><div class="in hero-in"><div class="where"><span class="small">'+(ph==='hin'?'Hinfahrt – wir sind gerade':'Heimfahrt – wir sind gerade')+'</span><strong>'+esc(whereText(e))+'</strong></div>'+
-       '<div class="dest">'+ARROW+'<span class="to">'+esc(last.n)+'</span><span class="km">'+n1(e.remainKm!=null?e.remainKm:((e.live&&!e.offRoute&&geoRemainKm(e.phase,e.r.key,e.lat,e.lon))||(e.kmTotal-e.km)))+' km</span><span class="eta">Ankunft ca. '+tm(e.eta)+', noch '+dur(e.remain)+'</span></div></div></div></div>';
+       '<div class="dest">'+ARROW+'<span class="to">'+esc(last.n)+'</span><span class="km">'+n1(e.remainKm!=null?e.remainKm:((e.live&&!e.offRoute&&geoRemainKm(e.phase,e.r.key,e.lat,e.lon))||(e.kmTotal-e.km)))+' km</span><span class="eta">'+(e.fc||ph==='rueck'?'Ankunftszeit siehe oben':'Ankunft ca. '+tm(e.eta)+', noch '+dur(e.remain))+'</span></div></div></div></div>';
     var nx=nextEvent(e);
     if(nx&&!e.done)h+=nextBox('Als Nächstes',nx.n,inMin(nx.min));
     var sw=swissState(e);
     if(sw==='in')h+='<div class="plates"><span class="plate late">Ihr seid in der Schweiz: mobile Daten aus, wenn dein Tarif die Schweiz nicht enthält</span></div>';
     else if(sw==='soon')h+='<div class="plates"><span class="plate late">Gleich Schweiz: jetzt prüfen, ob dein Handytarif dort gilt</span></div>';
-    if(ph==='rueck'&&!e.done)h+='<div class="plates"><span class="plate">Abholung an der Schule ca. '+tm(e.eta)+' Uhr, Nespelerstraße 75</span></div>';
+    if(ph==='rueck'&&!e.done)h+='<div class="plates"><span class="plate">Abholung: Schule, Nespelerstraße 75</span></div>';
     var sv=e.live&&gps&&!gps.stopped&&movingRecently()?curSpeed():null;
     if(sv!=null&&sv>=3&&sv<40){
       var rs=(traffic.items||[]).filter(function(o){return !o.works&&o.ahead>-3&&o.ahead<8})[0];
@@ -1397,12 +1409,15 @@ function hero(ph,now,e){
 }
 function fcLine(f){
   var np=f.pauses.filter(function(p){return p.n==='Pause'}).length, fw=f.pauses.some(function(p){return p.n==='Fahrerwechsel Freiburg'}), lp=f.pauses.some(function(p){return p.n==='laufende Pause'});
-  var parts=['Fahrzeit '+dur(f.drive)];
-  if(np||fw||lp)parts.push((lp?'laufende Pause, ':'')+(np?np+(np===1?' Pause':' Pausen'):'')+(np&&fw?' + ':'')+(fw?'Fahrerwechsel Freiburg':'')+' ca. '+dur(f.pauseMin));
-  if(f.rush)parts.push('Feierabendverkehr +'+f.rush+' Min');
-  if(f.live)parts.push(f.jam?'Verkehr und Stau +'+f.jam+' Min':'freie Fahrt erwartet');
-  else if(f.jam)parts.push('Stau vor uns +'+f.jam+' Min');
-  return '<div class="l4">'+esc(parts.join(' · '))+'</div><div class="l5">'+(f.live?'Geschätzt aus der echten Hinfahrt und Live-Verkehr (TomTom, Stand '+tm(f.live.at)+')':'Geschätzt aus der echten Hinfahrt, live mit GPS und Autobahn-Meldungen')+'</div>';
+  function hm(m){m=Math.max(0,Math.round(m));return Math.floor(m/60)+':'+('0'+m%60).slice(-2)+' h'}
+  var pl=[];if(lp)pl.push('laufende Pause');if(np)pl.push(np+' × ca. '+FC.pause+' Min');if(fw)pl.push('Fahrerwechsel Freiburg '+FC.driverMin+' Min');
+  var traf=f.live?f.jam:(f.jam+f.rush), tl=f.live?(f.jam?'Verkehr & Stau':'freie Fahrt'):(f.rush&&!f.jam?'Feierabendverkehr':'Stau & Feierabend');
+  var h='<div class="fcb"><div class="fcbar" aria-hidden="true"><i class="d" style="flex:'+Math.max(1,f.drive)+'"></i>'+(f.pauseMin?'<i class="p" style="flex:'+f.pauseMin+'"></i>':'')+(traf?'<i class="j" style="flex:'+traf+'"></i>':'')+'</div>';
+  h+='<div class="fcleg"><div class="d"><b>'+hm(f.drive)+'</b><span>Fahrt</span></div>';
+  h+='<div class="p"><b>'+hm(f.pauseMin)+'</b><span>Pausen: '+esc(pl.join(' + ')||'keine mehr')+'</span></div>';
+  h+='<div class="j"><b>'+(traf?'+'+hm(traf):'0:00 h')+'</b><span>'+esc(tl)+'</span></div></div>';
+  h+='<div class="fcsrc">'+(f.live?'Hinfahrt-Daten + TomTom live · Stand '+tm(f.live.at):'Hinfahrt-Daten + Autobahn-Meldungen')+'</div></div>';
+  return h;
 }
 function whereText(e){
   var a=e.a,b=e.b;
@@ -2084,7 +2099,7 @@ function stopText(now){
   var mins=gps.stoppedSince?Math.max(1,Math.round((now-gps.stoppedSince)/60000)):null;
   var since=mins?' seit '+mins+' Min':'';
   var cp=checkpointAt(gps.lat,gps.lon,mins);
-  if(cp)return 'Halt an der '+cp.n+since+(cp.kind==='toll'?' (Maut, keine Pause)':' (Grenzkontrolle, keine Pause)');
+  if(cp)return (cp.kind==='toll'?'Halt an der ':'Halt an der ')+cp.n+since+(cp.kind==='toll'?' (Maut, keine Pause)':' (Grenzkontrolle, keine Pause)');
   var k=stopKey(), place=stopCache[k];
   if(place===undefined)return 'Bus steht'+since;
   if(place===null)return 'Bus steht'+since+', keine Raststätte in der Nähe (vermutlich Stau)';
@@ -2132,6 +2147,21 @@ function pullGps(){
     return fetch(GPS_RAW+'?t='+Date.now(),{cache:'no-store'}).then(function(r2){return r2.ok?r2.json():null});
   }).then(useGps).catch(function(){});
 }
+/* Neue Version der Seite: bei offener Seite automatisch neu laden (nicht während jemand tippt) */
+var BUILD=document.getElementById('app-build')?document.getElementById('app-build').content:'';
+function checkUpdate(){
+  if(!window.fetch||!BUILD||location.protocol==='file:')return;
+  fetch('index.html?u='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){
+    var m=t.match(/name="app-build" content="([^"]+)"/);
+    if(!m||m[1]===BUILD)return;
+    var a=document.activeElement;if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))return;
+    if(document.visibilityState==='visible')location.reload();else window.__reloadOnShow=true;
+  }).catch(function(){});
+}
+setInterval(checkUpdate,180000);
+// Handy war im Hintergrund (Timer pausiert): beim Zurückkommen sofort alles neu holen
+document.addEventListener('visibilitychange',function(){if(document.visibilityState!=='visible')return;if(window.__reloadOnShow){location.reload();return}
+  try{pullGps();pullStatus();pullEvents();pullTraffic();pullTrack();checkUpdate();render()}catch(e){}});
 pullStatus();setInterval(pullStatus,60000);pullGps();setInterval(pullGps,75000);setInterval(pullOsrm,60000);setInterval(pullExc,60000);pullWx();setInterval(pullWx,3600000);pullTrack();setInterval(pullTrack,300000);pullPois();pullFood();pullGeo();pullEvents();setInterval(pullEvents,180000);pullTraffic();setInterval(pullTraffic,300000);
 
 })();
