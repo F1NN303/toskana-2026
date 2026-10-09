@@ -421,7 +421,15 @@ if (phase === 'rueck' && TOMTOM_KEY && !OFFLINE) {
       const j = r.ok ? await r.json() : null;
       const sm = j && j.routes && j.routes[0] && j.routes[0].summary;
       if (sm) {
-        ps.tt = { at: NOW, gt: t, lat: r5(lat), lon: r5(lon), km: Math.round(sm.lengthInMeters / 100) / 10, sec: sm.travelTimeInSeconds, free: sm.noTrafficTravelTimeInSeconds ?? null, delay: sm.trafficDelayInSeconds || 0 };
+        // Strecke ab Bus bis Ziel, auf ca. alle 2,5 km ausgedünnt (für die Karte, wenn der Bus von der Planroute abweicht)
+        const geo = [];
+        for (const leg of j.routes[0].legs || []) for (const q of leg.points || []) {
+          const pt = [Math.round(q.latitude * 1e4) / 1e4, Math.round(q.longitude * 1e4) / 1e4];
+          if (!geo.length || km(geo[geo.length - 1], pt) >= 2.5) geo.push(pt);
+        }
+        const lp = (j.routes[0].legs || []).at(-1)?.points?.at(-1);
+        if (lp) geo.push([Math.round(lp.latitude * 1e4) / 1e4, Math.round(lp.longitude * 1e4) / 1e4]);
+        ps.tt = { at: NOW, gt: t, lat: r5(lat), lon: r5(lon), km: Math.round(sm.lengthInMeters / 100) / 10, sec: sm.travelTimeInSeconds, free: sm.noTrafficTravelTimeInSeconds ?? null, delay: sm.trafficDelayInSeconds || 0, geo };
         console.log('TomTom:', ps.tt.km, 'km, Verzögerung', Math.round(ps.tt.delay / 60), 'Min');
       } else console.log('TomTom: keine Route', r.status);
     } catch (e) { console.log('TomTom-Fehler', String(e).replace(TOMTOM_KEY, '***')); }

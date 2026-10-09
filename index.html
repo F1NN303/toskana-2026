@@ -1,4 +1,4 @@
-<!doctype html><html lang="de"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><meta name="robots" content="noindex,nofollow"><meta name="app-build" id="app-build" content="v29"><title>Toskana-Fahrt Live</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect x=%221%22 y=%221%22 width=%2230%22 height=%2230%22 rx=%225%22 fill=%22%230a5aa8%22 stroke=%22white%22 stroke-width=%222%22/%3E%3Cpath d=%22M16 6l8 9h-5v11h-6V15H8z%22 fill=%22white%22/%3E%3C/svg%3E"><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#232527"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bus Live"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script></head><body>
+<!doctype html><html lang="de"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><meta name="robots" content="noindex,nofollow"><meta name="app-build" id="app-build" content="v30"><title>Toskana-Fahrt Live</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect x=%221%22 y=%221%22 width=%2230%22 height=%2230%22 rx=%225%22 fill=%22%230a5aa8%22 stroke=%22white%22 stroke-width=%222%22/%3E%3Cpath d=%22M16 6l8 9h-5v11h-6V15H8z%22 fill=%22white%22/%3E%3C/svg%3E"><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#232527"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bus Live"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script></head><body>
 
 
 <style id="css">
@@ -706,7 +706,7 @@ function estimate(phase,now){
       // Auf den letzten 250 km ist die Live-Route genauer als der Fahrplan (der Pausen enthält)
       if(O.km<250){var eta=Math.max(now+60000,O.gt+O.min*OSRM_BUS*60000);res.eta=eta;res.remain=(eta-now)/60000;res.delay=(eta-start)/60000-total;res.osrm=true;res.scale=res.remain/Math.max(1,total-res.eff)}
     }
-    if(phase==='rueck'&&!res.done&&!res.offRoute){var fc=null;try{fc=forecastRueck(now)}catch(err){}
+    if(phase==='rueck'&&!res.done){var fc=null;try{fc=forecastRueck(now)}catch(err){}
       if(fc){res.fc=fc;res.osrm=false;res.eta=fc.eta;res.remain=fc.remain;res.delay=(fc.eta-start)/60000-total;res.scale=res.remain/Math.max(1,total-res.eff)}}
   }
   return res;
@@ -755,7 +755,8 @@ var fH=new Intl.DateTimeFormat('de-DE',{timeZone:TZ,hour:'2-digit',hour12:false}
 function berlinHour(ms){return (parseInt(fH.format(new Date(ms)),10)%24)+new Date(ms).getUTCMinutes()/60}
 function forecastRueck(now){
   if(!gps)return null;
-  var here=profAt(gps.lat,gps.lon);if(!here)return null;
+  var here=profAt(gps.lat,gps.lon);
+  if(!here){var t0=tripState.rueck&&tripState.rueck.tt;if(t0&&t0.free&&now-t0.at<15*60000&&kmDist(t0.lat,t0.lon,gps.lat,gps.lon)<8)here={m:t0.free/60,d:0,tt:1};else return null}
   fcMarks();
   var x=here.m, t=now, pauses=[], rushMin=0, driveMin=0;
   var lb=lastBreakEnd('rueck')||RUECK_START, s=Math.max(0,(gps.t-lb)/60000);
@@ -960,6 +961,26 @@ function geoRemainKm(phase,key,lat,lon){
   var a=line[q.i],b=line[q.i+1],seg=kmDist(a[0],a[1],b[0],b[1]),part=Math.min(seg,kmDist(a[0],a[1],lat,lon));
   return Math.max(0,cum[cum.length-1]-(cum[q.i]+part));
 }
+/* Abweichung von der Planroute: Reststrecke ab Bus neu (TomTom aus state.json, sonst OSRM) */
+var reroute={t:0,lat:0,lon:0,geo:null,src:''};
+function offPlan(e){
+  if(!e||!e.live||!GEO||!gps||e.done)return false;
+  return distToLine(lineForPhase(e.phase,e.r.key),gps.lat,gps.lon).d>2.5;
+}
+function rerouteGeo(e,now){
+  var tt=e.phase==='rueck'&&tripState.rueck&&tripState.rueck.tt;
+  if(tt&&tt.geo&&tt.geo.length>1&&now-tt.at<15*60000&&kmDist(tt.lat,tt.lon,gps.lat,gps.lon)<8)return {geo:tt.geo,src:'TomTom'};
+  if(reroute.geo&&now-reroute.t<10*60000&&kmDist(reroute.lat,reroute.lon,gps.lat,gps.lon)<8)return {geo:reroute.geo,src:reroute.src};
+  if(!reroute.busy&&(!reroute.tried||now-reroute.tried>3*60000)){
+    reroute.busy=true;reroute.tried=now;var la=gps.lat,lo=gps.lon,fin=e.r[e.r.length-1];
+    fetch('https://router.project-osrm.org/route/v1/driving/'+lo.toFixed(5)+','+la.toFixed(5)+';'+fin.lon+','+fin.lat+'?overview=simplified&geometries=geojson')
+      .then(function(x){return x.ok?x.json():null}).then(function(j){reroute.busy=false;
+        var c=j&&j.routes&&j.routes[0]&&j.routes[0].geometry&&j.routes[0].geometry.coordinates;if(!c)return;
+        reroute={t:Date.now(),lat:la,lon:lo,geo:c.map(function(q){return [q[1],q[0]]}),src:'OSRM',tried:reroute.tried};render();
+      }).catch(function(){reroute.busy=false});
+  }
+  return null;
+}
 function sliceTo(line,lat,lon){var q=distToLine(line,lat,lon);return line.slice(0,q.i+1).concat([[lat,lon]])}
 
 /* Raststätten und McDonald's (aus OpenStreetMap, als pois.json neben der Seite) */
@@ -1044,6 +1065,16 @@ function updateMap(ph,e){
   }
   else if(ph==='vorort'||ph==='zuhause')done=GEO?lineForPhase(ph==='vorort'?'hin':'rueck',active):lineFor(active);
   LL.done.setLatLngs(done);
+  var rr=null;
+  if(e&&offPlan(e))rr=rerouteGeo(e,Date.now());
+  if(rr){
+    var g=[[gps.lat,gps.lon]].concat(rr.geo);
+    if(mapSig.rr!==1){mapSig.rr=1;LL.route.setStyle({color:'#e8b54a',dashArray:null,opacity:.95});LL.plan=LL.plan||L.polyline([],{pane:'altPane',color:'#9aa0a6',weight:3,dashArray:'6 7',opacity:.8,interactive:false}).addTo(LM);LL.plan.setLatLngs(lineFor(active))}
+    LL.route.setLatLngs(g);
+  } else if(mapSig.rr===1){
+    mapSig.rr=0;LL.route.setStyle({color:'#9aa0a6',opacity:.85});LL.route.setLatLngs(lineFor(active));if(LL.plan)LL.plan.setLatLngs([]);
+  }
+  curMap.rr=rr;
   var bl,bo;
   if(e&&e.eff>0){bl=e.lat;bo=e.lon}else if(ph==='vorort'){bl=P.mt.lat;bo=P.mt.lon}else if(e){bl=e.r[0].lat;bo=e.r[0].lon}else{bl=P.mg.lat;bo=P.mg.lon}
   curMap.bus=[bl,bo];LL.bus.setLatLng([bl,bo]);
@@ -1390,7 +1421,7 @@ function hero(ph,now,e){
       var rs=(traffic.items||[]).filter(function(o){return !o.works&&o.ahead>-3&&o.ahead<8})[0];
       h+='<div class="plates"><span class="plate late">Verkehr stockt gerade, ca. '+rnd(sv)+' km/h'+(rs?'. Laut Autobahn GmbH: '+esc(rs.label)+' ('+esc(rs.title)+')':'')+'</span></div>';
     }
-    if(e.live){var dl=Math.round((e.eta-(e.start+route(e.phase,'g-cisa')[route(e.phase,'g-cisa').length-1].off*60000))/60000);h+='<div class="plates"><span class="plate live"><i></i>GPS live, Stand '+tm(gps.t)+' Uhr</span>'+(gps.stopped?'<span class="plate late">'+esc(stopText(now))+'</span>':'')+(e.offRoute?'<span class="plate late">Umleitung: abseits der geplanten Strecke</span>':(Math.abs(dl)>=15?'<span class="plate">Ankunft '+(dl>0?'ca. '+dl+' Min später':'ca. '+(-dl)+' Min früher')+' als geplant</span>':''))+'</div>'}
+    if(e.live){var dl=Math.round((e.eta-(e.start+route(e.phase,'g-cisa')[route(e.phase,'g-cisa').length-1].off*60000))/60000);h+='<div class="plates"><span class="plate live"><i></i>GPS live, Stand '+tm(gps.t)+' Uhr</span>'+(offPlan(e)?'<span class="plate late">Anderer Weg als geplant: Reststrecke auf der Karte ab Bus neu berechnet</span>':'')+(gps.stopped?'<span class="plate late">'+esc(stopText(now))+'</span>':'')+(e.offRoute?'<span class="plate late">Umleitung: abseits der geplanten Strecke</span>':(Math.abs(dl)>=15?'<span class="plate">Ankunft '+(dl>0?'ca. '+dl+' Min später':'ca. '+(-dl)+' Min früher')+' als geplant</span>':''))+'</div>'}
     else if(e.ck){var d=Math.round(e.delay);h+='<span class="plate'+(d>=10?' late':'')+'">Gemeldet: '+esc(P[e.ck.wp].n)+' um '+tm(e.ck.t)+(Math.abs(d)>=10?', '+(d>0?'+':'−')+Math.abs(d)+' Min zum Plan':'')+'</span>'}
     else h+='<span class="plate">'+(gps&&gps.t>e.start-90*60000?'Kein GPS-Signal seit '+tm(gps.t)+' Uhr, Position geschätzt':'Geschätzt nach Fahrplan')+'</span>';
     h+=roadStrip(e,e.km/e.kmTotal*100);
