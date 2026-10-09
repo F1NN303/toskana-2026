@@ -1,4 +1,4 @@
-<!doctype html><html lang="de"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><meta name="robots" content="noindex,nofollow"><meta name="app-build" id="app-build" content="v50"><title>Toskana-Fahrt Live</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect x=%221%22 y=%221%22 width=%2230%22 height=%2230%22 rx=%225%22 fill=%22%230a5aa8%22 stroke=%22white%22 stroke-width=%222%22/%3E%3Cpath d=%22M16 6l8 9h-5v11h-6V15H8z%22 fill=%22white%22/%3E%3C/svg%3E"><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#232527"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bus Live"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script></head><body>
+<!doctype html><html lang="de"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><meta name="robots" content="noindex,nofollow"><meta name="app-build" id="app-build" content="v51"><title>Toskana-Fahrt Live</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect x=%221%22 y=%221%22 width=%2230%22 height=%2230%22 rx=%225%22 fill=%22%230a5aa8%22 stroke=%22white%22 stroke-width=%222%22/%3E%3Cpath d=%22M16 6l8 9h-5v11h-6V15H8z%22 fill=%22white%22/%3E%3C/svg%3E"><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#232527"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bus Live"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script></head><body>
 
 
 <style id="css">
@@ -567,6 +567,15 @@ svg .mk-works text{fill:#111}
 .fd-gr{display:flex;gap:8px;align-items:baseline}.fd-gr span:last-child{font-size:.72rem;color:var(--paint-dim)}
 .fd-by{position:absolute;right:6px;bottom:6px;z-index:1;font-size:.62rem;color:#fff;background:rgba(0,0,0,.55);padding:1px 5px;border-radius:4px;max-width:60%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fd-pic .fd-tag.y{margin-bottom:14px}
+.wr-card{position:relative;display:block;margin:12px 0;border-radius:16px;overflow:hidden;text-decoration:none;color:#f6ecd8;background:linear-gradient(135deg,#2a1f4a 0%,#7a3b5e 48%,#c8553d 82%,#f28f3b 100%);box-shadow:0 10px 28px rgba(42,31,74,.35)}
+.wr-card .wr-strip{display:flex;gap:6px;padding:12px 12px 0;opacity:.95}
+.wr-card .wr-strip img{flex:1;min-width:0;height:64px;object-fit:cover;border-radius:8px}
+.wr-card .wr-txt{padding:12px 16px 16px;display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+.wr-card small{display:block;font:800 .72rem/1.2 Overpass,sans-serif;letter-spacing:.14em;text-transform:uppercase;opacity:.8}
+.wr-card strong{display:block;font:900 1.55rem/1.05 Overpass,sans-serif;letter-spacing:-.01em;margin-top:3px}
+.wr-card strong em{font-family:Georgia,serif;font-weight:700;color:#f3c316}
+.wr-card span.wr-sub{display:block;font:600 .88rem/1.3 Overpass,sans-serif;opacity:.9;margin-top:4px}
+.wr-card .wr-go{flex:none;background:#f3c316;color:#141414;font:900 .9rem Overpass,sans-serif;border-radius:999px;padding:10px 16px;white-space:nowrap}
 </style>
 <script type="application/json" id="state">{"checkins":[],"message":"","messageAt":null,"gpsLink":"","variant":{"hin":"cisa","rueck":"cisa"}}</script>
 <div id="app"></div>
@@ -1522,6 +1531,12 @@ function movingRecently(){
   for(var i=1;i<tr.length;i++)if(kmDist(tr[i-1][0],tr[i-1][1],tr[i][0],tr[i][1])<0.05)return false;
   return true;
 }
+/* Toskana Wrapped: erst sichtbar, wenn in status.json "wrapped": true steht */
+function wrappedCard(){
+  if(!state.wrapped)return '';
+  return '<a class="wr-card" href="wrapped-33477060a2.html"><div class="wr-strip">'+['siena-duomo','firenze-david','pisa','siena-campo'].map(function(n){return '<img src="img/wrapped/'+n+'-s.webp" alt="" loading="lazy">'}).join('')+'</div>'+
+    '<div class="wr-txt"><div><small>Neu · Rückblick</small><strong>Toskana <em>Wrapped</em></strong><span class="wr-sub">Eure Fahrt in 2 Minuten: Kilometer, Stau, Gotthard und Fotos</span></div><span class="wr-go">Ansehen →</span></div></a>';
+}
 function hero(ph,now,e){
   var h='';
   var msg=state.message, msgAt=state.messageAt;
@@ -1539,6 +1554,7 @@ function hero(ph,now,e){
     var cc=countryOf(e), last=e.r[e.r.length-1];
     h+=statusBar(e,Date.now());
     if(!e.done)h+='<div class="vms eta-big" role="status"><div class="l1">Ankunft '+(ph==='hin'?'im Hotel':'an der Schule')+'</div><div class="l2">ca. '+tm(e.eta)+' Uhr</div><div class="l3">'+(e.fc&&e.fc.win?'wahrscheinlich '+tm(r5m(e.fc.win.lo))+' – '+tm(r5m(e.fc.win.hi))+' · ':'geschätzt · ')+'noch '+dur(e.remain)+(e.fc?'':(e.osrm?'':', alle Pausen eingerechnet'))+'</div>'+(e.fc?fcLine(e.fc):'')+'</div>';
+    if(ph==='rueck')h+=wrappedCard();
     h+='<div class="gantry"><div class="sign '+cc+'"><div class="in hero-in"><div class="where"><span class="small">'+(ph==='hin'?'Hinfahrt – wir sind gerade':'Heimfahrt – wir sind gerade')+'</span><strong>'+esc(whereText(e))+'</strong></div>'+
        '<div class="dest">'+ARROW+'<span class="to">'+esc(last.n)+'</span><span class="km">'+n1(e.remainKm!=null?e.remainKm:((e.live&&!e.offRoute&&geoRemainKm(e.phase,e.r.key,e.lat,e.lon))||(e.kmTotal-e.km)))+' km</span><span class="eta">'+(e.fc||ph==='rueck'?'Ankunftszeit siehe oben':'Ankunft ca. '+tm(e.eta)+', noch '+dur(e.remain))+'</span></div></div></div></div>';
     var nx=nextEvent(e);
@@ -1567,6 +1583,7 @@ function hero(ph,now,e){
     if(D&&D.place&&D.place!=='mt'&&D.place!=='mg'){var wd=wxDay(D.place,today);if(wd)pl+='<span class="plate wx">'+wxIcon(wd.code)+esc(WXNAME[D.place])+' heute: '+rnd(wd.max)+'° / '+rnd(wd.min)+'°, '+wxKind(wd.code)[0]+', Regenrisiko '+rnd(wd.rain||0)+' %</span>'}
     if(pl)h+='<div class="plates">'+pl+'</div>';
   } else {
+    h+=wrappedCard();
     h+='<div class="gantry"><div class="sign de"><div class="in"><div class="where"><span class="small">Fr 09.10.</span><strong>Willkommen zurück in Mönchengladbach</strong></div></div></div></div>';
   }
   if(state.gpsLink&&ph!=='zuhause')h+='<a class="gps" href="'+esc(state.gpsLink)+'" target="_blank" rel="noopener">Genauen Standort öffnen (GPS) →</a>';
@@ -2299,6 +2316,7 @@ function pullStatus(){
     state.message=typeof s.message==='string'?s.message.slice(0,200):'';
     state.messageAt=s.messageAt?toMs(s.messageAt):null;
     state.gpsLink=typeof s.gpsLink==='string'&&/^https:\/\/[^\s"'<>]+$/.test(s.gpsLink)?s.gpsLink:'';
+    state.wrapped=s.wrapped===true;
     if(s.variant){state.variant.hin=s.variant.hin==='bologna'?'bologna':'cisa';state.variant.rueck=s.variant.rueck==='bologna'?'bologna':'cisa'}
     render();
   }).catch(function(){});

@@ -511,7 +511,9 @@ function activate(s){
     setTimeout(function(){is.forEach(function(i){i.style.transition=''});is[0].style.width=(tr.dataset.dr/mx*100)+'%';is[1].style.width=(tr.dataset.pa/mx*100)+'%';is[2].style.width=(tr.dataset.ja/mx*100)+'%'},RM?0:700)});
   ['rh','rr'].forEach(function(id,k){var p=s.querySelector('#'+id);if(!p)return;p.style.transition='none';p.style.strokeDashoffset=RM?0:p.dataset.len;p.getBoundingClientRect();if(!RM)setTimeout(function(){p.style.transition='stroke-dashoffset '+(k?3.2:3.6)+'s cubic-bezier(.45,.05,.4,1)';p.style.strokeDashoffset=0},k?4100:500)});
 }
+var pending=false;
 function go(i){
+  if(pending){pending=false;compute();build()} // neue Live-Daten erst beim Folienwechsel, damit die laufende Folie nicht neu startet
   var ss=slidesEl.children;if(i<0)i=0;if(i>=ss.length)i=ss.length-1;
   paused=false;autoPaused=false;document.getElementById('pp').textContent='❚❚';slidesEl.querySelectorAll('[style*="animation-play-state"]').forEach(function(el){el.style.animationPlayState=''});
   for(var k=0;k<ss.length;k++){ss[k].classList.remove('on');barsEl.children[k].firstChild.style.width=k<i?'100%':'0'}
@@ -545,7 +547,7 @@ function refresh(first){
     if(st&&st.rueck){if(st.rueck.arrived&&RUE.arr!==st.rueck.arrived){RUE.arr=st.rueck.arrived;changed=true}}
     if(Array.isArray(tr)){var last=pts.length?pts[pts.length-1][2]:0;tr.forEach(function(q){if(q[2]>last&&q[2]>=RUE.from){pts.push([q[0],q[1],q[2]]);changed=true}})}
     if(first){start();return}
-    if(changed){compute();var keep=cur;build();go(keep)}
+    if(changed)pending=true;
   });
 }
 var started=false;
