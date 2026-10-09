@@ -310,7 +310,7 @@ if (phase) {
     }
     track.sort((a, b) => a[2] - b[2]);
   }
-  if (track.length > 600) track = track.slice(-600);
+  if (track.length > 4000) track = track.slice(-4000); // ganze Woche behalten (für Toskana Wrapped)
   const ptrack = track.filter((q) => q[2] >= trip.from && q[2] <= trip.to);
   const first = ptrack[0];
   const moving = !pos.stopped;
