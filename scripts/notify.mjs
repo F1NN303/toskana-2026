@@ -44,6 +44,9 @@ const TUNNELS = {
   rueck: [[46.528, 8.611, 'gotthard'], [46.463, 9.186, 'sanbernardino']],
 };
 
+// Pflicht-Halte (Maut, Grenze): dort ist ein Halt keine Pause und kein Stau. An Grenzen ab 20 Min doch Pause (Raststätten daneben).
+const CHECKPTS = [['toll', 'Mautstelle Montecatini', 43.8772, 10.7926], ['toll', 'Mautstelle Milano Sud', 45.3494, 9.31], ['toll', 'Mautstelle Milano Nord', 45.5485, 9.06], ['toll', 'Mautstelle Como Grandate', 45.774, 9.049], ['border', 'Grenze Chiasso-Brogeda', 45.8405, 9.0373], ['border', 'Grenze Weil am Rhein', 47.5964, 7.6035]];
+
 // ---------- Hilfen ----------
 const readJSON = (f, d) => { try { return JSON.parse(fs.readFileSync(path.join(DIR, f), 'utf8')); } catch { return d; } };
 const toMs = (v) => (v == null ? null : typeof v === 'number' ? v : Date.parse(v));
@@ -347,7 +350,14 @@ if (phase) {
   const since = toMs(pos.stoppedSince);
   if (underway && pos.stopped && since) {
     const mins = (t - since) / 60000;
-    if (ps.stopFor !== since && mins >= 10) {
+    const cp = CHECKPTS.find((c) => km([lat, lon], [c[2], c[3]]) < (c[0] === 'toll' ? 0.5 : 0.6));
+    if (cp && (cp[0] === 'toll' || mins < 20)) {
+      // Maut oder Grenzkontrolle: nur bei langem Warten melden, ohne es Pause oder Stau zu nennen
+      if (ps.stopFor !== since && mins >= 12) {
+        ps.stopFor = since; ps.stopKind = 'check';
+        out.push({ title: cp[0] === 'toll' ? 'Wartezeit an der Maut' : 'Wartezeit an der Grenze', message: `Der Bus wartet seit ${Math.round(mins)} Minuten an der ${cp[1]}.`, tags: ['hourglass'] });
+      }
+    } else if (ps.stopFor !== since && mins >= 10) {
       let poi = ps.poiFor === since ? ps.poi : undefined;
       if (poi === undefined) { poi = await restStop(lat, lon); if (poi !== undefined) { ps.poiFor = since; ps.poi = poi; } }
       if (poi && mins >= 15) {
@@ -362,7 +372,7 @@ if (phase) {
   } else if (underway && moving && ps.stopFor && ps.resumedFor !== ps.stopFor) {
     ps.resumedFor = ps.stopFor;
     ps.resumedAt = t;
-    out.push(ps.stopKind === 'jam'
+    out.push(ps.stopKind === 'jam' || ps.stopKind === 'check'
       ? { title: 'Es geht weiter', message: 'Der Bus fährt wieder.', tags: ['bus'] }
       : { title: 'Weiter geht’s', message: 'Die Pause ist vorbei, der Bus fährt weiter.', tags: ['bus'] });
   }
