@@ -25,7 +25,7 @@ if (VAPID_PUBLIC && VAPID_PRIVATE) {
 
 const TRIPS = {
   hin: { from: Date.parse('2026-10-04T21:00:00+02:00'), to: Date.parse('2026-10-05T20:00:00+02:00'), dest: [43.88563, 10.77852], near: 0.4 },
-  rueck: { from: Date.parse('2026-10-09T06:00:00+02:00'), to: Date.parse('2026-10-10T06:00:00+02:00'), dest: [51.2, 6.45], near: 8 },
+  rueck: { from: Date.parse('2026-10-09T04:00:00+02:00'), to: Date.parse('2026-10-10T06:00:00+02:00'), dest: [51.2, 6.45], near: 8 },
 };
 
 // Bekannte Wege (grob), um Umleitungen zu erkennen

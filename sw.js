@@ -1,6 +1,6 @@
 // Hält die Seite offline verfügbar und zeigt Push-Nachrichten an.
 // Seiten immer zuerst aus dem Netz, damit Updates sofort ankommen.
-const CACHE = 'toskana-v19';
+const CACHE = 'toskana-v20';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 const SUBS_TOPIC = 'toskana26-subs-r8x2kp';
 const VAPID_PUBLIC = 'BEUcM2EYTTmgcaBX2OWDhRxC6rD02HrXhDZqLjjzZ_YZ0leAIYj__XqZJ6Xo6QJeRj0N3TEklowThK79ErVGQMc';
