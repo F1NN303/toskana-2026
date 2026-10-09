@@ -1,4 +1,4 @@
-<!doctype html><html lang="de"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><meta name="robots" content="noindex,nofollow"><meta name="app-build" id="app-build" content="v46"><title>Toskana-Fahrt Live</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect x=%221%22 y=%221%22 width=%2230%22 height=%2230%22 rx=%225%22 fill=%22%230a5aa8%22 stroke=%22white%22 stroke-width=%222%22/%3E%3Cpath d=%22M16 6l8 9h-5v11h-6V15H8z%22 fill=%22white%22/%3E%3C/svg%3E"><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#232527"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bus Live"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script></head><body>
+<!doctype html><html lang="de"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><meta name="robots" content="noindex,nofollow"><meta name="app-build" id="app-build" content="v47"><title>Toskana-Fahrt Live</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect x=%221%22 y=%221%22 width=%2230%22 height=%2230%22 rx=%225%22 fill=%22%230a5aa8%22 stroke=%22white%22 stroke-width=%222%22/%3E%3Cpath d=%22M16 6l8 9h-5v11h-6V15H8z%22 fill=%22white%22/%3E%3C/svg%3E"><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#232527"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bus Live"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script></head><body>
 
 
 <style id="css">
@@ -845,6 +845,7 @@ function forecastRueck(now){
   jamAt.sort(function(a,b){return b[0]-a[0]});
   // Laufender Halt: Rest der Pause abwarten (Maut/Grenze ausgenommen)
   if(!changed&&gps.stopped&&gps.stoppedSince&&gps.stoppedSince>=FC_FRFROM&&!checkpointAt(gps.lat,gps.lon,null)){var stw=(now-gps.stoppedSince)/60000,rw=Math.max(3,FC.driverMin-stw);t+=rw*60000;s=0;leg={d:0,part:false};changed=true;pauses.push({n:'Fahrerwechsel Freiburg',min:Math.round(rw),at:now});trace.push([x,t])}
+  else if(gps.stopped&&gps.stoppedSince&&lg.changedAt&&lg.changedAt>=gps.stoppedSince-60000){var stc=(now-gps.stoppedSince)/60000,rc=Math.max(2,FC.driverMin-stc);t+=rc*60000;s=0;pauses.push({n:'Fahrerwechsel Freiburg',min:Math.round(rc),at:now,running:true});trace.push([x,t])}
   else if(gps.stopped&&gps.stoppedSince){var st=(now-gps.stoppedSince)/60000, cp=checkpointAt(gps.lat,gps.lon,st);if(st>=5&&!cp){var need=leg.d>=200?(leg.part?30:45):FC.pause,rest=Math.max(5,need-st);t+=rest*60000;euBreak(leg,st+rest);s=0;pauses.push({n:'laufende Pause',min:Math.round(rest)});trace.push([x,t])}}
   function drive(to){
     while(x>to+0.01){
@@ -868,7 +869,13 @@ function forecastRueck(now){
     pauses.push({n:mustReset?'Pflichtpause':'Pause',min:L,at:t});t+=L*60000;euBreak(leg,L);s=0;trace.push([x,t]);
   }
   var legalLatest=now+Math.max(0,FC.legal-lg.d)*60000;
-  return {eta:t,remain:(t-now)/60000,drive:driveMin,legalLatest:legalLatest,pauses:pauses,pauseMin:pauses.reduce(function(a,p){return a+p.min},0),jam:Math.round(jamTot),jams:jams,rush:Math.round(rushMin),live:live,trace:trace,x0:x0,pace:pace,legal:{d:Math.round(lg.d),part:lg.part,changedAt:lg.changedAt}};
+  // Zeitfenster: früher, wenn nur die gesetzlich nötige Pause gemacht wird, Tempo etwas besser und weniger Verkehr;
+  // später bei einem zusätzlichen Halt, etwas langsamerem Tempo und unvorhergesehenem Stau (wächst mit der Restzeit)
+  var pmin=pauses.reduce(function(a,p){return a+p.min},0), needLegal=(lg.d+driveMin>FC.legal)?(lg.part?30:45):0;
+  needLegal=Math.min(needLegal,pmin);
+  var hrsLeft=(t-now)/3600000, early=(pmin-needLegal)+0.04*driveMin+0.3*jamTot, late=0.04*driveMin+Math.max(0,hrsLeft-1)*5+(hrsLeft>3&&pauses.length<2?15:0);
+  var win={lo:t-early*60000,hi:t+late*60000};
+  return {eta:t,win:win,remain:(t-now)/60000,drive:driveMin,legalLatest:legalLatest,pauses:pauses,pauseMin:pauses.reduce(function(a,p){return a+p.min},0),jam:Math.round(jamTot),jams:jams,rush:Math.round(rushMin),live:live,trace:trace,x0:x0,pace:pace,legal:{d:Math.round(lg.d),part:lg.part,changedAt:lg.changedAt}};
 }
 // Zeitpunkt, zu dem die Simulation die Fahrminute m (bis Mönchengladbach) erreicht
 function fcTimeAt(f,m){
@@ -1256,7 +1263,9 @@ function pauseForecast(ph,e,now){
   if(!(ph==='hin'||ph==='rueck')||!e||e.offRoute||!pois.length)return null;
   if(gps&&gpsFresh(now)&&gps.stopped)return {stopped:true};
   var since0=lastBreakEnd(ph)||e.start, since=Math.max(0,(now-since0)/3600000), v=avgSpeed(ph,now), r=e.r, cur=e.km;
-  var horizon=Math.max(0.5,Math.min(4.8,since+3.6)-since);
+  var np=e.fc&&e.fc.pauses?e.fc.pauses.filter(function(p){return p.at&&!p.running})[0]:null, npAt=np?np.at:null, legLate=e.fc?e.fc.legalLatest:null;
+  if(e.fc&&e.fc.legal)since=e.fc.legal.d/60;
+  var horizon=npAt?Math.max(0.5,(npAt-now)/3600000+1.2):Math.max(0.5,Math.min(4.8,since+3.6)-since);
   var b=r.filter(function(w){return w.id===(ph==='hin'?'ba':'ch')})[0];
   var cands=[];
   pois.forEach(function(o){
@@ -1268,6 +1277,8 @@ function pauseForecast(ph,e,now){
     // an das Verhalten unseres Fahrers angepasst: bisher Halt nach 2:54, 2:13 und 2:20 Std, also etwa alle 2,5 Std
     var tw=Math.exp(-0.5*Math.pow((hrs-2.5)/0.45,2));
     if(hrs>4.6)tw=0.02;if(hrs<1.2)tw*=0.3;
+    // Rückfahrt: um den Zeitpunkt der nächsten Pause aus dem Prognose-Modell (Lenkzeit + Erfahrung) herum
+    if(npAt){var dh=eta-(npAt-now)/3600000;tw=Math.exp(-0.5*Math.pow(dh/0.35,2));if(legLate&&now+eta*3600000>legLate)tw=0.01}
     // Ort: Autohöfe und große Raststätten sind bustauglich; vor der Schweiz wird gern noch günstig getankt
     var aw=1;
     if(/autohof|truck|tank/i.test(o.n||''))aw*=1.25;
@@ -1280,14 +1291,14 @@ function pauseForecast(ph,e,now){
   if(!sum)return {since:since,list:[],overdue:since>=4.5};
   cands.forEach(function(c){c.p=c.w/sum});
   cands.sort(function(a,b){return b.p-a.p});
-  var mean=cands.reduce(function(t,c){return t+c.p*c.eta},0);
+  var mean=npAt?(npAt-now)/3600000:cands.reduce(function(t,c){return t+c.p*c.eta},0);
   return {since:since,list:cands.slice(0,3),meanEta:mean,overdue:since>=4.5};
 }
 function pauseBox(ph,e,now){
   var f=pauseForecast(ph,e,now);
   if(!f)return '';
   if(f.stopped)return '<div class="pfc"><b>Pausen-Prognose</b><p>Der Bus steht gerade. Die nächste Prognose kommt, sobald es weitergeht.</p></div>';
-  var h='<div class="pfc"><b>Pausen-Prognose</b><p>Seit der letzten Pause gefahren: <strong>'+dur(f.since*60)+'</strong>. Spätestens nach 4½ Stunden Fahrt muss der Fahrer pausieren (EU-Lenkzeiten).</p>';
+  var h='<div class="pfc"><b>Pausen-Prognose</b><p>Seit der letzten vollen Pause gefahren: <strong>'+dur(f.since*60)+'</strong>. Spätestens nach 4½ Stunden Fahrt muss der Fahrer pausieren (EU-Lenkzeiten).</p>';
   if(f.overdue)h+='<p class="pfc-hot">Eine Pause ist jetzt jederzeit wahrscheinlich.</p>';
   if(f.list.length){
     h+='<p>Wahrscheinlicher nächster Halt, ungefähr gegen <strong>'+tm(now+f.meanEta*3600000)+' Uhr</strong>:</p><ul>'+f.list.map(function(c){
@@ -1523,7 +1534,7 @@ function hero(ph,now,e){
   } else if(ph==='hin'||ph==='rueck'){
     var cc=countryOf(e), last=e.r[e.r.length-1];
     h+=statusBar(e,Date.now());
-    if(!e.done)h+='<div class="vms eta-big" role="status"><div class="l1">Ankunft '+(ph==='hin'?'im Hotel':'an der Schule')+'</div><div class="l2">ca. '+tm(e.eta)+' Uhr</div><div class="l3">geschätzt · noch '+dur(e.remain)+(e.fc?'':(e.osrm?'':', alle Pausen eingerechnet'))+'</div>'+(e.fc?fcLine(e.fc):'')+'</div>';
+    if(!e.done)h+='<div class="vms eta-big" role="status"><div class="l1">Ankunft '+(ph==='hin'?'im Hotel':'an der Schule')+'</div><div class="l2">ca. '+tm(e.eta)+' Uhr</div><div class="l3">'+(e.fc&&e.fc.win?'wahrscheinlich '+tm(r5m(e.fc.win.lo))+' – '+tm(r5m(e.fc.win.hi))+' · ':'geschätzt · ')+'noch '+dur(e.remain)+(e.fc?'':(e.osrm?'':', alle Pausen eingerechnet'))+'</div>'+(e.fc?fcLine(e.fc):'')+'</div>';
     h+='<div class="gantry"><div class="sign '+cc+'"><div class="in hero-in"><div class="where"><span class="small">'+(ph==='hin'?'Hinfahrt – wir sind gerade':'Heimfahrt – wir sind gerade')+'</span><strong>'+esc(whereText(e))+'</strong></div>'+
        '<div class="dest">'+ARROW+'<span class="to">'+esc(last.n)+'</span><span class="km">'+n1(e.remainKm!=null?e.remainKm:((e.live&&!e.offRoute&&geoRemainKm(e.phase,e.r.key,e.lat,e.lon))||(e.kmTotal-e.km)))+' km</span><span class="eta">'+(e.fc||ph==='rueck'?'Ankunftszeit siehe oben':'Ankunft ca. '+tm(e.eta)+', noch '+dur(e.remain))+'</span></div></div></div></div>';
     var nx=nextEvent(e);
@@ -1578,21 +1589,27 @@ function statusInfo(e,now){
     var cp=checkpointAt(gps.lat,gps.lon,mins);
     if(cp)return {k:'check',h:cp.kind==='toll'?'Mautstelle':'Grenze',t:'Wartet an der '+cp.n+' seit '+mins+' Min. Zählt nicht als Pause.'};
     var st=stopText(now);
+    var lgS=null;try{lgS=legalState(now)}catch(err){}
+    if(lgS&&lgS.changedAt&&lgS.changedAt>=gps.stoppedSince-60000)return {k:'pause',h:'Fahrerwechsel',t:'Seit '+mins+' Min.'};
     if(jh)return {k:'jam',h:'Stau',t:'Bus steht seit '+mins+' Min, '+jamTxt(jh)+'.'};
     if(/^(Pause|Kurzer Halt)/.test(st))return {k:'pause',h:/^Kurzer/.test(st)?'Kurzer Halt':'Pause',t:st.replace(/^(Pause|Kurzer Halt): /,'')+'.'};
     if(/vermutlich Stau/.test(st))return {k:'jam',h:'Stau',t:'Bus steht seit '+mins+' Min, keine Raststätte in der Nähe.'};
     return {k:'check',h:'Bus steht',t:'Seit '+mins+' Min.'};
   }
+  var lastStop=(stopsRueck(8).slice(-1)[0])||null;
+  if(sv!=null&&sv<35&&lastStop&&now-lastStop[1]<5*60000&&kmDist(gps.lat,gps.lon,lastStop[3],lastStop[4])<2)return {k:'ok',h:'Weiterfahrt',t:'Der Bus fährt nach dem Halt ('+Math.round(lastStop[2])+' Min) wieder los.'};
   if(sv!=null&&sv<35){var cp2=checkpointAt(gps.lat,gps.lon,null);if(cp2)return {k:'check',h:cp2.kind==='toll'?'Mautstelle':'Grenze',t:'Bus an der '+cp2.n+', ca. '+Math.round(sv)+' km/h. Zählt nicht als Pause.'}}
   if(sv!=null&&(sv<35||(sv<45&&jh)))return {k:'jam',h:jh&&jamLevel(jh)<3?'Stockender Verkehr':'Stau',t:(sv<5?'Bus steht oder rollt nur':'Bus fährt ca. '+Math.round(sv)+' km/h')+(jh?', '+jamTxt(jh):'')+'.'};
   var nx=null;if(tt)ttJams().forEach(function(j){var a=jamAhead(j);if(a!=null&&a>1&&(!nx||a<nx.a))nx={j:j,a:a}});
   return {k:'ok',h:'Freie Fahrt',t:(sv!=null?'ca. '+Math.round(sv)+' km/h. ':'')+(nx?'Nächster Stau in ca. '+nx.a+' km ('+jamLabel(nx.j)+', '+String(nx.j.km).replace('.',',')+' km'+(nx.j.delay>=60?', +'+Math.round(nx.j.delay/60)+' Min':'')+').':(tt?'Kein Stau mehr bis Mönchengladbach gemeldet.':''))};
 }
 function statusBar(e,now){var s0=null;try{s0=statusInfo(e,now)}catch(err){}if(!s0)return '';return '<div class="stbar st-'+s0.k+'" role="status"><b>'+esc(s0.h)+'</b><span>'+esc(s0.t)+'</span></div>'}
+function r5m(ms){return Math.round(ms/300000)*300000}
 function fcLine(f){
   function hm(m){m=Math.max(0,Math.round(m));return Math.floor(m/60)+':'+('0'+m%60).slice(-2)+' h'}
   var np=f.pauses.filter(function(p){return p.n==='Pause'}), pp=f.pauses.filter(function(p){return p.n==='Pflichtpause'}), fw=f.pauses.some(function(p){return p.n==='Fahrerwechsel Freiburg'}), lp=f.pauses.filter(function(p){return p.n==='laufende Pause'})[0];
-  var pl=[];if(lp)pl.push('laufende Pause noch '+lp.min+' Min');if(np.length)pl.push(np.length+' × ca. '+FC.pause+' Min');pp.forEach(function(p){pl.push('Pflichtpause '+p.min+' Min')});if(fw)pl.push('Fahrerwechsel '+FC_FRNAME+' ca. '+FC.driverMin+' Min');
+  var fwr=f.pauses.filter(function(p){return p.running})[0];if(fwr)fw=false;
+  var pl=[];if(fwr)pl.push('Fahrerwechsel läuft, noch ca. '+fwr.min+' Min');if(lp)pl.push('laufende Pause noch '+lp.min+' Min');if(np.length)pl.push(np.length+' × ca. '+FC.pause+' Min');pp.forEach(function(p){pl.push('Pflichtpause '+p.min+' Min')});if(fw)pl.push('Fahrerwechsel '+FC_FRNAME+' ca. '+FC.driverMin+' Min');
   var traf=f.live?f.jam:(f.jam+f.rush), tl=f.live?(f.jam?'Verkehr & Stau':'freie Fahrt'):(f.rush&&!f.jam?'Feierabendverkehr':'Stau & Feierabend');
   var h='<div class="fcb"><div class="fcbar" aria-hidden="true"><i class="d" style="flex:'+Math.max(1,f.drive)+'"></i>'+(f.pauseMin?'<i class="p" style="flex:'+f.pauseMin+'"></i>':'')+(traf?'<i class="j" style="flex:'+traf+'"></i>':'')+'</div>';
   h+='<div class="fcleg"><div class="d"><b>'+hm(f.drive)+'</b><span>Fahrt'+(f.pace&&Math.abs(f.pace.f-1)>=0.02?' (heute '+Math.round(Math.abs(f.pace.f-1)*100)+' % '+(f.pace.f>1?'langsamer':'schneller')+' als Hinfahrt)':'')+'</span></div>';
@@ -1731,7 +1748,7 @@ function worksInfo(it){
 function ttFresh(){var tt=tripState.rueck&&tripState.rueck.tt;return tt&&Date.now()-tt.at<15*60000?tt:null}
 // Bus fährt gerade zügig (über 45 km/h) in einem gemeldeten Stauabschnitt: Meldung gilt für uns nicht (z. B. nur Lkw-Spur dosiert)
 function busThrough(j){if(!gps||gps.stopped)return false;var v=curSpeed();if(!(v>45))return false;for(var i=0;i<j.line.length;i++)if(kmDist(gps.lat,gps.lon,j.line[i][0],j.line[i][1])<0.8)return true;return false}
-function ttJamsAll(){var tt=ttFresh();if(!tt||!tt.jams)return [];return tt.jams.filter(function(j){return j.line&&j.line.length>1&&(j.cat==='JAM'||j.cat==='ROAD_CLOSURE'||j.delay>=60)})}
+function ttJamsAll(){var tt=ttFresh();if(!tt||!tt.jams)return [];return tt.jams.filter(function(j){return j.line&&j.line.length>1&&(j.km>=0.3||j.delay>=60)&&(j.cat==='JAM'||j.cat==='ROAD_CLOSURE'||j.delay>=60)})}
 function ttJams(){return ttJamsAll().filter(function(j){return !busThrough(j)})}
 // TomTom magnitudeOfDelay: 1 gering, 2 mittel, 3 stark, 4/0 unbekannt (dann nach Tempo einstufen)
 function jamLevel(j){if(j.cat==='ROAD_CLOSURE')return 3;if(j.mag>=1&&j.mag<=3)return j.mag;return j.v!=null&&j.v<25?3:(j.v!=null&&j.v<50?2:1)}
