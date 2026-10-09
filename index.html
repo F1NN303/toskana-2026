@@ -1,4 +1,4 @@
-<!doctype html><html lang="de"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><meta name="robots" content="noindex,nofollow"><meta name="app-build" id="app-build" content="v49"><title>Toskana-Fahrt Live</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect x=%221%22 y=%221%22 width=%2230%22 height=%2230%22 rx=%225%22 fill=%22%230a5aa8%22 stroke=%22white%22 stroke-width=%222%22/%3E%3Cpath d=%22M16 6l8 9h-5v11h-6V15H8z%22 fill=%22white%22/%3E%3C/svg%3E"><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#232527"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bus Live"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script></head><body>
+<!doctype html><html lang="de"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><meta name="robots" content="noindex,nofollow"><meta name="app-build" id="app-build" content="v50"><title>Toskana-Fahrt Live</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect x=%221%22 y=%221%22 width=%2230%22 height=%2230%22 rx=%225%22 fill=%22%230a5aa8%22 stroke=%22white%22 stroke-width=%222%22/%3E%3Cpath d=%22M16 6l8 9h-5v11h-6V15H8z%22 fill=%22white%22/%3E%3C/svg%3E"><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#232527"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bus Live"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script></head><body>
 
 
 <style id="css">
@@ -1265,6 +1265,8 @@ function pauseForecast(ph,e,now){
   var since0=lastBreakEnd(ph)||e.start, since=Math.max(0,(now-since0)/3600000), v=avgSpeed(ph,now), r=e.r, cur=e.km;
   var np=e.fc&&e.fc.pauses?e.fc.pauses.filter(function(p){return p.at&&!p.running})[0]:null, npAt=np?np.at:null, legLate=e.fc?e.fc.legalLatest:null;
   if(e.fc&&e.fc.legal)since=e.fc.legal.d/60;
+  // Prognose-Modell sieht bis zur Ankunft keine Pause mehr (z. B. volle Pause schon gemacht): nichts mehr vorschlagen
+  if(e.fc&&e.fc.pauses&&!np)return {since:since,none:true};
   var horizon=npAt?Math.max(0.5,(npAt-now)/3600000+1.2):Math.max(0.5,Math.min(4.8,since+3.6)-since);
   var b=r.filter(function(w){return w.id===(ph==='hin'?'ba':'ch')})[0];
   var cands=[];
@@ -1272,6 +1274,7 @@ function pauseForecast(ph,e,now){
     if(o.k!=='s'||!poiSideOk(o,ph,r.key))return;
     var a=poiAlong(o,r);if(a==null||a<=cur+2)return;
     var ahead=a-cur, eta=ahead/v;if(eta>horizon)return;
+    if(ph==='rueck'&&e.eta&&now+eta*3600000>e.eta-10*60000)return; // nach der Ankunft hält niemand mehr
     var hrs=since+eta;
     // Zeitpunkt: meist nach 3 bis 4 Stunden, spätestens nach 4,5 Stunden
     // an das Verhalten unseres Fahrers angepasst: bisher Halt nach 2:54, 2:13 und 2:20 Std, also etwa alle 2,5 Std
@@ -1299,6 +1302,7 @@ function pauseBox(ph,e,now){
   if(!f)return '';
   if(f.stopped)return '<div class="pfc"><b>Pausen-Prognose</b><p>Der Bus steht gerade. Die nächste Prognose kommt, sobald es weitergeht.</p></div>';
   var h='<div class="pfc"><b>Pausen-Prognose</b><p>Seit der letzten vollen Pause gefahren: <strong>'+dur(f.since*60)+'</strong>. Spätestens nach 4½ Stunden Fahrt muss der Fahrer pausieren (EU-Lenkzeiten).</p>';
+  if(f.none)return h+'<p>Bis Mönchengladbach ist <strong>keine Pause mehr</strong> nötig: Die Lenkzeit reicht bis zur Ankunft.</p></div>';
   if(f.overdue)h+='<p class="pfc-hot">Eine Pause ist jetzt jederzeit wahrscheinlich.</p>';
   if(f.list.length){
     h+='<p>Wahrscheinlicher nächster Halt, ungefähr gegen <strong>'+tm(now+f.meanEta*3600000)+' Uhr</strong>:</p><ul>'+f.list.map(function(c){

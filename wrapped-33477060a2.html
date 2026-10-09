@@ -282,10 +282,12 @@ var BORDERS=[
 'use strict';
 var TZ='Europe/Berlin';
 var HIN={from:Date.parse('2026-10-04T21:00:00+02:00'),to:Date.parse('2026-10-05T17:00:00+02:00'),dep:1791146590999,arr:1791206170000};
-var RUE={from:Date.parse('2026-10-09T04:00:00+02:00'),dep:1791519716000,arr:null};
+// Abfahrt am Hotel ca. 06:00; das Handy hat erst ab 06:19 gesendet (da schon ca. 15 km weiter), deshalb fest
+var RUE={from:Date.parse('2026-10-09T04:00:00+02:00'),dep:Date.parse('2026-10-09T06:00:00+02:00'),arr:null};
 var STATE='https://raw.githubusercontent.com/F1NN303/toskana-2026/live/state.json', TRACK='https://raw.githubusercontent.com/F1NN303/toskana-2026/live/track.json';
 var ROAD=1.1;   // GPS-Punkte liegen ca. alle 3 Min auseinander: Straße ist ca. 10 % länger als die Luftlinien dazwischen (Hinfahrt geeicht)
 var pts=PTS.map(function(p){return [p[0]/1e4,p[1]/1e4,p[2]*1000]});
+pts.splice(pts.findIndex(function(q){return q[2]>=RUE.from}),0,[43.8856,10.7785,RUE.dep]); // Hotel Concordia als Startpunkt
 var fT=new Intl.DateTimeFormat('de-DE',{timeZone:TZ,hour:'2-digit',minute:'2-digit'});
 function tm(ms){return fT.format(new Date(ms))}
 function km(a,b){var k=Math.cos((a[0]+b[0])/2*Math.PI/180),dx=(b[1]-a[1])*111.32*k,dy=(b[0]-a[0])*110.57;return Math.sqrt(dx*dx+dy*dy)}
@@ -294,7 +296,7 @@ function hm(min){min=Math.round(min);return Math.floor(min/60)+':'+('0'+min%60).
 function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
 
 // Raststätten und Orte, an denen heute gehalten wurde (für Namen der Halte)
-var PLACES=[['Rasthof Wonnegau',49.648,8.291],['Raststätte Schauinsland',48.050,7.811],['Raststätte Gotthard Nord',46.847,8.633],['Area di Lario',45.729,9.029],['Area di Villoresi',45.559,9.038],['Area San Benedetto',44.311,9.926],['Area d’Arda',44.962,9.908],['Stau bei Muttenz',47.540,7.638],['McDonald’s Basel-Weil am Rhein',47.599,7.603],['Rasthof Mahlberg',48.307,7.791],['Hotel Concordia',43.881,10.775]];
+var PLACES=[['Rasthof Wonnegau',49.648,8.291],['Raststätte Schauinsland',48.050,7.811],['Raststätte Gotthard Nord',46.847,8.633],['Area di Lario',45.729,9.029],['Area di Villoresi',45.559,9.038],['Area San Benedetto',44.311,9.926],['Area d’Arda',44.962,9.908],['Stau bei Muttenz',47.540,7.638],['McDonald’s Basel-Weil am Rhein',47.599,7.603],['Rasthof Mahlberg',48.307,7.791],['Raststätte Hunsrück',49.963,7.768],['Hotel Concordia',43.881,10.775]];
 function placeName(la,lo){var b=null,bd=3;PLACES.forEach(function(p){var d=km([la,lo],[p[1],p[2]]);if(d<bd){bd=d;b=p[0]}});return b}
 
 function analyse(p,dep,arr){
@@ -540,7 +542,7 @@ function refresh(first){
   Promise.all([fetch(STATE+'?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.json():null}).catch(function(){return null}),
                fetch(TRACK+'?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.json():null}).catch(function(){return null})]).then(function(v){
     var st=v[0],tr=v[1],changed=false;
-    if(st&&st.rueck){if(st.rueck.departed)RUE.dep=st.rueck.departed;if(st.rueck.arrived&&RUE.arr!==st.rueck.arrived){RUE.arr=st.rueck.arrived;changed=true}}
+    if(st&&st.rueck){if(st.rueck.arrived&&RUE.arr!==st.rueck.arrived){RUE.arr=st.rueck.arrived;changed=true}}
     if(Array.isArray(tr)){var last=pts.length?pts[pts.length-1][2]:0;tr.forEach(function(q){if(q[2]>last&&q[2]>=RUE.from){pts.push([q[0],q[1],q[2]]);changed=true}})}
     if(first){start();return}
     if(changed){compute();var keep=cur;build();go(keep)}
