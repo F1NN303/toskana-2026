@@ -1,4 +1,4 @@
-<!doctype html><html lang="de"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><meta name="robots" content="noindex,nofollow"><meta name="app-build" id="app-build" content="v45"><title>Toskana-Fahrt Live</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect x=%221%22 y=%221%22 width=%2230%22 height=%2230%22 rx=%225%22 fill=%22%230a5aa8%22 stroke=%22white%22 stroke-width=%222%22/%3E%3Cpath d=%22M16 6l8 9h-5v11h-6V15H8z%22 fill=%22white%22/%3E%3C/svg%3E"><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#232527"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bus Live"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script></head><body>
+<!doctype html><html lang="de"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><meta name="robots" content="noindex,nofollow"><meta name="app-build" id="app-build" content="v46"><title>Toskana-Fahrt Live</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect x=%221%22 y=%221%22 width=%2230%22 height=%2230%22 rx=%225%22 fill=%22%230a5aa8%22 stroke=%22white%22 stroke-width=%222%22/%3E%3Cpath d=%22M16 6l8 9h-5v11h-6V15H8z%22 fill=%22white%22/%3E%3C/svg%3E"><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#232527"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bus Live"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script></head><body>
 
 
 <style id="css">
@@ -766,7 +766,8 @@ function profAt(lat,lon){
 // Fahrminuten ab Mönchengladbach auf der Hinfahrt: Pause bei Freiburg (Raststätte Schauinsland) und Grenze Weil am Rhein/Basel
 // Fahrerwechsel mit McDonald's-Stopp: Raststätte Breisgau (A5 bei Freiburg, McDonald's), angekündigt vom Fahrer
 // Korrektur 18:30: Fahrerwechsel nicht in Weil, sondern am Autohof Herbolzheim (A5, ca. 293 Fahrminuten vor MG)
-var FC_FR=293,FC_BA=346,FC_FRPOS=[48.2271,7.7541],FC_FRNAME='Autohof Herbolzheim';
+// Korrektur 18:35: an Herbolzheim vorbei; Wechsel beim nächsten längeren Halt ab 18:25 (vermutlich Rasthof Mahlberg)
+var FC_FR=289,FC_BA=346,FC_FRPOS=[48.3080,7.7915],FC_FRNAME='Rasthof Mahlberg',FC_FRFROM=Date.parse('2026-10-09T18:25:00+02:00');
 function fcMarks(){}
 var fH=new Intl.DateTimeFormat('de-DE',{timeZone:TZ,hour:'2-digit',hour12:false});
 function berlinHour(ms){return (parseInt(fH.format(new Date(ms)),10)%24)+new Date(ms).getUTCMinutes()/60}
@@ -797,7 +798,7 @@ function euBreak(st,L){if(L>=45||(st.part&&L>=30)){st.d=0;st.part=false}else if(
 function legalState(now){
   var stops=stopsRueck(10), shift=RUECK_START, st={d:0,part:false,since:0,changedAt:null};
   // Fahrerwechsel: Halt (ab 8 Min) am Autohof Herbolzheim
-  stopsRueck(8).forEach(function(sp){if(!st.changedAt&&kmDist(sp[3],sp[4],FC_FRPOS[0],FC_FRPOS[1])<2)st.changedAt=sp[1]});
+  stopsRueck(8).forEach(function(sp){if(!st.changedAt&&sp[0]>=FC_FRFROM)st.changedAt=sp[1]});
   var dep=tripState.rueck&&tripState.rueck.departed||RUECK_START, cur=st.changedAt||dep, last=cur;
   stops.forEach(function(sp){
     if(sp[1]<=cur)return;
@@ -843,7 +844,7 @@ function forecastRueck(now){
   } else if(traffic.items)traffic.items.forEach(function(o){if(!o.works&&o.jam&&o.delay&&o.ahead>-1&&o.ahead<FC.jamKm){jamAt.push([Math.max(0,x-o.ahead/1.4),o.delay]);jamTot+=o.delay;jams.push(o)}});
   jamAt.sort(function(a,b){return b[0]-a[0]});
   // Laufender Halt: Rest der Pause abwarten (Maut/Grenze ausgenommen)
-  if(!changed&&gps.stopped&&gps.stoppedSince&&kmDist(gps.lat,gps.lon,FC_FRPOS[0],FC_FRPOS[1])<2){var stw=(now-gps.stoppedSince)/60000,rw=Math.max(3,FC.driverMin-stw);t+=rw*60000;s=0;leg={d:0,part:false};changed=true;pauses.push({n:'Fahrerwechsel Freiburg',min:Math.round(rw),at:now});trace.push([x,t])}
+  if(!changed&&gps.stopped&&gps.stoppedSince&&gps.stoppedSince>=FC_FRFROM&&!checkpointAt(gps.lat,gps.lon,null)){var stw=(now-gps.stoppedSince)/60000,rw=Math.max(3,FC.driverMin-stw);t+=rw*60000;s=0;leg={d:0,part:false};changed=true;pauses.push({n:'Fahrerwechsel Freiburg',min:Math.round(rw),at:now});trace.push([x,t])}
   else if(gps.stopped&&gps.stoppedSince){var st=(now-gps.stoppedSince)/60000, cp=checkpointAt(gps.lat,gps.lon,st);if(st>=5&&!cp){var need=leg.d>=200?(leg.part?30:45):FC.pause,rest=Math.max(5,need-st);t+=rest*60000;euBreak(leg,st+rest);s=0;pauses.push({n:'laufende Pause',min:Math.round(rest)});trace.push([x,t])}}
   function drive(to){
     while(x>to+0.01){
