@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#1b1d3a">
+<title>Toskana Wrapped</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800;900&family=Fraunces:ital,opsz,wght@1,9..144,600;1,9..144,800&display=swap" rel="stylesheet">
+<style>
+/* Toskana Wrapped: Story-Folien zum Durchtippen. Jede Folie hat eine eigene Farbe der Toskana,
+   Zahlen zählen hoch, die Strecke zeichnet sich auf der Karte. */
+:root{
+  --night:#1b1d3a; --terra:#c8553d; --sun:#f28f3b; --gold:#f3c316; --olive:#5d6b2f; --cypress:#24382c;
+  --cream:#f6ecd8; --ink:#141414; --sky:#7fb6d9; --wine:#6e1f2e;
+  --f:"Overpass","Arial Narrow",Arial,sans-serif; --serif:"Fraunces",Georgia,serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#000;overflow:hidden;overscroll-behavior:none;touch-action:manipulation}
+body{font-family:var(--f);color:var(--cream);-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;user-select:none}
+#app{position:fixed;inset:0;display:grid;place-items:center}
+.frame{position:relative;width:min(100vw,calc(100dvh*0.5625));height:100dvh;max-height:100dvh;overflow:hidden;background:var(--night)}
+@media (min-width:700px){.frame{height:min(100dvh,900px);border-radius:22px;box-shadow:0 30px 80px rgba(0,0,0,.6)}}
+
+/* Fortschrittsbalken oben */
+.bars{position:absolute;z-index:20;top:max(10px,env(safe-area-inset-top));left:12px;right:12px;display:flex;gap:4px}
+.bars i{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.3);overflow:hidden}
+.bars i b{display:block;height:100%;width:0;background:#fff}
+.top{position:absolute;z-index:20;top:calc(max(10px,env(safe-area-inset-top)) + 12px);left:14px;right:14px;display:flex;justify-content:space-between;align-items:center;font-size:.78rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;opacity:.85}
+.top button{font:inherit;background:none;border:0;color:inherit;padding:6px;cursor:pointer;letter-spacing:.08em}
+.frame.light .top{color:var(--ink)}.frame.light .bars i{background:rgba(0,0,0,.18)}.frame.light .bars i b{background:var(--ink)}
+.tap{position:absolute;z-index:10;top:0;bottom:0;width:34%;touch-action:manipulation}
+.tap.l{left:0}.tap.r{right:0;width:66%}
+
+/* Folien */
+.s{position:absolute;inset:0;padding:calc(max(10px,env(safe-area-inset-top)) + 54px) 26px calc(34px + env(safe-area-inset-bottom));display:flex;flex-direction:column;opacity:0;visibility:hidden;transition:opacity .45s ease,visibility 0s .45s}
+.s.on{opacity:1;visibility:visible;transition:opacity .45s ease}
+.k{font-weight:800;font-size:.82rem;letter-spacing:.14em;text-transform:uppercase;opacity:.8}
+h1,h2{font-weight:900;line-height:.92;letter-spacing:-.02em}
+h2{font-size:clamp(2.1rem,9.5vw,3.1rem)}
+.serif{font-family:var(--serif);font-style:italic;font-weight:600;letter-spacing:0}
+.big{font-weight:900;font-size:clamp(4.6rem,24vw,7.4rem);line-height:.85;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.unit{font-weight:900;font-size:clamp(1.4rem,6vw,2rem)}
+.lead{font-size:1.12rem;font-weight:600;line-height:1.35;max-width:30ch}
+.small{font-size:.9rem;opacity:.8;line-height:1.35}
+.grow{flex:1}
+.note{font-size:.78rem;opacity:.65;line-height:1.35}
+
+/* Einblenden der Elemente: .u mit Verzögerung über --d */
+.u{opacity:0;transform:translateY(22px)}
+.s.on .u{animation:up .7s cubic-bezier(.2,.8,.2,1) forwards;animation-delay:var(--d,0s)}
+@keyframes up{to{opacity:1;transform:none}}
+.pop{opacity:0;transform:scale(.6)}
+.s.on .pop{animation:pop .55s cubic-bezier(.3,1.6,.5,1) forwards;animation-delay:var(--d,0s)}
+@keyframes pop{to{opacity:1;transform:none}}
+
+/* 0 Titel */
+.s0{background:linear-gradient(180deg,#2a1f4a 0%,#7a3b5e 38%,#f28f3b 72%,#f6c26b 100%);justify-content:flex-start}
+.s0 .art{position:absolute;left:0;right:0;bottom:0;height:62%}
+.s0 .sun{transform:translateY(60px);transform-box:fill-box}
+.s0.on .sun{animation:rise 3.2s cubic-bezier(.2,.7,.2,1) forwards}
+@keyframes rise{to{transform:translateY(-40px)}}
+.s0 .hill{transform:translateY(40px);opacity:0}
+.s0.on .hill{animation:hill 1.4s cubic-bezier(.2,.8,.2,1) forwards;animation-delay:var(--d,0s)}
+@keyframes hill{to{transform:none;opacity:1}}
+.s0 h1{font-size:clamp(3.4rem,17vw,5.4rem);margin-top:6px}
+.s0 h1 span{display:inline-block;opacity:0;transform:translateY(30px) rotate(-6deg)}
+.s0.on h1 span{animation:letter .6s cubic-bezier(.2,.9,.3,1.2) forwards}
+@keyframes letter{to{opacity:1;transform:none}}
+.s0 .w{font-family:var(--serif);font-style:italic;font-weight:800;color:var(--gold);font-size:clamp(2.6rem,13vw,4rem);line-height:1}
+.hint{position:absolute;z-index:5;bottom:calc(22px + env(safe-area-inset-bottom));left:0;right:0;text-align:center;font-weight:800;font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink);opacity:0}
+.s0.on .hint{animation:blink 2s 2.6s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:.25}50%{opacity:.9}}
+
+/* 1 Kilometer */
+.s1{background:var(--terra)}
+.s1 .road{position:absolute;left:-10%;right:-10%;bottom:16%;height:70px;background:#2b2b2b;transform:rotate(-6deg)}
+.s1 .road::after{content:"";position:absolute;left:0;right:0;top:50%;height:6px;margin-top:-3px;background:repeating-linear-gradient(90deg,var(--cream) 0 40px,transparent 40px 80px)}
+.s1.on .road::after{animation:lane .5s linear infinite}
+@keyframes lane{to{background-position:-80px 0}}
+.bus{position:absolute;width:120px;height:58px}
+.s1 .bus{bottom:calc(16% + 38px);left:-140px}
+.s1.on .bus{animation:drive 6.5s cubic-bezier(.4,.1,.3,1) forwards}
+@keyframes drive{to{left:calc(100% + 20px)}}
+.cmp{display:flex;flex-direction:column;gap:6px;margin-top:18px}
+.cmp div{display:flex;gap:10px;align-items:baseline;font-weight:700}
+.cmp b{font-weight:900;font-size:1.3rem;min-width:3.6ch}
+
+/* 2 Karte */
+.s2{background:#14232e;padding-left:14px;padding-right:14px}
+.s2 h2,.s2 .k{padding-left:12px}
+.s2 svg{width:100%;flex:1;min-height:0;margin-top:10px}
+.land{fill:#22343f}.sea{fill:#0f1a22}.alps{fill:none;stroke:#2f444f;stroke-width:16;stroke-linecap:round;stroke-linejoin:round}
+.border{fill:none;stroke:#4a6370;stroke-width:.8;stroke-dasharray:3 2}
+.rt{fill:none;stroke-linecap:round;stroke-linejoin:round}
+.rt.h{stroke:var(--gold);stroke-width:3.2}
+.rt.r{stroke:#ff7a5c;stroke-width:3.2}
+.dot{fill:#fff}
+.pl{font:800 8.5px var(--f);fill:var(--cream);paint-order:stroke;stroke:#14232e;stroke-width:3px}
+.pl.s{font-weight:600;fill:#a9bcc6}
+.lg{display:flex;gap:16px;font-weight:800;font-size:.85rem;padding:8px 12px 0}
+.lg i{display:inline-block;width:18px;height:4px;border-radius:2px;margin-right:6px;vertical-align:middle}
+
+/* 3 Stunden */
+.s3{background:var(--night)}
+.race{display:flex;flex-direction:column;gap:20px;margin-top:26px}
+.lane2 .lab{display:flex;justify-content:space-between;font-weight:800;margin-bottom:7px}
+.lane2 .lab b{font-weight:900;font-size:1.25rem;font-variant-numeric:tabular-nums}
+.track{height:38px;border-radius:8px;background:rgba(255,255,255,.08);overflow:hidden;display:flex}
+.track i{display:block;height:100%;width:0;transition:width 1.6s cubic-bezier(.2,.8,.2,1)}
+.track .dr{background:var(--gold)}.track .pa{background:var(--sky)}.track .ja{background:#ff5c5c}
+.key{display:flex;gap:14px;flex-wrap:wrap;font-size:.82rem;font-weight:700;margin-top:14px;opacity:.85}
+.key span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;background:var(--c)}
+
+/* 4 Gotthard */
+.s4{background:linear-gradient(180deg,#9cc7e4 0%,#d9ecf6 55%,#eef4f6 100%);color:var(--ink)}
+.s4 .mtn{position:absolute;left:0;right:0;bottom:0;height:58%}
+.s4 .tbus{offset-path:path("M -60 252 L 460 252");offset-rotate:0deg;offset-distance:0%}
+.s4.on .tbus{animation:tun 5.5s 1s cubic-bezier(.45,0,.55,1) forwards}
+@keyframes tun{to{offset-distance:100%}}
+.s4 .glow{opacity:0}
+.s4.on .glow{animation:glow 5.5s 1s linear forwards}
+@keyframes glow{0%,15%{opacity:0}25%,75%{opacity:1}85%,100%{opacity:0}}
+
+/* 5 Nachtfahrt */
+.s5{background:linear-gradient(180deg,#0b0d24 0%,#1b1d3a 45%,#3a2a5a 75%,#c8553d 100%)}
+.stars i{position:absolute;width:2px;height:2px;border-radius:50%;background:#fff;opacity:.7}
+.s5.on .stars i{animation:tw 2.4s ease-in-out infinite alternate;animation-delay:var(--d)}
+@keyframes tw{to{opacity:.15}}
+.tl{position:relative;margin-top:24px;padding-left:22px;display:flex;flex-direction:column;gap:12px}
+.tl::before{content:"";position:absolute;left:6px;top:6px;bottom:6px;width:3px;background:rgba(255,255,255,.2);border-radius:2px}
+.tl div{position:relative;font-weight:700;line-height:1.25}
+.tl div::before{content:"";position:absolute;left:-21px;top:4px;width:11px;height:11px;border-radius:50%;background:var(--gold);box-shadow:0 0 0 3px rgba(243,195,22,.25)}
+.tl b{font-weight:900;font-variant-numeric:tabular-nums;margin-right:8px}
+.tl small{display:block;font-weight:600;opacity:.7;font-size:.82rem}
+
+/* 6 Woche */
+.s6{background:var(--olive)}
+.cards{display:flex;flex-direction:column;gap:10px;margin-top:18px}
+.card{display:grid;grid-template-columns:52px 1fr;gap:12px;align-items:center;background:var(--cream);color:var(--ink);border-radius:14px;padding:11px 14px;box-shadow:0 6px 0 rgba(0,0,0,.18)}
+.card .dd{font-weight:900;text-align:center;line-height:1}
+.card .dd small{display:block;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;opacity:.65;margin-bottom:2px}
+.card .dd b{font-size:1.5rem}
+.card h3{font-weight:900;font-size:1.12rem;line-height:1.05}
+.card p{font-size:.84rem;font-weight:600;opacity:.75;line-height:1.25;margin-top:2px}
+.s.on .card{animation:flip .7s cubic-bezier(.2,.9,.3,1.1) forwards;animation-delay:var(--d)}
+.card{opacity:0;transform:perspective(600px) rotateX(-70deg);transform-origin:top}
+@keyframes flip{to{opacity:1;transform:none}}
+
+/* 7 Rückfahrt */
+.s7{background:#7a2f22}
+.stops{display:flex;flex-direction:column;gap:8px;margin-top:16px}
+.stop{display:grid;grid-template-columns:3.4rem 1fr auto;gap:10px;align-items:center;font-weight:700;background:rgba(0,0,0,.18);border-radius:10px;padding:8px 12px}
+.stop b{font-weight:900;font-variant-numeric:tabular-nums}
+.stop .m{font-weight:900;font-variant-numeric:tabular-nums;color:var(--gold)}
+.stop.mc{background:#ffc72c;color:#5a1a10}.stop.mc .m{color:#c41e2a}
+.stop.dc{background:var(--cream);color:var(--ink)}.stop.dc .m{color:var(--terra)}
+
+/* 8 Stau */
+.s8{background:#e5484d}
+.s8 .cars{position:absolute;left:0;right:0;bottom:12%;height:120px;overflow:hidden}
+.s8 .cars{height:130px;bottom:9%}
+.s8 .car{position:absolute;width:56px;height:24px;border-radius:8px;background:var(--c);box-shadow:0 4px 0 rgba(0,0,0,.25)}
+.s8 .car::after{content:"";position:absolute;left:10px;right:14px;top:-11px;height:13px;border-radius:7px 7px 0 0;background:var(--c);filter:brightness(.9)}
+.s8 .car::before{content:"";position:absolute;left:8px;right:8px;bottom:-6px;height:10px;background:radial-gradient(circle at 6px 5px,#111 5px,transparent 5.5px),radial-gradient(circle at calc(100% - 6px) 5px,#111 5px,transparent 5.5px)}
+.s8 .car b{position:absolute;left:-2px;top:6px;width:6px;height:7px;border-radius:2px;background:#ff2a2a;box-shadow:0 0 8px 2px rgba(255,42,42,.8)}
+.s8.on .car b{animation:brake 1.3s ease-in-out infinite alternate;animation-delay:var(--d)}
+@keyframes brake{from{opacity:1}to{opacity:.35}}
+.jbox{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}
+.jbox div{background:rgba(0,0,0,.18);border-radius:14px;padding:14px}
+.jbox b{display:block;font-weight:900;font-size:2.2rem;line-height:1}
+.jbox span{font-weight:700;font-size:.86rem;opacity:.9}
+.s8.on .car{animation:crawl 7s linear forwards;animation-delay:var(--d)}
+@keyframes crawl{0%{transform:translateX(0)}30%{transform:translateX(30px)}45%{transform:translateX(30px)}70%{transform:translateX(52px)}100%{transform:translateX(60px)}}
+
+/* 9 Zahlen */
+.s9{background:var(--cypress)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}
+.tile{background:rgba(255,255,255,.08);border-radius:14px;padding:14px;min-height:96px;display:flex;flex-direction:column;justify-content:space-between}
+.tile b{font-weight:900;font-size:2.1rem;line-height:1;color:var(--gold);font-variant-numeric:tabular-nums}
+.tile span{font-weight:700;font-size:.86rem;line-height:1.2;opacity:.9}
+
+/* 10 Ende */
+.s10{background:linear-gradient(180deg,#1b1d3a 0%,#2c2f5c 60%,#c8553d 140%);justify-content:center;text-align:center;align-items:center}
+.s10 h2{font-size:clamp(2.6rem,12vw,3.8rem)}
+.btns{display:flex;gap:10px;margin-top:26px;position:relative;z-index:15}
+.btns button{font:900 .95rem var(--f);border:0;border-radius:999px;padding:13px 20px;cursor:pointer}
+.btns .p{background:var(--gold);color:var(--ink)}.btns .q{background:rgba(255,255,255,.14);color:var(--cream)}
+.confetti i{position:absolute;top:-20px;width:9px;height:14px;border-radius:2px;opacity:0}
+.s10.on .confetti i{animation:fall 3.4s cubic-bezier(.3,.6,.4,1) forwards;animation-delay:var(--d)}
+@keyframes fall{0%{opacity:1;transform:translateY(0) rotate(0)}100%{opacity:0;transform:translateY(105vh) rotate(var(--r))}}
+
+.live{display:inline-flex;align-items:center;gap:8px;font-weight:800;font-size:.82rem;background:rgba(0,0,0,.22);border-radius:999px;padding:6px 12px;margin-top:14px;align-self:flex-start}
+.live::before{content:"";width:8px;height:8px;border-radius:50%;background:#7dff9b;box-shadow:0 0 0 0 rgba(125,255,155,.7);animation:pulse 1.6s infinite}
+@keyframes pulse{70%{box-shadow:0 0 0 8px rgba(125,255,155,0)}100%{box-shadow:0 0 0 0 rgba(125,255,155,0)}}
+
+@media (prefers-reduced-motion:reduce){
+  .u,.pop,.card,.s0 h1 span,.s0 .hill{opacity:1!important;transform:none!important;animation:none!important}
+  .s0 .sun{transform:translateY(-40px)}
+  .s1 .bus,.s4 .tbus,.s8 .car,.confetti i,.stars i,.s1 .road::after{animation:none!important}
+}
+</style>
+</head>
+<body>
+<div id="app"><div class="frame" id="frame">
+  <div class="bars" id="bars"></div>
+  <div class="top"><span>Toskana Wrapped</span><button type="button" id="pp" aria-label="Pause">❚❚</button></div>
+  <div class="tap l" id="tl" aria-hidden="true"></div><div class="tap r" id="tr" aria-hidden="true"></div>
+  <div id="slides"></div>
+</div></div>
+
+<script>
+var PTS=[[512161,64704,1791146080],[512220,64901,1791146363],[512562,64963,1791146591],[512824,65125,1791146704],[512859,65764,1791146874],[512888,66202,1791146987],[509203,68414,1791148977],[508923,68229,1791149131],[508493,68038,1791149329],[508200,67850,1791149458],[507931,67971,1791149573],[507679,68241,1791149701],[507412,68695,1791149870],[507185,68950,1791149984],[506923,69061,1791150097],[506670,69223,1791150210],[506361,69609,1791150380],[506138,69864,1791150494],[505966,70205,1791150606],[505822,70590,1791150721],[505751,71007,1791150835],[505558,71508,1791151006],[505333,71764,1791151119],[505132,72064,1791151232],[504781,72222,1791151404],[504395,72244,1791151575],[504129,72354,1791151689],[503891,72564,1791151802],[503879,72992,1791151916],[503912,73600,1791152087],[503730,74147,1791152255],[503668,74604,1791152426],[503408,75086,1791152596],[503093,74861,1791152766],[502808,75067,1791152935],[502410,75139,1791153106],[502134,75555,1791153277],[501941,75854,1791153391],[501668,75950,1791153505],[501389,75934,1791153619],[501123,76035,1791153733],[500849,76094,1791153847],[500622,76328,1791153959],[500283,76623,1791154128],[499941,76927,1791154303],[499803,77215,1791154586],[499651,77654,1791154756],[499384,78093,1791154927],[499271,78632,1791155097],[499325,79047,1791155210],[499111,79490,1791155381],[498838,79478,1791155495],[498600,79700,1791155609],[498316,80130,1791155778],[498073,80508,1791155948],[497846,81022,1791156118],[497594,81184,1791156232],[497218,81341,1791156405],[496992,81776,1791156576],[496934,82312,1791156746],[496736,82616,1791156860],[496476,82906,1791157030],[496467,82903,1791157200],[496467,82904,1791157370],[496467,82906,1791157541],[496470,82903,1791157711],[496468,82906,1791157832],[496469,82905,1791158002],[496467,82901,1791158172],[496467,82901,1791158343],[496467,82902,1791158512],[496467,82901,1791158681],[496468,82904,1791158853],[496468,82908,1791158990],[496373,82943,1791159160],[495983,82881,1791159331],[495709,83005,1791159445],[495446,83159,1791159558],[495164,83109,1791159671],[494878,83119,1791159785],[494602,83145,1791159899],[494317,83031,1791160068],[494073,82808,1791160181],[493845,82565,1791160294],[493762,82148,1791160408],[493424,81900,1791160579],[493183,81681,1791160692],[492930,81522,1791160806],[492653,81521,1791160919],[492372,81487,1791161033],[491973,81486,1791161203],[491695,81521,1791161316],[491430,81631,1791161430],[491162,81756,1791161544],[490852,82138,1791161715],[490536,82331,1791161885],[490397,82691,1791161998],[490374,83188,1791162169],[490113,83538,1791162340],[489901,83765,1791162511],[489608,83793,1791162680],[489331,83598,1791162850],[489062,83470,1791162963],[488940,83084,1791163077],[488820,82696,1791163190],[488600,82437,1791163304],[488352,82227,1791163417],[488153,81922,1791163531],[487946,81633,1791163645],[487706,81414,1791163758],[487456,81220,1791163872],[487226,80970,1791163985],[486991,80730,1791164099],[486740,80537,1791164213],[486496,80316,1791164327],[486232,80152,1791164441],[486007,79883,1791164555],[485762,79658,1791164669],[485496,79497,1791164783],[485265,79250,1791164897],[485013,79048,1791165011],[484731,79036,1791165125],[484451,78998,1791165238],[484197,78802,1791165352],[483997,78502,1791165466],[483802,78191,1791165580],[483577,77943,1791165693],[483300,77894,1791165807],[483017,77897,1791165921],[482748,77785,1791166035],[482500,77596,1791166148],[482174,77469,1791166318],[481823,77480,1791166489],[481560,77589,1791166602],[481314,77790,1791166715],[481050,77908,1791166831],[480792,78045,1791166944],[480502,78106,1791167115],[480500,78102,1791167286],[480500,78102,1791167456],[480500,78102,1791167627],[480500,78102,1791167798],[480500,78102,1791167968],[480500,78102,1791168138],[480500,78102,1791168308],[480488,78106,1791168479],[480197,77769,1791168650],[479961,77528,1791168764],[479746,77258,1791168877],[479576,76922,1791168991],[479445,76356,1791169162],[479196,75950,1791169333],[478814,75743,1791169503],[478536,75665,1791169617],[478255,75606,1791169731],[477998,75432,1791169845],[477713,75366,1791169961],[477444,75514,1791170075],[477175,75413,1791170189],[476940,75204,1791170303],[476655,75251,1791170417],[476445,75521,1791170531],[476232,75773,1791170645],[475984,76029,1791170816],[468469,86324,1791177073],[468469,86324,1791177245],[468469,86324,1791177416],[468469,86323,1791177588],[468469,86324,1791177759],[468469,86324,1791177930],[468469,86324,1791178101],[468469,86324,1791178272],[468469,86324,1791178443],[468278,86403,1791178614],[467928,86652,1791178785],[467624,86594,1791178961],[467372,86346,1791179137],[467130,86108,1791179258],[466839,85911,1791179428],[466584,85894,1791179599],[466360,85770,1791179770],[466126,85689,1791179941],[465891,85657,1791180112],[465660,85751,1791180283],[465265,86099,1791180339],[465190,86477,1791180454],[465152,86876,1791180567],[465020,87237,1791180681],[464889,87630,1791180828],[464708,88110,1791180998],[464469,88308,1791181111],[463744,89164,1791181503],[463107,89824,1791181837],[462830,89933,1791181951],[462575,90094,1791182065],[462344,90305,1791182179],[461999,90134,1791182350],[461750,89937,1791182464],[461491,89592,1791182635],[461272,89180,1791182808],[461009,89304,1791182922],[460605,89278,1791183093],[460249,89228,1791183264],[460143,89174,1791183435],[460091,89153,1791183606],[460024,89154,1791183777],[459812,89323,1791183948],[459574,89472,1791184091],[459384,89696,1791184222],[459127,89843,1791184337],[458856,89796,1791184452],[458489,89858,1791184623],[458389,90280,1791184794],[458386,90320,1791184965],[458351,90415,1791185136],[458098,90579,1791185307],[457761,90497,1791185481],[457681,90473,1791185652],[457423,90326,1791185766],[457301,90279,1791185937],[457299,90277,1791186110],[457299,90278,1791186285],[457300,90277,1791186456],[457300,90278,1791186627],[457299,90277,1791186802],[457299,90278,1791186980],[457298,90278,1791187102],[457302,90280,1791187273],[457302,90281,1791187444],[457302,90281,1791187615],[457302,90280,1791187786],[457303,90280,1791187957],[457303,90280,1791188128],[457286,90279,1791188299],[456976,90193,1791188470],[456691,90157,1791188584],[456398,90142,1791188701],[456111,90127,1791188815],[455824,90112,1791188929],[455595,90384,1791189100],[455580,90390,1791189271],[455579,90390,1791189442],[455581,90389,1791189613],[455582,90386,1791189784],[455582,90390,1791189955],[455582,90389,1791190126],[455582,90389,1791190297],[455582,90389,1791190468],[455582,90389,1791190641],[455582,90389,1791190812],[455579,90410,1791190983],[455418,90582,1791191155],[455250,90607,1791191326],[454888,90668,1791191497],[454534,90766,1791191668],[454180,90840,1791191839],[453981,91319,1791192012],[453892,91823,1791192184],[453849,92353,1791192355],[453721,92826,1791192526],[453365,93413,1791192882],[453218,93753,1791192996],[453022,94050,1791193110],[452835,94358,1791193224],[452629,94672,1791193344],[452419,94948,1791193458],[452208,95226,1791193572],[452000,95498,1791193686],[451803,95788,1791193801],[451616,96074,1791193915],[451411,96360,1791194029],[451236,96682,1791194143],[451026,96955,1791194258],[450800,97198,1791194371],[450548,97448,1791194493],[450291,97703,1791194620],[450074,97964,1791194734],[449919,98355,1791194860],[449771,98711,1791194976],[449626,99056,1791195090],[449426,99524,1791195244],[449266,99861,1791195358],[449103,100194,1791195472],[448948,100533,1791195586],[448890,100910,1791195700],[448830,101303,1791195814],[448765,101698,1791195928],[448699,102090,1791196045],[448458,102230,1791196216],[448205,102055,1791196330],[447934,101922,1791196444],[447675,101752,1791196558],[447415,101590,1791196672],[447246,101265,1791196786],[447048,100985,1791196900],[446818,100777,1791197013],[446471,100474,1791197185],[446279,100125,1791197356],[446012,99742,1791197532],[445754,99492,1791197703],[445491,99454,1791197874],[445222,99556,1791198045],[445021,99533,1791198216],[444625,99313,1791198455],[444404,99137,1791198626],[444205,98789,1791198797],[443978,98564,1791198911],[443657,98744,1791199082],[443433,99041,1791199209],[443182,99232,1791199326],[443114,99261,1791199497],[443113,99261,1791199668],[443113,99262,1791199839],[443113,99262,1791200010],[443113,99262,1791200181],[443113,99262,1791200353],[443113,99261,1791200524],[442832,99467,1791200716],[442450,99478,1791200887],[442077,99629,1791201059],[441809,99227,1791201234],[441565,99044,1791201348],[441457,99036,1791201519],[441450,99054,1791201655],[441469,99089,1791201827],[441460,99084,1791201998],[441210,99366,1791202140],[440959,99629,1791202269],[440734,99872,1791202383],[440566,100200,1791202499],[440427,100531,1791202613],[440305,100881,1791202727],[440155,101214,1791202841],[439952,101484,1791202955],[439745,101758,1791203069],[439479,102091,1791203212],[439231,102280,1791203326],[439000,102516,1791203440],[438200,106835,1791204953],[438390,107137,1791205069],[438580,107436,1791205183],[438739,107753,1791205303],[438771,107925,1791205476],[438779,107907,1791205598],[438778,107973,1791205771],[438787,107857,1791205942],[438811,107753,1791206113],[438840,107764,1791206284],[438839,107778,1791206455],[438840,107776,1791206626],[438851,107779,1791206797],[438856,107782,1791206969],[438206,106142,1791519594],[438256,105715,1791519716],[438281,105321,1791519830],[438303,104931,1791519944],[438455,104506,1791520115],[438534,104139,1791520233],[438526,103821,1791520357],[438910,102618,1791520783],[439236,102276,1791520954],[439487,102084,1791521068],[439706,101829,1791521182],[439902,101533,1791521297],[440121,101284,1791521411],[440266,100945,1791521525],[440398,100600,1791521639],[440546,100274,1791521753],[440693,99942,1791521867],[440915,99692,1791521982],[441118,99423,1791522096],[441347,99202,1791522210],[441576,98956,1791522332],[441626,98832,1791522503],[441581,98940,1791522675],[441603,99065,1791522804],[441849,99248,1791522918],[442103,99632,1791523090],[442472,99450,1791523262],[442860,99446,1791523433],[443115,99273,1791523547],[443355,99069,1791523661],[443608,98829,1791523789],[443799,98538,1791523906],[444104,98687,1791524050],[444412,99009,1791524223],[444547,99312,1791524395],[444860,99396,1791524565],[445085,99556,1791524737],[445377,99505,1791524908],[445660,99497,1791525080],[445929,99620,1791525251],[446214,100008,1791525422],[446392,100420,1791525593],[446649,100579,1791525707],[446859,100826,1791525821],[447095,101040,1791525935],[447281,101337,1791526049],[447464,101650,1791526164],[447735,101784,1791526278],[447992,101962,1791526392],[448265,102084,1791526506],[448512,102287,1791526620],[448703,102079,1791526791],[448769,101686,1791526905],[448833,101300,1791527019],[448892,100901,1791527134],[448957,100504,1791527249],[449117,100171,1791527363],[449277,99842,1791527477],[449433,99510,1791527591],[449619,99076,1791527762],[449633,99051,1791527933],[449636,99048,1791528104],[449636,99048,1791528236],[449637,99051,1791528356],[449634,99049,1791528479],[449637,99047,1791528651],[449636,99048,1791528824],[449632,99052,1791528995],[449734,98803,1791529166],[449882,98456,1791529280],[450019,98102,1791529394],[450199,97796,1791529508],[450434,97564,1791529622],[450764,97238,1791529795],[450982,97006,1791529910],[451198,96740,1791530024],[451379,96425,1791530138],[451577,96131,1791530252],[451774,95837,1791530366],[451971,95541,1791530480],[452181,95264,1791530594],[452392,94987,1791530708],[452602,94710,1791530822],[452801,94417,1791530936],[452979,94114,1791531050],[453175,93822,1791531164],[453352,93506,1791531278],[453455,93146,1791531392],[453495,93101,1791531563],[453552,93030,1791531734],[453808,92683,1791531905],[453900,92144,1791532076],[453887,91605,1791532247],[454078,91116,1791532418],[454362,90744,1791532589],[454641,90762,1791532703],[455034,90658,1791532874],[455405,90590,1791533045],[455433,90596,1791533216],[455627,90331,1791533387],[455942,90119,1791533559],[456232,90136,1791533674],[456517,90150,1791533790],[456842,90167,1791533919],[457137,90242,1791534040],[457290,90294,1791534212],[457292,90291,1791534396],[457291,90290,1791534518],[457290,90295,1791534692],[457290,90294,1791534863],[457290,90294,1791535034],[457290,90295,1791535205],[457290,90294,1791535376],[457290,90294,1791535548],[457290,90294,1791535719],[457290,90294,1791535890],[457290,90294,1791536061],[457290,90294,1791536232],[457290,90294,1791536403],[457348,90303,1791536575],[457716,90486,1791536746],[457791,90508,1791536917],[458134,90600,1791537099],[458396,90447,1791537297],[458412,90408,1791537422],[458414,90397,1791537593],[458403,90207,1791537730],[458564,89764,1791537898],[458950,89765,1791538070],[459234,89811,1791538190],[459541,89555,1791538361],[459698,89264,1791538497],[459921,89222,1791538618],[460387,89297,1791538890],[460775,89232,1791539061],[461046,89315,1791539175],[461308,89189,1791539289],[461444,89508,1791539415],[461682,89907,1791539587],[461950,90096,1791539706],[462147,90372,1791539820],[462400,90216,1791539934],[462656,90078,1791540048],[462912,89910,1791540162],[463205,89806,1791540282],[463483,89643,1791540403],[463665,89332,1791540517],[464006,88684,1791540748],[464321,88511,1791540894],[464548,88272,1791541009],[464841,87792,1791541236],[464993,87296,1791541406],[465142,86948,1791541519],[465162,86697,1791541691],[465161,86675,1791541862],[465161,86636,1791542033],[465164,86607,1791542207],[465166,86597,1791542378],[465176,86560,1791542549],[465184,86526,1791542720],[465188,86505,1791542891],[465193,86468,1791543062],[465196,86438,1791543233],[465261,86148,1791543404],[465264,86114,1791543575],[465267,86093,1791543746],[465270,86070,1791543917],[465338,85938,1791544088],[465438,85865,1791544259],[465438,85865,1791544432],[465438,85865,1791544606],[465438,85865,1791544782],[466780,85928,1791544896],[467108,86092,1791545067],[467342,86322,1791545181],[467639,86612,1791545352],[467937,86652,1791545523],[468262,86412,1791545694],[468465,86334,1791545865],[468471,86333,1791546036],[468474,86335,1791546166],[468474,86334,1791546287],[468474,86334,1791546469],[468473,86333,1791546646],[468467,86333,1791546816],[468468,86333,1791546987],[468501,86326,1791547158],[468873,86204,1791547329],[469630,85102,1791547811],[469635,84697,1791547925],[469719,84309,1791548039],[469674,83901,1791548153],[469730,83403,1791548324],[469924,83075,1791548508],[470166,82993,1791548639],[470550,82960,1791548834],[470817,82856,1791549005],[470984,82458,1791549177],[471339,82069,1791549372],[471555,81584,1791549543],[471757,81250,1791549669],[471821,80830,1791549791],[472013,80538,1791549907],[472084,80137,1791550021],[472280,79723,1791550192],[472529,79543,1791550306],[472783,79379,1791550420],[473071,79087,1791550590],[473114,78493,1791550761],[473214,78056,1791550932],[473274,78094,1791551103],[473354,78273,1791551274],[473414,78340,1791551445],[473460,78360,1791551571],[473566,78332,1791551745],[473854,78170,1791551916],[474117,78090,1791552041],[474480,78050,1791552211],[474752,77817,1791552382],[475009,77628,1791552535],[475303,77316,1791552706],[475276,76735,1791552878],[475401,76384,1791553778],[475404,76367,1791553929],[475405,76357,1791554100],[475408,76343,1791554271],[475409,76333,1791554442],[475410,76325,1791554613],[475412,76310,1791554784],[475423,76234,1791554955],[475429,76211,1791555126],[475449,76163,1791555297],[475475,76150,1791555468],[475526,76167,1791555643],[475591,76133,1791555813],[475658,76079,1791555987],[475950,76042,1791556216],[475965,76040,1791556391],[475992,76033,1791556562],[475992,76032,1791556733],[476000,76033,1791556904],[475981,76037,1791557075],[475976,76041,1791557246],[475974,76038,1791557417],[475975,76040,1791557588],[475975,76039,1791557759],[475975,76041,1791557930],[475975,76042,1791558100],[475975,76040,1791558271],[475975,76040,1791558442],[475975,76041,1791558613],[475975,76039,1791558784],[475978,76039,1791558955],[476000,76032,1791559126],[476000,76032,1791559297],[476072,75983,1791559467],[476298,75723,1791559581],[476493,75422,1791559695],[476720,75238,1791559865],[476814,75230,1791560036],[476864,75217,1791560165],[476911,75208,1791560336],[476977,75210,1791560507],[477067,75251,1791560678],[477383,75526,1791560849],[477652,75391,1791560963],[477934,75400,1791561077],[478195,75570,1791561191],[478472,75673,1791561305],[478754,75706,1791561419],[479017,75871,1791561533],[479362,76150,1791561704],[479486,76529,1791561817],[479578,76931,1791561931],[479752,77270,1791562045],[480072,77632,1791562216],[480277,77916,1791562329],[480520,78121,1791562442],[480788,78051,1791562557],[481063,77907,1791562728],[481405,77724,1791562903],[481745,77505,1791563074],[482042,77457,1791563245],[482346,77519,1791563416],[482659,77716,1791563587],[482996,77896,1791563758],[483072,77910,1791563929],[483072,77910,1791564050],[483073,77908,1791564225],[483074,77904,1791564396],[483073,77907,1791564566],[483092,77908,1791564737],[483464,77895,1791564908],[483786,78172,1791565076],[483978,78469,1791565190],[484166,78770,1791565304],[484403,78974,1791565418],[484681,79050,1791565532],[484963,79031,1791565645]];
+var SEA=[[43.20,5.0],[43.20,5.6],[43.10,6.0],[43.20,6.6],[43.55,7.0],[43.70,7.27],[43.78,7.5],[43.88,7.95],[44.15,8.3],[44.31,8.48],[44.41,8.93],[44.33,9.2],[44.25,9.4],[44.10,9.82],[44.03,10.0],[43.95,10.15],[43.87,10.25],[43.68,10.30],[43.55,10.31],[43.35,10.48],[42.9,10.55],[42.9,5.0]];
+var ALPS=[[44.2,7.1],[44.9,6.9],[45.6,7.0],[45.95,7.4],[46.3,7.9],[46.55,8.5],[46.55,9.3],[46.65,9.9],[46.85,10.6],[47.05,11.4],[47.1,12.5]];
+var BORDERS=[
+ [[47.59,7.59],[48.0,7.57],[48.58,7.80],[48.97,8.23],[49.1,7.7],[49.15,7.0],[49.4,6.5],[49.5,6.37],[50.1,6.1],[50.6,6.2],[50.75,6.0],[51.0,5.9],[51.4,6.2],[51.6,6.0]],
+ [[47.59,7.59],[47.56,8.2],[47.65,8.6],[47.65,9.0],[47.6,9.5],[47.5,9.7]],
+ [[47.5,9.7],[47.05,9.6],[46.9,10.1],[46.85,10.45]],
+ [[46.85,10.45],[46.6,10.2],[46.35,10.05],[46.4,9.6],[46.45,9.3],[46.05,9.1],[45.82,9.03],[45.93,8.9],[46.0,8.7],[46.1,8.5],[46.45,8.4],[46.4,8.1],[46.1,7.9],[45.92,7.04],[46.2,6.85],[46.15,6.25],[46.4,6.1],[46.95,6.45],[47.45,7.0],[47.5,7.5],[47.59,7.59]],
+ [[45.92,7.04],[45.6,7.0],[45.2,6.75],[44.8,7.0],[44.4,6.9],[44.1,7.7],[43.78,7.5]],
+ [[46.85,10.45],[46.75,11.0],[47.0,11.5],[46.75,12.1],[46.6,12.5]],
+ [[47.5,9.7],[47.55,10.4],[47.4,10.9],[47.55,11.6],[47.6,12.5]]
+];
+(function(){
+'use strict';
+var TZ='Europe/Berlin';
+var HIN={from:Date.parse('2026-10-04T21:00:00+02:00'),to:Date.parse('2026-10-05T17:00:00+02:00'),dep:1791146590999,arr:1791206170000};
+var RUE={from:Date.parse('2026-10-09T04:00:00+02:00'),dep:1791519716000,arr:null};
+var STATE='https://raw.githubusercontent.com/F1NN303/toskana-2026/live/state.json', TRACK='https://raw.githubusercontent.com/F1NN303/toskana-2026/live/track.json';
+var ROAD=1.1;   // GPS-Punkte liegen ca. alle 3 Min auseinander: Straße ist ca. 10 % länger als die Luftlinien dazwischen (Hinfahrt geeicht)
+var pts=PTS.map(function(p){return [p[0]/1e4,p[1]/1e4,p[2]*1000]});
+var fT=new Intl.DateTimeFormat('de-DE',{timeZone:TZ,hour:'2-digit',minute:'2-digit'});
+function tm(ms){return fT.format(new Date(ms))}
+function km(a,b){var k=Math.cos((a[0]+b[0])/2*Math.PI/180),dx=(b[1]-a[1])*111.32*k,dy=(b[0]-a[0])*110.57;return Math.sqrt(dx*dx+dy*dy)}
+function fmt(n,d){return Number(n).toLocaleString('de-DE',{minimumFractionDigits:d||0,maximumFractionDigits:d||0})}
+function hm(min){min=Math.round(min);return Math.floor(min/60)+':'+('0'+min%60).slice(-2)}
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+
+// Raststätten und Orte, an denen heute gehalten wurde (für Namen der Halte)
+var PLACES=[['Rasthof Wonnegau',49.648,8.291],['Raststätte Schauinsland',48.050,7.811],['Raststätte Gotthard Nord',46.847,8.633],['Area di Lario',45.729,9.029],['Area di Villoresi',45.559,9.038],['Area San Benedetto',44.311,9.926],['Area d’Arda',44.962,9.908],['Stau bei Muttenz',47.540,7.638],['McDonald’s Basel-Weil am Rhein',47.599,7.603],['Rasthof Mahlberg',48.307,7.791],['Hotel Concordia',43.881,10.775]];
+function placeName(la,lo){var b=null,bd=3;PLACES.forEach(function(p){var d=km([la,lo],[p[1],p[2]]);if(d<bd){bd=d;b=p[0]}});return b}
+
+function analyse(p,dep,arr){
+  p=p.filter(function(q){return q[2]>=dep-5*60000&&(!arr||q[2]<=arr+5*60000)});
+  var dist=0,vmax=0,jam=0,stops=[];
+  for(var i=1;i<p.length;i++){
+    var d=km(p[i-1],p[i]),h=(p[i][2]-p[i-1][2])/3600000;dist+=d;
+    if(h>0&&h<=0.1){var v=d/h;if(h*60>=1&&v<=110)vmax=Math.max(vmax,v);if(v>2&&v<25)jam+=h*60}
+  }
+  for(var a=0;a<p.length-1;a++){
+    var b=a;while(b+1<p.length&&km(p[a],p[b+1])<0.5)b++;
+    var m=(p[b][2]-p[a][2])/60000;
+    if(m>=10)stops.push({t:p[a][2],min:m,lat:p[a][0],lon:p[a][1],n:placeName(p[a][0],p[a][1])});
+    a=Math.max(b,a);
+  }
+  var end=arr||(p.length?p[p.length-1][2]:dep);
+  var pauseMin=stops.reduce(function(s,x){return s+(/Stau/.test(x.n||'')?0:x.min)},0);
+  return {p:p,km:dist*ROAD,vmax:vmax,jam:jam+stops.filter(function(x){return /Stau/.test(x.n||'')}).reduce(function(s,x){return s+x.min},0),stops:stops,pause:pauseMin,dur:(end-dep)/60000,done:!!arr};
+}
+
+var H,R,LIVE=false;
+function compute(){H=analyse(pts.filter(function(q){return q[2]<=HIN.to}),HIN.dep,HIN.arr);R=analyse(pts.filter(function(q){return q[2]>=RUE.from}),RUE.dep,RUE.arr)}
+compute();
+
+/* ---------- Folien ---------- */
+var EXC_BUS=355, EXC_TRAIN=40; // Ausflüge laut Wochenplan (Siena, Prato, Pisa, Lucca), Straßenkilometer geschätzt
+
+function cover(){
+  var L='TOSKANA'.split('').map(function(c,i){return '<span style="animation-delay:'+(0.25+i*0.07)+'s">'+c+'</span>'}).join('');
+  return '<section class="s s0" data-dur="6500">'+
+   '<div class="k u" style="--d:.1s">Stufenfahrt Hans-Jonas-Gesamtschule</div>'+
+   '<h1>'+L+'</h1><div class="w u" style="--d:.9s">Wrapped</div>'+
+   '<p class="lead u" style="--d:1.3s;margin-top:14px">04.–09. Oktober 2026<br>Mönchengladbach · Montecatini Terme</p>'+
+   '<svg class="art" viewBox="0 0 400 360" preserveAspectRatio="xMidYMax slice" aria-hidden="true">'+
+    '<circle class="sun" cx="236" cy="172" r="50" fill="#ffd27a"/>'+
+    '<path class="hill" style="--d:.2s" d="M0 220 C80 170 150 200 220 180 C290 160 340 190 400 170 V360 H0Z" fill="#b8643f"/>'+
+    '<path class="hill" style="--d:.45s" d="M0 260 C70 230 140 250 210 235 C280 220 330 245 400 230 V360 H0Z" fill="#8d4a33"/>'+
+    '<path class="hill" style="--d:.7s" d="M0 300 C90 275 170 295 250 280 C320 268 360 285 400 278 V360 H0Z" fill="#4e5b28"/>'+
+    cypress(112,298,1)+cypress(132,295,.8)+cypress(262,284,1.1)+cypress(282,287,.85)+cypress(300,283,.7)+
+    '<path d="M180 360 C200 330 230 312 270 300" stroke="#e8c48a" stroke-width="7" fill="none" stroke-linecap="round" class="hill" style="--d:.9s"/>'+
+   '</svg><div class="hint">Tippen zum Starten →</div></section>';
+}
+function cypress(x,y,s){return '<g class="hill" style="--d:'+(0.8+Math.random()*0.4).toFixed(2)+'s"><g transform="translate('+x+' '+y+') scale('+s+')"><path d="M0 0 C-9 -22 -8 -55 0 -82 C8 -55 9 -22 0 0Z" fill="#1f3326"/><rect x="-1.6" y="-2" width="3.2" height="8" fill="#3b2a1d"/></g></g>'}
+
+function busSvg(){return '<svg class="bus" viewBox="0 0 62 30" aria-hidden="true"><rect x="1" y="2" width="58" height="22" rx="4" fill="#f3c316" stroke="#111" stroke-width="2"/><rect x="6" y="6" width="9" height="8" rx="1" fill="#1a1b1d"/><rect x="18" y="6" width="9" height="8" rx="1" fill="#1a1b1d"/><rect x="30" y="6" width="9" height="8" rx="1" fill="#1a1b1d"/><rect x="42" y="6" width="13" height="11" rx="1.5" fill="#1a1b1d"/><circle cx="14" cy="24" r="4.5" fill="#111" stroke="#ecebe4" stroke-width="1.5"/><circle cx="46" cy="24" r="4.5" fill="#111" stroke="#ecebe4" stroke-width="1.5"/></svg>'}
+
+function kmSlide(){
+  var tot=H.km+R.km+EXC_BUS;
+  return '<section class="s s1" data-dur="7000">'+
+   '<div class="k u">Zusammen im Bus</div>'+
+   '<div class="u" style="--d:.2s;margin-top:14px"><span class="big" data-count="'+Math.round(tot)+'">0</span> <span class="unit">km</span></div>'+
+   '<p class="lead u" style="--d:.5s;margin-top:10px">'+(R.done?'Hin, zurück und alle Ausflüge.':'Hin, Ausflüge und die Rückfahrt bis jetzt.')+'</p>'+
+   '<div class="cmp">'+
+    '<div class="u" style="--d:1.1s"><b>'+fmt(H.km)+'</b> km Hinfahrt</div>'+
+    '<div class="u" style="--d:1.3s"><b>'+fmt(EXC_BUS)+'</b> km Ausflüge <span class="small">+ '+EXC_TRAIN+' km Zug</span></div>'+
+    '<div class="u" style="--d:1.5s"><b>'+fmt(R.km)+'</b> km Rückfahrt'+(R.done?'':' <span class="small">(läuft noch)</span>')+'</div>'+
+   '</div>'+
+   '<p class="small u" style="--d:2.1s;margin-top:16px">Das sind <b>'+fmt(tot/40075*100,1)+' %</b> einmal um die Erde.</p>'+
+   '<div class="road"></div>'+busSvg()+'</section>';
+}
+
+/* Karte */
+var M={lon0:5.6,lon1:12.6,lat0:43.0,lat1:51.6,k:Math.cos(47.3*Math.PI/180),S:56};
+function W(){return (M.lon1-M.lon0)*M.k*M.S}function Hh(){return (M.lat1-M.lat0)*M.S}
+function xy(la,lo){return [(lo-M.lon0)*M.k*M.S,(M.lat1-la)*M.S]}
+function pl(a){return a.map(function(p){var q=xy(p[0],p[1]);return q[0].toFixed(1)+','+q[1].toFixed(1)}).join(' ')}
+function pathD(a){return a.map(function(p,i){var q=xy(p[0],p[1]);return (i?'L':'M')+q[0].toFixed(1)+' '+q[1].toFixed(1)}).join(' ')}
+function mapSlide(){
+  var w=W(),h=Hh(),s='<svg viewBox="0 0 '+w.toFixed(0)+' '+h.toFixed(0)+'" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Karte der gefahrenen Strecke">';
+  s+='<rect class="land" width="'+w.toFixed(0)+'" height="'+h.toFixed(0)+'"/><polyline class="alps" points="'+pl(ALPS)+'"/><polygon class="sea" points="'+pl(SEA)+'"/>';
+  BORDERS.forEach(function(b){s+='<polyline class="border" points="'+pl(b)+'"/>'});
+  s+='<path class="rt h" id="rh" d="'+pathD(H.p)+'"/>';
+  if(R.p.length>1)s+='<path class="rt r" id="rr" transform="translate(3.2 1.6)" d="'+pathD(R.p)+'"/>';
+  [['Mönchengladbach',51.19,6.44,'r'],['Basel',47.56,7.59,'l'],['Gotthard',46.6,8.6,'r'],['Mailand',45.46,9.19,'r'],['Montecatini',43.88,10.77,'r'],['Firenze',43.77,11.25,'s'],['Siena',43.32,11.33,'s'],['Pisa',43.72,10.40,'sl'],['Luzern',47.05,8.31,'sl'],['Frankfurt',50.11,8.68,'s']].forEach(function(c){
+    var q=xy(c[1],c[2]),left=/l/.test(c[3]);s+='<circle class="dot" cx="'+q[0].toFixed(1)+'" cy="'+q[1].toFixed(1)+'" r="'+(/s/.test(c[3])?1.6:2.4)+'"/><text class="pl'+(/s/.test(c[3])?' s':'')+'" x="'+(q[0]+(left?-5:5)).toFixed(1)+'" y="'+(q[1]+3).toFixed(1)+'" text-anchor="'+(left?'end':'start')+'">'+c[0]+'</text>';
+  });
+  s+='</svg>';
+  return '<section class="s s2" data-dur="9000"><div class="k u">Unsere Strecke</div><h2 class="u" style="--d:.15s">Quer über die <span class="serif">Alpen</span></h2>'+s+
+   '<div class="lg u" style="--d:.4s"><span><i style="background:var(--gold)"></i>Hinfahrt</span><span><i style="background:#ff7a5c"></i>Rückfahrt'+(R.done?'':' (bis jetzt)')+'</span></div></section>';
+}
+
+function hoursSlide(){
+  function lane(name,a,dep,arr){
+    var tot=a.dur, pa=Math.min(a.pause,tot), ja=Math.min(a.jam,tot-pa), dr=Math.max(0,tot-pa-ja);
+    return '<div class="lane2 u" style="--d:'+(name==='Hinfahrt'?'.3s':'.6s')+'"><div class="lab"><span>'+name+' <span class="small">'+tm(dep)+' → '+(a.done?tm(arr):'unterwegs')+'</span></span><b>'+hm(tot)+' h</b></div>'+
+      '<div class="track" data-dr="'+dr+'" data-pa="'+pa+'" data-ja="'+ja+'" data-max="'+Math.max(H.dur,R.dur,960)+'"><i class="dr"></i><i class="pa"></i><i class="ja"></i></div></div>';
+  }
+  var tot=H.dur+R.dur;
+  return '<section class="s s3" data-dur="7500"><div class="k u">Zeit im Bus</div>'+
+   '<div class="u" style="--d:.15s;margin-top:12px"><span class="big" data-count="'+Math.round(tot/60)+'">0</span> <span class="unit">Stunden</span></div>'+
+   '<p class="lead u" style="--d:.35s">'+(R.done?'Hin und zurück, Tür zu Tür.':'Hin und zurück, und wir sind noch nicht da.')+'</p>'+
+   '<div class="race">'+lane('Hinfahrt',H,HIN.dep,HIN.arr)+lane('Rückfahrt',R,RUE.dep,RUE.arr)+'</div>'+
+   '<div class="key u" style="--d:.9s"><span style="--c:var(--gold)">Fahrt</span><span style="--c:var(--sky)">Pausen</span><span style="--c:#ff5c5c">Stau & Stop-and-go</span></div></section>';
+}
+
+function gotthardSlide(){
+  return '<section class="s s4" data-dur="7500"><div class="k u">Zweimal durch</div><h2 class="u" style="--d:.15s">den <span class="serif">Gotthard</span></h2>'+
+   '<p class="lead u" style="--d:.35s;margin-top:10px">16,9 km Tunnel, hin und zurück:<br><b>33,8 km</b> mitten durch die Alpen.</p>'+
+   '<svg class="mtn" viewBox="0 0 400 300" preserveAspectRatio="xMidYMax slice" aria-hidden="true">'+
+    '<path d="M-10 300 L60 170 L110 210 L190 40 L240 120 L270 90 L340 190 L410 140 L410 300Z" fill="#6f7f8c"/>'+
+    '<path d="M190 40 L215 82 L200 76 L188 92 L172 74Z M270 90 L287 116 L276 112 L266 120Z" fill="#fff"/>'+
+    '<path d="M-10 300 L60 210 L120 240 L200 150 L300 230 L410 200 L410 300Z" fill="#55636e"/>'+
+    '<rect x="-10" y="236" width="420" height="34" fill="#2a2f33"/>'+
+    '<rect class="glow" x="-10" y="236" width="420" height="34" fill="#ffd27a" opacity="0"/>'+
+    '<g fill="#ffd27a">'+[0,1,2,3,4,5,6,7,8,9].map(function(i){return '<rect x="'+(i*42+8)+'" y="240" width="14" height="3" rx="1.5"/>'}).join('')+'</g>'+
+    '<g class="tbus"><g transform="translate(-28 -14) scale(.9)">'+busSvg().replace('class="bus"','').replace('<svg ','<svg width="62" height="30" ')+'</g></g>'+
+    '<path d="M-10 236 H40 A20 20 0 0 1 40 270 H-10Z M410 236 H360 A20 20 0 0 0 360 270 H410Z" fill="#6f7f8c"/>'+
+   '</svg></section>';
+}
+
+function nightSlide(){
+  var st='';for(var i=0;i<38;i++)st+='<i style="left:'+(Math.random()*100).toFixed(1)+'%;top:'+(Math.random()*55).toFixed(1)+'%;--d:'+(Math.random()*2).toFixed(2)+'s"></i>';
+  var items=[[HIN.dep,'Abfahrt an der Schule','Mönchengladbach, mitten in der Nacht']];
+  H.stops.forEach(function(x){items.push([x.t,x.n||'Halt',Math.round(x.min)+' Min Pause'])});
+  items.push([HIN.arr,'Ankunft am Hotel Concordia','Montecatini Terme']);
+  items=items.filter(function(x,i){return i===0||i===items.length-1||!/Hotel/.test(x[1])});
+  return '<section class="s s5" data-dur="8500"><div class="stars">'+st+'</div><div class="k u">Die Hinfahrt</div><h2 class="u" style="--d:.15s">Durch die <span class="serif">Nacht</span></h2>'+
+   '<p class="lead u" style="--d:.3s;margin-top:8px">'+hm(H.dur)+' Stunden, '+fmt(H.km)+' km, '+H.stops.filter(function(x){return !/Hotel/.test(x.n||'')}).length+' Stopps.</p>'+
+   '<div class="tl">'+items.map(function(x,i){return '<div class="u" style="--d:'+(0.5+i*0.18).toFixed(2)+'s"><b>'+tm(x[0])+'</b>'+esc(x[1])+'<small>'+esc(x[2])+'</small></div>'}).join('')+'</div></section>';
+}
+
+function weekSlide(){
+  var D=[['Mo','05','Montecatini Alto','Ankunft, Zimmer, und gleich den Berg hoch'],['Di','06','Siena','Piazza del Campo und ganz viele Stufen'],['Mi','07','Firenze','Zug ab Prato, David, Ponte Vecchio, Dom'],['Do','08','Pisa & Lucca','Schiefer Turm, dann Lucca statt Meer (Gewitter)'],['Fr','09','Ab nach Hause','Frühstück, Bus beladen, los']];
+  return '<section class="s s6" data-dur="8000"><div class="k u">Die Woche</div><h2 class="u" style="--d:.15s">Fünf Tage <span class="serif">Toskana</span></h2>'+
+   '<div class="cards">'+D.map(function(d,i){return '<div class="card" style="--d:'+(0.4+i*0.16).toFixed(2)+'s"><div class="dd"><small>'+d[0]+'</small><b>'+d[1]+'</b></div><div><h3>'+d[2]+'</h3><p>'+d[3]+'</p></div></div>'}).join('')+'</div></section>';
+}
+
+function backSlide(){
+  var rows=R.stops.map(function(x,i){
+    var n=x.n||'Halt', mc=/McDonald/.test(n), dc=/Mahlberg/.test(n);
+    return '<div class="stop u'+(mc?' mc':'')+(dc?' dc':'')+'" style="--d:'+(0.45+i*0.15).toFixed(2)+'s"><b>'+tm(x.t)+'</b><span>'+esc(n)+(dc?' · Fahrerwechsel':'')+'</span><span class="m">'+Math.round(x.min)+' Min</span></div>';
+  }).join('');
+  return '<section class="s s7" data-dur="9000"><div class="k u">Die Rückfahrt</div><h2 class="u" style="--d:.15s">Der lange <span class="serif">Freitag</span></h2>'+
+   '<p class="lead u" style="--d:.3s;margin-top:8px">Abfahrt '+tm(RUE.dep)+', früher als geplant. '+(R.done?'Angekommen '+tm(RUE.arr)+'.':'Unterwegs seit '+hm(R.dur)+' Std.')+'</p>'+
+   '<div class="stops">'+rows+'</div>'+(R.done?'':'<span class="live u" style="--d:1.4s">Live: wird fertig, sobald wir ankommen</span>')+'</section>';
+}
+
+function jamSlide(){
+  var cars='',cc=['#f6ecd8','#f3c316','#7fb6d9','#1b1d3a','#5d6b2f','#f28f3b'];for(var ln=0;ln<2;ln++)for(var i=0;i<8;i++)cars+='<i class="car" style="left:'+(i*66-20+ln*30)+'px;bottom:'+(ln?62:12)+'px;--c:'+cc[(i+ln*3)%cc.length]+';--d:'+(i*0.12+ln*0.3).toFixed(2)+'s"><b></b></i>';
+  var worst=R.stops.filter(function(x){return /Stau/.test(x.n||'')})[0];
+  return '<section class="s s8" data-dur="7000"><div class="k u">Stau-Bilanz</div>'+
+   '<div class="u" style="--d:.15s;margin-top:12px"><span class="big" data-count="'+Math.round(H.jam+R.jam)+'">0</span> <span class="unit">Minuten</span></div>'+
+   '<p class="lead u" style="--d:.35s">im Stau oder Stop-and-go, unter 25 km/h.</p>'+
+   '<div class="jbox u" style="--d:.8s"><div><b>'+Math.round(H.jam)+'</b><span>Min Hinfahrt</span></div><div><b>'+Math.round(R.jam)+'</b><span>Min Rückfahrt'+(R.done?'':' bis jetzt')+'</span></div></div>'+
+   '<p class="small u" style="--d:1.1s;margin-top:14px">Am zähesten: vor dem Gotthard, rund um Basel'+(worst?' und bei Muttenz, wo wir '+Math.round(worst.min)+' Min standen':'')+'.</p>'+
+   '<div class="cars">'+cars+'</div></section>';
+}
+
+function factsSlide(){
+  var nStops=H.stops.filter(function(x){return !/Hotel|Stau/.test(x.n||'')}).length+R.stops.filter(function(x){return !/Stau/.test(x.n||'')}).length;
+  var T=[[3,'Länder: Deutschland, Schweiz, Italien'],[4,'Grenzen überquert'],[Math.min(100,Math.round(Math.max(H.vmax,R.vmax))),'km/h Spitze (mehr darf ein Bus nicht)'],[nStops,'Raststätten-Stopps'],[2,'Tunnel-Durchfahrten am Gotthard'],[1,'Fahrerwechsel (Mahlberg)']];
+  return '<section class="s s9" data-dur="8000"><div class="k u">In Zahlen</div><h2 class="u" style="--d:.15s">Kleine <span class="serif">Rekorde</span></h2>'+
+   '<div class="grid">'+T.map(function(t,i){return '<div class="tile pop" style="--d:'+(0.35+i*0.12).toFixed(2)+'s"><b data-count="'+t[0]+'">0</b><span>'+t[1]+'</span></div>'}).join('')+'</div></section>';
+}
+
+function endSlide(){
+  var cf='',cols=['#f3c316','#c8553d','#7fb6d9','#f6ecd8','#5d6b2f','#ff7a5c'];
+  for(var i=0;i<46;i++)cf+='<i style="left:'+(Math.random()*100).toFixed(1)+'%;background:'+cols[i%cols.length]+';--d:'+(Math.random()*1.2).toFixed(2)+'s;--r:'+(Math.random()*720-360).toFixed(0)+'deg"></i>';
+  return '<section class="s s10" data-dur="12000"><div class="confetti" aria-hidden="true">'+cf+'</div>'+
+   '<div class="k u">'+(R.done?'Angekommen um '+tm(RUE.arr):'Gleich geschafft')+'</div>'+
+   '<h2 class="u" style="--d:.2s;margin-top:10px">Willkommen<br><span class="serif">zuhause</span></h2>'+
+   '<p class="lead u" style="--d:.5s;margin:16px auto 0">Danke an Micha und alle Fahrer, an die Lehrkräfte und an euch alle. Arrivederci, Toscana.</p>'+
+   '<div class="btns u" style="--d:.8s"><button type="button" class="p" id="again">Nochmal ansehen</button><button type="button" class="q" id="share">Teilen</button></div></section>';
+}
+
+/* ---------- Ablauf ---------- */
+var slidesEl=document.getElementById('slides'), barsEl=document.getElementById('bars');
+var cur=0, timer=null, startedAt=0, elapsed=0, paused=false, raf=null;
+function build(){
+  slidesEl.innerHTML=cover()+kmSlide()+mapSlide()+hoursSlide()+gotthardSlide()+nightSlide()+weekSlide()+backSlide()+jamSlide()+factsSlide()+endSlide();
+  var n=slidesEl.children.length;barsEl.innerHTML=new Array(n+1).join('<i><b></b></i>');
+  ['rh','rr'].forEach(function(id){var p=document.getElementById(id);if(!p)return;var L=p.getTotalLength();p.style.strokeDasharray=L;p.style.strokeDashoffset=L;p.dataset.len=L});
+  document.getElementById('again').onclick=function(e){e.stopPropagation();go(0)};
+  document.getElementById('share').onclick=function(e){e.stopPropagation();var d={title:'Toskana Wrapped',text:'Unsere Stufenfahrt in die Toskana, zusammengefasst',url:location.href};if(navigator.share)navigator.share(d).catch(function(){});else if(navigator.clipboard)navigator.clipboard.writeText(location.href).then(function(){e.target.textContent='Link kopiert'})};
+}
+var RM=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+function countUp(el){var to=+el.dataset.count,dur=RM?0:1600,t0=performance.now();function f(t){var k=dur?Math.min(1,(t-t0)/dur):1;k=1-Math.pow(1-k,3);el.textContent=fmt(Math.round(to*k));if(k<1)requestAnimationFrame(f)}requestAnimationFrame(f)}
+function activate(s){
+  s.querySelectorAll('[data-count]').forEach(function(el){el.textContent='0';setTimeout(function(){countUp(el)},RM?0:350)});
+  s.querySelectorAll('.track').forEach(function(tr){var mx=+tr.dataset.max,is=tr.querySelectorAll('i');is.forEach(function(i){i.style.transition='none';i.style.width='0'});tr.offsetWidth;
+    setTimeout(function(){is.forEach(function(i){i.style.transition=''});is[0].style.width=(tr.dataset.dr/mx*100)+'%';is[1].style.width=(tr.dataset.pa/mx*100)+'%';is[2].style.width=(tr.dataset.ja/mx*100)+'%'},RM?0:700)});
+  ['rh','rr'].forEach(function(id,k){var p=s.querySelector('#'+id);if(!p)return;p.style.transition='none';p.style.strokeDashoffset=RM?0:p.dataset.len;p.getBoundingClientRect();if(!RM)setTimeout(function(){p.style.transition='stroke-dashoffset '+(k?3.2:3.6)+'s cubic-bezier(.45,.05,.4,1)';p.style.strokeDashoffset=0},k?4100:500)});
+}
+function go(i){
+  var ss=slidesEl.children;if(i<0)i=0;if(i>=ss.length)i=ss.length-1;
+  paused=false;autoPaused=false;document.getElementById('pp').textContent='❚❚';slidesEl.querySelectorAll('[style*="animation-play-state"]').forEach(function(el){el.style.animationPlayState=''});
+  for(var k=0;k<ss.length;k++){ss[k].classList.remove('on');barsEl.children[k].firstChild.style.width=k<i?'100%':'0'}
+  document.getElementById('frame').classList.toggle('light',ss[i].classList.contains('s4'));
+  void ss[i].offsetWidth;ss[i].classList.add('on');cur=i;activate(ss[i]);elapsed=0;startedAt=performance.now();tick();
+}
+function tick(){
+  cancelAnimationFrame(raf);
+  var s=slidesEl.children[cur],dur=+s.dataset.dur||7000;
+  function f(t){if(!paused){var e=elapsed+(t-startedAt),k=Math.min(1,e/dur);barsEl.children[cur].firstChild.style.width=(k*100)+'%';if(k>=1){if(cur<slidesEl.children.length-1){go(cur+1);return}else return}}raf=requestAnimationFrame(f)}
+  raf=requestAnimationFrame(f);
+}
+function pause(b){if(b===paused)return;if(b){elapsed+=performance.now()-startedAt}else startedAt=performance.now();paused=b;document.getElementById('pp').textContent=b?'▶':'❚❚';document.getElementById('frame').style.setProperty('--ps',b?'paused':'running');
+  slidesEl.querySelectorAll('.s.on *').forEach(function(el){el.style.animationPlayState=b?'paused':''})}
+var hold=null,held=false;
+function down(){held=false;hold=setTimeout(function(){held=true;pause(true)},220)}
+function up(dir){clearTimeout(hold);if(held){pause(false);return}if(paused)pause(false);go(cur+dir)}
+var tl=document.getElementById('tl'),trr=document.getElementById('tr');
+tl.addEventListener('pointerdown',down);trr.addEventListener('pointerdown',down);
+tl.addEventListener('pointerup',function(){up(-1)});trr.addEventListener('pointerup',function(){up(1)});
+document.getElementById('pp').addEventListener('click',function(e){e.stopPropagation();pause(!paused)});
+document.addEventListener('keydown',function(e){if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();go(cur+1)}else if(e.key==='ArrowLeft')go(cur-1);else if(e.key==='p')pause(!paused)});
+var autoPaused=false;
+document.addEventListener('visibilitychange',function(){if(document.hidden){if(!paused){autoPaused=true;pause(true)}}else if(autoPaused){autoPaused=false;pause(false)}});
+
+/* Live: Rückfahrt mit den neuesten Punkten und der echten Ankunft ergänzen */
+function refresh(first){
+  Promise.all([fetch(STATE+'?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.json():null}).catch(function(){return null}),
+               fetch(TRACK+'?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.json():null}).catch(function(){return null})]).then(function(v){
+    var st=v[0],tr=v[1],changed=false;
+    if(st&&st.rueck){if(st.rueck.departed)RUE.dep=st.rueck.departed;if(st.rueck.arrived&&RUE.arr!==st.rueck.arrived){RUE.arr=st.rueck.arrived;changed=true}}
+    if(Array.isArray(tr)){var last=pts.length?pts[pts.length-1][2]:0;tr.forEach(function(q){if(q[2]>last&&q[2]>=RUE.from){pts.push([q[0],q[1],q[2]]);changed=true}})}
+    if(first){start();return}
+    if(changed){compute();var keep=cur;build();go(keep)}
+  });
+}
+var started=false;
+function start(){if(started)return;started=true;compute();build();go(0)}
+refresh(true);setTimeout(start,2500);setInterval(function(){if(!R.done)refresh(false)},5*60000);
+})();
+</script>
+</body>
+</html>
