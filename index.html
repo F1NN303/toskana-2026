@@ -1,4 +1,4 @@
-<!doctype html><html lang="de"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><meta name="robots" content="noindex,nofollow"><meta name="app-build" id="app-build" content="v40"><title>Toskana-Fahrt Live</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect x=%221%22 y=%221%22 width=%2230%22 height=%2230%22 rx=%225%22 fill=%22%230a5aa8%22 stroke=%22white%22 stroke-width=%222%22/%3E%3Cpath d=%22M16 6l8 9h-5v11h-6V15H8z%22 fill=%22white%22/%3E%3C/svg%3E"><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#232527"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bus Live"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script></head><body>
+<!doctype html><html lang="de"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><meta name="robots" content="noindex,nofollow"><meta name="app-build" id="app-build" content="v41"><title>Toskana-Fahrt Live</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect x=%221%22 y=%221%22 width=%2230%22 height=%2230%22 rx=%225%22 fill=%22%230a5aa8%22 stroke=%22white%22 stroke-width=%222%22/%3E%3Cpath d=%22M16 6l8 9h-5v11h-6V15H8z%22 fill=%22white%22/%3E%3C/svg%3E"><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#232527"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bus Live"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script></head><body>
 
 
 <style id="css">
@@ -768,6 +768,16 @@ var FC_FR=316,FC_BA=346;
 function fcMarks(){}
 var fH=new Intl.DateTimeFormat('de-DE',{timeZone:TZ,hour:'2-digit',hour12:false});
 function berlinHour(ms){return (parseInt(fH.format(new Date(ms)),10)%24)+new Date(ms).getUTCMinutes()/60}
+function longStopNorthOfBasel(){
+  var tr=trackFor('rueck');
+  for(var i=0;i<tr.length;i++){
+    if(!(tr[i][0]>47.55&&tr[i][1]<7.9))continue;
+    var j=i;while(j+1<tr.length&&kmDist(tr[i][0],tr[i][1],tr[j+1][0],tr[j+1][1])<0.6)j++;
+    if(tr[j][2]-tr[i][2]>=20*60000)return true;
+    i=j;
+  }
+  return false;
+}
 function forecastRueck(now){
   if(!gps)return null;
   var here=profAt(gps.lat,gps.lon);
@@ -775,7 +785,8 @@ function forecastRueck(now){
   fcMarks();
   var x=here.m, t=now, pauses=[], rushMin=0, driveMin=0;
   var lb=lastBreakEnd('rueck')||RUECK_START, s=Math.max(0,(gps.t-lb)/60000);
-  var changed=(tripState.rueck&&tripState.rueck.driverChanged)||(FC_FR>0&&x<FC_FR-15);
+  // Fahrerwechsel schon passiert? Langer Halt (ab 20 Min) ab Basel nordwärts, z. B. heute in Weil am Rhein statt bei Freiburg
+  var changed=(tripState.rueck&&tripState.rueck.driverChanged)||(FC_FR>0&&x<FC_FR-15)||longStopNorthOfBasel();
   // Steht der Bus gerade länger, läuft eine Pause: Rest davon abwarten
   if(gps.stopped&&gps.stoppedSince){var st=(now-gps.stoppedSince)/60000, cp=checkpointAt(gps.lat,gps.lon,st);if(st>=5&&!cp){var rest=Math.max(5,FC.pause-st);t+=rest*60000;s=0;pauses.push({n:'laufende Pause',min:Math.round(rest)})}}
   function drive(to){ // fahren bis Fahrminute "to" (rückwärts zum Ziel), Berufsverkehr in Deutschland 15–19 Uhr
