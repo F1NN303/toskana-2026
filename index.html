@@ -757,7 +757,7 @@ function forecastRueck(now){
   var jam=0,jams=[],live=null;
   // Live-Verkehr von TomTom (ganze Reststrecke, auch Schweiz und Italien), wenn frisch und vom aktuellen Standort
   var tt=tripState.rueck&&tripState.rueck.tt;
-  if(tt&&now-tt.at<20*60000&&kmDist(tt.lat,tt.lon,gps.lat,gps.lon)<25){live=tt;jam=Math.round((tt.delay||0)/60);t-=rushMin*60000;rushMin=0}
+  if(tt&&now-tt.at<20*60000&&kmDist(tt.lat,tt.lon,gps.lat,gps.lon)<25){live=tt;jam=Math.round(Math.max(tt.delay||0,tt.free?tt.sec-tt.free:0)/60);t-=rushMin*60000;rushMin=0}
   else if(traffic.items)traffic.items.forEach(function(o){if(!o.works&&o.jam&&o.delay&&o.ahead>-1&&o.ahead<FC.jamKm){jam+=o.delay;jams.push(o)}});
   jam=Math.min(jam,180);t+=jam*60000;
   return {eta:t,remain:(t-now)/60000,drive:driveMin,pauses:pauses,pauseMin:pauses.reduce(function(a,p){return a+p.min},0),jam:jam,jams:jams,rush:Math.round(rushMin),live:live};
@@ -1393,7 +1393,7 @@ function fcLine(f){
   var parts=['Fahrzeit '+dur(f.drive)];
   if(np||fw||lp)parts.push((lp?'laufende Pause, ':'')+(np?np+(np===1?' Pause':' Pausen'):'')+(np&&fw?' + ':'')+(fw?'Fahrerwechsel Freiburg':'')+' ca. '+dur(f.pauseMin));
   if(f.rush)parts.push('Feierabendverkehr +'+f.rush+' Min');
-  if(f.live)parts.push(f.jam?'Stau auf der Strecke +'+f.jam+' Min':'kein Stau auf der Strecke');
+  if(f.live)parts.push(f.jam?'Verkehr und Stau +'+f.jam+' Min':'freie Fahrt erwartet');
   else if(f.jam)parts.push('Stau vor uns +'+f.jam+' Min');
   return '<div class="l4">'+esc(parts.join(' · '))+'</div><div class="l5">'+(f.live?'Geschätzt aus der echten Hinfahrt und Live-Verkehr (TomTom, Stand '+tm(f.live.at)+')':'Geschätzt aus der echten Hinfahrt, live mit GPS und Autobahn-Meldungen')+'</div>';
 }
